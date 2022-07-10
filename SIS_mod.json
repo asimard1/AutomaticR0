@@ -1,0 +1,130 @@
+{
+    "compartments": {
+        "S^0": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 0
+        },
+        "S^1": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 9999999
+        },
+        "I^0": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 0
+        },
+        "I^1": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 1
+        },
+        "Null": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 0
+        },
+        "Rt(S,I)": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 0
+        }
+    },
+    "flows": {
+        "contacts": [
+            {
+                "from": "S^1",
+                "to": "I^1",
+                "rate": "S^0+S^1",
+                "contact": "I^0+I^1",
+                "parameter": 0.4,
+                "ti": null,
+                "tf": null
+            },
+            {
+                "from": "Null",
+                "to": "Rt(S,I)",
+                "rate": "S^1",
+                "contact": "I^0",
+                "parameter": 0.4,
+                "ti": null,
+                "tf": null
+            }
+        ],
+        "rates": [
+            {
+                "from": "I^0",
+                "to": "S^0",
+                "rate": "I^0",
+                "contact": "Null",
+                "parameter": 0.1,
+                "ti": null,
+                "tf": null
+            },
+            {
+                "from": "I^1",
+                "to": "S^1",
+                "rate": "I^1",
+                "contact": "Null",
+                "parameter": 0.1,
+                "ti": null,
+                "tf": null
+            },
+            {
+                "from": "Null",
+                "to": "S^1",
+                "rate": "S^0+S^1",
+                "contact": "Null",
+                "parameter": 0.00015,
+                "ti": null,
+                "tf": null
+            },
+            {
+                "from": "Null",
+                "to": "I^1",
+                "rate": "I^0+I^1",
+                "contact": "Null",
+                "parameter": 5e-05,
+                "ti": null,
+                "tf": null
+            },
+            {
+                "from": "S^0",
+                "to": "Null",
+                "rate": "S^0",
+                "contact": "Null",
+                "parameter": 7.5e-05,
+                "ti": null,
+                "tf": null
+            },
+            {
+                "from": "S^1",
+                "to": "Null",
+                "rate": "S^1",
+                "contact": "Null",
+                "parameter": 7.5e-05,
+                "ti": null,
+                "tf": null
+            },
+            {
+                "from": "I^0",
+                "to": "Null",
+                "rate": "I^0",
+                "contact": "Null",
+                "parameter": 0.0001,
+                "ti": null,
+                "tf": null
+            },
+            {
+                "from": "I^1",
+                "to": "Null",
+                "rate": "I^1",
+                "contact": "Null",
+                "parameter": 0.0001,
+                "ti": null,
+                "tf": null
+            }
+        ]
+    }
+}

@@ -1,0 +1,131 @@
+{
+    "compartments": {
+        "S": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 9999999
+        },
+        "I_A": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 1
+        },
+        "I_B": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 0
+        },
+        "R": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 0
+        },
+        "Null": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 0
+        }
+    },
+    "flows": {
+        "infections": [
+            {
+                "from": "S",
+                "to": "I_A",
+                "rate": "S",
+                "contact": "I_A",
+                "parameter": 0.4,
+                "ti": null,
+                "tf": null
+            },
+            {
+                "from": "S",
+                "to": "I_B",
+                "rate": "S",
+                "contact": "I_B",
+                "parameter": 0.7,
+                "ti": null,
+                "tf": null
+            }
+        ],
+        "recoveries": [
+            {
+                "from": "I_A",
+                "to": "R",
+                "rate": "I_A",
+                "contact": "Null",
+                "parameter": 0.2,
+                "ti": null,
+                "tf": null
+            },
+            {
+                "from": "I_B",
+                "to": "R",
+                "rate": "I_B",
+                "contact": "Null",
+                "parameter": 0.1,
+                "ti": null,
+                "tf": null
+            }
+        ],
+        "births": [
+            {
+                "from": "Null",
+                "to": "S",
+                "rate": "Null",
+                "contact": "Null",
+                "parameter": 100,
+                "ti": null,
+                "tf": null
+            }
+        ],
+        "deaths": [
+            {
+                "from": "S",
+                "to": "Null",
+                "rate": "S",
+                "contact": "Null",
+                "parameter": 0.00001,
+                "ti": null,
+                "tf": null
+            },
+            {
+                "from": "I_A",
+                "to": "Null",
+                "rate": "I_A",
+                "contact": "Null",
+                "parameter": 0.0002,
+                "ti": null,
+                "tf": null
+            },
+            {
+                "from": "I_B",
+                "to": "Null",
+                "rate": "I_B",
+                "contact": "Null",
+                "parameter": 0.0002,
+                "ti": null,
+                "tf": null
+            },
+            {
+                "from": "R",
+                "to": "Null",
+                "rate": "R",
+                "contact": "Null",
+                "parameter": 0.00001,
+                "ti": null,
+                "tf": null
+            }
+        ],
+        "importation": [
+            {
+                "from": "Null",
+                "to": "I_B",
+                "rate": "Null",
+                "contact": "Null",
+                "parameter": 1,
+                "ti": 20,
+                "tf": 21
+            }
+        ]
+    }
+}

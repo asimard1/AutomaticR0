@@ -1,0 +1,79 @@
+{
+    "compartments": {
+        "S": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 9999999
+        },
+        "I": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 1
+        },
+        "Null": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 0
+        }
+    },
+    "flows": {
+        "contacts": [
+            {
+                "from": "S",
+                "to": "I",
+                "rate": "S",
+                "contact": "I",
+                "parameter": 0.4,
+                "ti": null,
+                "tf": null
+            }
+        ],
+        "rates": [
+            {
+                "from": "I",
+                "to": "S",
+                "rate": "I",
+                "contact": "Null",
+                "parameter": 0.1,
+                "ti": null,
+                "tf": null
+            },
+            {
+                "from": "Null",
+                "to": "S",
+                "rate": "S",
+                "contact": "Null",
+                "parameter": 1.5e-4,
+                "ti": null,
+                "tf": null
+            },
+            {
+                "from": "Null",
+                "to": "I",
+                "rate": "I",
+                "contact": "Null",
+                "parameter": 5e-5,
+                "ti": null,
+                "tf": null
+            },
+            {
+                "from": "S",
+                "to": "Null",
+                "rate": "S",
+                "contact": "Null",
+                "parameter": 0.75e-4,
+                "ti": null,
+                "tf": null
+            },
+            {
+                "from": "I",
+                "to": "Null",
+                "rate": "I",
+                "contact": "Null",
+                "parameter": 1e-4,
+                "ti": null,
+                "tf": null
+            }
+        ]
+    }
+}
