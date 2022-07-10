@@ -161,7 +161,7 @@ def loadModel(name: str) -> dict:
     Par exemple, loadModel('SIR') fonctionne.
     """
     try:
-        with open(f'{name}.json') as file:
+        with open(f'models/{name}.json') as file:
             model = json.load(file)
         verifyModel(model)
         return model
@@ -867,7 +867,7 @@ def writeModel(newModel: dict, modelName: str, overWrite: bool = False) -> None:
     if not os.path.isfile(newFileName):
         # File doesn't exist
         try:
-            with open(newFileName, 'w') as file:
+            with open(f'models/{newFileName}', 'w') as file:
                 json.dump(newModel, file, indent=4)
         except:
             print('Problem when writing file.')
@@ -877,7 +877,7 @@ def writeModel(newModel: dict, modelName: str, overWrite: bool = False) -> None:
         if overWrite:
             print('Overwriting file.')
             try:
-                with open(newFileName, 'w') as file:
+                with open(f'models/{newFileName}', 'w') as file:
                     json.dump(newModel, file, indent=4)
             except:
                 print('Problem when writing file.')
