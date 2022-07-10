@@ -166,7 +166,7 @@ def loadModel(name: str) -> dict:
         verifyModel(model)
         return model
     except:
-        raise Exception(f'{name}.json not found.')
+        raise Exception(f'models/{name}.json not found.')
 
 
 def initialize(model: dict, y0: dict, originalModel:
@@ -769,9 +769,9 @@ def analysis(model: dict, solution: np.ndarray, nodes: bool = False,
         print(f'Maximums: {roundDict(maximums, 2)}')
 
 
-def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1/2,
+def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
               t_span_sim: tuple = (0, 100), sub_sim: float = 100,
-              verification: bool = False, write: bool = False,
+              verification: bool = True, write: bool = False,
               overWrite: bool = False) -> tuple:
     """This is an important part. Returns a dictionary with Rt values,
     as well as models and solutions."""
@@ -790,7 +790,7 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1/2,
     compartments = getCompartments(newModel)
 
     if write:
-        writeModel(newModel, modelName, overWrite=overWrite)
+        writeModel(newModel, modelName + '_mod', overWrite=overWrite)
 
     # Vérification!
     if verification:
@@ -860,9 +860,8 @@ def infsScaled(model: dict, solution: np.ndarray) -> np.ndarray:
 
 
 def writeModel(newModel: dict, modelName: str, overWrite: bool = False) -> None:
-    """Write model to file. This is useful to save modified models.
-    Adds _mod automatically to file name, so there won't be any problems."""
-    newFileName = modelName + '_mod.json'
+    """Write model to file. This is useful to save modified models."""
+    newFileName = modelName + '.json'
     print(f'Writing new model to file {newFileName}.')
     if not os.path.isfile(newFileName):
         # File doesn't exist
@@ -881,3 +880,4 @@ def writeModel(newModel: dict, modelName: str, overWrite: bool = False) -> None:
                     json.dump(newModel, file, indent=4)
             except:
                 print('Problem when writing file.')
+  
