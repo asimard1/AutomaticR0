@@ -15,7 +15,12 @@
             "contagiousness": 1,
             "initial_condition": 0
         },
-        "Null": {
+        "Null_n": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 0
+        },
+        "Null_m": {
             "susceptibility": 1,
             "contagiousness": 1,
             "initial_condition": 0
@@ -38,43 +43,43 @@
                 "from": "I",
                 "to": "R",
                 "rate": "I",
-                "contact": "Null",
+                "contact": "Null_m",
                 "parameter": 0.1,
                 "ti": null,
                 "tf": null
             },
             {
-                "from": "Null",
+                "from": "Null_n",
                 "to": "S",
-                "rate": "Null",
-                "contact": "Null",
+                "rate": "Null_n",
+                "contact": "Null_m",
                 "parameter": 100,
                 "ti": null,
                 "tf": null
             },
             {
                 "from": "S",
-                "to": "Null",
+                "to": "Null_m",
                 "rate": "S",
-                "contact": "Null",
+                "contact": "Null_m",
                 "parameter": 0.00001,
                 "ti": null,
                 "tf": null
             },
             {
                 "from": "I",
-                "to": "Null",
+                "to": "Null_m",
                 "rate": "I",
-                "contact": "Null",
+                "contact": "Null_m",
                 "parameter": 0.0002,
                 "ti": null,
                 "tf": null
             },
             {
                 "from": "R",
-                "to": "Null",
+                "to": "Null_m",
                 "rate": "R",
-                "contact": "Null",
+                "contact": "Null_m",
                 "parameter": 0.00001,
                 "ti": null,
                 "tf": null
