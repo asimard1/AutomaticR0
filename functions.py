@@ -36,43 +36,6 @@ def rreplace(s, old, new, n):
     return new.join(li)
 
 
-def find_nearest(array: np.ndarray, value: float) -> int:
-    """Retourne l'indice avec la valueur la plus proche."""
-    array = np.asarray(array)
-    idx = (np.abs(array - value)).argmin()
-    return idx
-
-
-def find_intersection(array: np.ndarray, value: float) -> tuple:
-    """Returns the pair of value that bound the intersection more closely."""
-    idx = find_nearest(array, value)
-
-    if array[idx] > value:
-        if array[idx - 1] < value:
-            toReturn = (idx - 1, idx)
-        elif array[idx + 1] < value:
-            toReturn = (idx, idx + 1)
-        else:
-            toReturn = (idx, idx)
-    else:
-        if array[idx - 1] > value:
-            toReturn = (idx - 1, idx)
-        elif array[idx + 1] > value:
-            toReturn = (idx, idx + 1)
-        else:
-            toReturn = (idx, idx)
-
-    valueNearest = array[idx]
-    valueMean = (array[toReturn[0]] + array[toReturn[1]]) / 2
-
-    if np.abs(valueNearest - value) < np.abs(valueMean - value):
-        print(valueNearest, valueMean)
-        return (idx, idx)
-    else:
-        print(valueNearest, valueMean)
-        return toReturn
-
-
 def plotCurves(xPoints: np.ndarray or list, curves, toPlot: list, labels: list,
                title: str = 'Infection curves', style: list = None,
                xlabel: str = 'Time', ylabel: str = 'Number of people',
@@ -221,7 +184,7 @@ def loadModel(name: str) -> dict:
     return model
 
 
-def initialize(model: dict, y0: dict, t: float, t0: float, originalModel:
+def initialize(model: dict, y0: dict, t: float, t0: float, scaled=False, originalModel:
                dict = None, printText: bool = True,
                whereToAdd: str = 'contact') -> None:
     """This modifies "model", but doesn't modify the file it comes from."""
@@ -236,7 +199,10 @@ def initialize(model: dict, y0: dict, t: float, t0: float, originalModel:
                             + f"Entries obtained: {list(y0.keys())}.")
 
         # TODO add test to see if need normalized or not!!!
-        scaledInfs = infs(originalModel, y0, t, t0, whereToAdd)
+        if scaled:
+            scaledInfs = infsScaled(originalModel, y0, t, t0, whereToAdd)
+        else:
+            scaledInfs = infs(originalModel, y0, t, t0, whereToAdd)
 
         for compartment in y0:
             model['compartments'][addI(
@@ -856,9 +822,10 @@ def analysis(model: dict, solution: np.ndarray, nodes: bool = False,
 
 def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
               t_span_sim: tuple = (0, 100), sub_sim: float = 100,
+              scaledInfs=False, autoInfections=True,
               verification: bool = True, write: bool = False,
               overWrite: bool = False, whereToAdd: str = 'contact',
-              printInit=False, r0=False, autoInfections=False) -> tuple:
+              printInit=False, printWarnings=True, r0=False) -> tuple:
     """This is an important part. Returns a dictionary with Rt values,
     as well as models and solutions."""
 
@@ -874,7 +841,7 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
     solutionOld, t_spanOld = solve(modelOld, t_span_rt, sub_sim)
     oldCompartments = getCompartments(modelOld)
 
-    newModel = mod(modelOld, True, True, autoInfections=autoInfections)
+    newModel = mod(modelOld, printWarnings, True, autoInfections=autoInfections)
     solution, t_span = solve(newModel, t_span_rt, sub_sim)
     compartments = getCompartments(newModel)
 
@@ -919,7 +886,7 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
                 for i, key in enumerate(oldCompartments)}
         if printInit:
             print(f'init: {init}')
-        initialize(newModel, init, pointIndex, t_span_rt[0], modelOld,
+        initialize(newModel, init, pointIndex, t_span_rt[0], scaledInfs, modelOld,
                    printText=printInit, whereToAdd=whereToAdd)
         solutionTemp, t_spanTemp = solve(newModel, t_span_sim, sub_sim)
 
@@ -932,10 +899,14 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
 
         for x in getRtNodes(newModel):
             compartment = x.split(',')[1].split(')')[0]
-            denom = initialCond[compartment] if compartment in initialCond else 1
+            if scaledInfs:
+                denom = 1
+            else:
+                denom = initialCond[compartment] if compartment in initialCond else 1
             value = solutionTemp[-1, getCompartments(newModel).index(x)]
             # print(f'{compartment}, {value}, {denom}')
             value = value / denom
+            # print(value)
             values[t][x] = value
         # print(f'{sum(values[t_spanOld[i]]):.2f} ', end='')
 
@@ -948,17 +919,19 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
 
 
 def computeR0(modelName: str, t_span_sim: tuple = (0, 100),
-              sub_sim: float = 100, write: bool = False,
+              sub_sim: float = 100, scaledInfs=False,
+              autoInfections: bool = True, write: bool = False,
               overWrite: bool = False, whereToAdd: str = 'contact',
-              printInit: bool = True, autoInfections: bool = False) -> dict:
+              printInit: bool = True, printWarnings: bool = True) -> dict:
     """Computes R0 associated with all contact nodes.
     However, if a variant is not present at start, R0 will be 0.
     This is because it was impossible at t=0 to know that variant would appear."""
     modelOld, newModel, solutionOld, _, values = \
         computeRt(modelName, (0, 0), 1, t_span_sim,
-                  sub_sim, verification=False, write=write,
+                  sub_sim, scaledInfs=scaledInfs, verification=False, write=write,
                   overWrite=overWrite, whereToAdd=whereToAdd,
-                  printInit=printInit, r0=True, autoInfections=autoInfections)
+                  printInit=printInit, r0=True, autoInfections=autoInfections,
+                  printWarnings=printWarnings)
 
     initialConds = solutionOld[0]
     return modelOld, newModel, initialConds, values[0]
@@ -1027,10 +1000,10 @@ def infCurve(model: dict, solution: np.ndarray, t_span: np.ndarray) -> np.ndarra
     return curve
 
 
-def infCurveScaled(model: dict, solution: np.ndarray) -> np.ndarray:
+def infCurveScaled(model: dict, solution: np.ndarray, t_span: np.ndarray) -> np.ndarray:
     """Returns curve of total infected, scaled so max = 1."""
 
-    curve = infCurve(model, solution)
+    curve = infCurve(model, solution, t_span)
     curve = curve / np.max(curve)
     return curve
 
@@ -1059,12 +1032,25 @@ def writeModel(newModel: dict, modelName: str, overWrite: bool = False) -> None:
                 print('Problem when writing file.')
 
 
-def doesIntersect(curve: np.ndarray, value: int, eps=10**4):
-    """Checks if curve intersects y = value."""
+def find_nearest(array: np.ndarray, value: float) -> int:
+    """Retourne l'indice avec la valueur la plus proche."""
+    array = np.asarray(array)
+    idx = (np.abs(array - value)).argmin()
+    return idx
 
-    newCurve = curve - value
-    products = newCurve[1:] * curve[:-1]
+
+def find_intersections(array: np.ndarray, value: float, eps=10**-4) -> tuple:
+    """Finds intersection between curve and value."""
+
+    newCurve = array - value
+    products = newCurve[2:] * newCurve[:-2]
 
     where = np.where(products < - eps)[0]
 
-    return len(where) > 0
+    return where
+
+
+def doesIntersect(curve: np.ndarray, value: int, eps=10**-4):
+    """Checks if curve intersects y = value."""
+
+    return len(find_intersections(curve, value, eps)) > 0

@@ -50,7 +50,7 @@
             {
                 "from": "Null_n",
                 "to": "Rt(S,I)",
-                "rate": "S^1",
+                "rate": "S^0+S^1",
                 "contact": "I^0",
                 "parameter": 0.4,
                 "ti": null,
