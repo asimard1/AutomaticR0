@@ -1,8 +1,8 @@
 import numpy as np
-from scipy.integrate import odeint
+from scipy.integrate import odeint, quad
 from dataclasses import dataclass
 from typing import Tuple
-from math import ceil, inf
+from math import *
 import matplotlib.pyplot as plt
 import time
 import json
@@ -40,9 +40,8 @@ def plotCurves(xPoints: np.ndarray or list, curves, toPlot: list, labels: list,
                title: str = 'Infection curves', style: list = None,
                xlabel: str = 'Time', ylabel: str = 'Number of people',
                scales: list = ['linear', 'linear'],
-               fig=plt, yTitle: str = None, fontsize: int = 15,
-               legendLoc: str = 'best', colors: list = None,
-               ycolor: str = 'black') -> None:
+               fig=plt, legendLoc: str = 'best',
+               colors: list = None, ycolor: str = 'black') -> None:
     """
     Plots given curves. If xPoints are the same for all curves, give only np.ndarray.
     Otherwise, a list of np.ndarrays works, in which case it has to be given for every curve.
@@ -83,20 +82,20 @@ def plotCurves(xPoints: np.ndarray or list, curves, toPlot: list, labels: list,
         fig.legend(loc=legendLoc)
 
     try:
-        fig.title(title, fontsize=fontsize, y=yTitle)
+        fig.title(title)
         fig.xlabel(xlabel)
         fig.ylabel(ylabel, color=ycolor)
         fig.xscale(scales[0])
         fig.yscale(scales[1])
     except:
-        fig.set_title(title, fontsize=fontsize, y=yTitle)
+        fig.set_title(title)
         fig.set_xlabel(xlabel)
         fig.set_ylabel(ylabel, color=ycolor)
         fig.set_xscale(scales[0])
         fig.set_yscale(scales[1])
 
 
-def verifyModel(model: dict) -> None:
+def verifyModel(model: dict, printText: bool = True) -> None:
     """Verifies if model has the right properties. Might not be complete."""
     if "Null_n" not in model['compartments'] or "Null_m" not in model['compartments']:
         raise Exception('Model doesn\'t have both Null nodes.')
@@ -106,37 +105,43 @@ def verifyModel(model: dict) -> None:
     compartments = getCompartments(model)
     for flowType_index, flowType in enumerate(flows):
         for flow_index, flow in enumerate(flows[flowType]):
-            # TODO check if flows don't have v_r and v_c that contain nulls but aren't nulls!
+            # TODO check that flows don't have v_r and v_c that contain nulls but aren't nulls!
             if 'rate' in flow:
                 v_r = flow['rate'].split('+')
                 for x in v_r:
                     if x not in compartments:
-                        raise Exception(f'Compartment {x} found in rates, not in compartment list.')
+                        raise Exception(
+                            f'Compartment {x} found in rates, not in compartment list.')
                     if x.startswith('Null'):
                         if len(v_r) > 1:
-                            raise Exception(f'Some flow has a rate which is a sum containing {x}.')
+                            raise Exception(
+                                f'Some flow has a rate which is a sum containing {x}.')
             if 'contact' in flow:
                 v_c = flow['contact'].split('+')
                 for x in v_c:
                     if x not in compartments:
-                        raise Exception(f'Compartment {x} found in contacts, not in compartment list.')
+                        raise Exception(
+                            f'Compartment {x} found in contacts, not in compartment list.')
                     if x.startswith('Null'):
                         if len(v_c) > 1:
-                            raise Exception(f'Some flow has a contact which is a sum containing {x}.')
+                            raise Exception(
+                                f'Some flow has a contact which is a sum containing {x}.')
 
             keys = list(flow.keys())
-            for p in ['from', 'to', 'rate', 'contact', 'parameter', 'ti', 'tf']:
+            for p in ['from', 'to', 'rate', 'contact', 'parameter']:
                 if p not in keys and p not in missing:
                     missing.append(p)
+
     if missing != []:
         missingStr = ', '.join(list(map(lambda x: f'"{x}"', missing)))
         missingStr = rreplace(missingStr, ', ', ' and ', 1)
         raise Exception(f'Some flows are missing parameters {missingStr}.')
 
-    print('Model verified.')
+    if printText:
+        print('Model verified.')
 
 
-def loadModel(name: str) -> dict:
+def loadModel(name: str, overWrite=False, printText: bool = True) -> dict:
     """
     Envoie un dictionaire contenant le fichier json "name.json".
     Seulement besoin d'appeler sur le nom du modèle.
@@ -145,6 +150,7 @@ def loadModel(name: str) -> dict:
     with open(f'models/{name}.json') as file:
         model = json.load(file)
 
+    # Try fixing the model if there are problems with nulls.
     missingNulln = False
     missingNullm = False
     if 'Null_n' not in model['compartments']:
@@ -178,9 +184,10 @@ def loadModel(name: str) -> dict:
 
         print('Model should be fixed...')
 
-    verifyModel(model)
+    # Verify
+    verifyModel(model, printText=printText)
 
-    writeModel(model, name, overWrite=False)
+    writeModel(model, name, overWrite=overWrite, printText=printText)
     return model
 
 
@@ -222,19 +229,6 @@ def initialize(model: dict, y0: dict, t: float, t0: float, scaled=False, origina
               f"{[round(model['compartments'][addI(x, 0)]['initial_condition'], 2) for x in weWant if x[:4] != 'Null']}")
         print(f"           Values for layer 1: " +
               f"{[round(model['compartments'][addI(x, 1)]['initial_condition'], 2) for x in weWant if x[:4] != 'Null']}")
-
-
-def newInfections(model: dict, state: np.ndarray or list) -> float:
-    """Returns new infections at state for given model."""
-    compartments = getCompartments(model)
-    weWant = removeDuplicates(
-        [removeI(x) for x in compartments if not x.startswith(('Rt'))])
-    Delta = model_derivative([x for x in state], 0, model, 0)
-    Delta = [max(x, 0) for x in Delta]
-    for x in [x for x in compartments if x.startswith('Null')]:
-        Delta[weWant.index(x)] = 0
-
-    return sum(Delta)
 
 
 def getCompartments(model: dict) -> list:
@@ -355,44 +349,43 @@ def getCoefForFlux(model: dict, flux: Flux, t: float, t0: float) -> float:
     flowType = flowTypes[flux.coef_indices[0]]
     flowJson = flows[flowType][flux.coef_indices[1]]
 
-    ti = flowJson['ti'] if flowJson['ti'] != None else - inf
-    tf = flowJson['tf'] if flowJson['tf'] != None else inf
-
-    if 'split' in list(flowJson.keys()):
-        # Pour le flot qui créé un cas index, on ne l'ajoute pas si
-        # on ne sait pas déjà qu'il existe.
-        if flowJson['split'] == 'New':
-            if t0 < ti:
-                return 0
-        # Pour le flot ajouté à la dynamique, il faut l'enlever si
-        # on le met dans les infectés.
-        else:
-            if t0 > ti:
-                return 0
-
-    return flowJson['parameter'] if ti <= t <= tf else 0
+    return getCoefForFlow(flowJson, t, t0)
 
 
 def getCoefForFlow(flow: dict, t: float, t0: float) -> float:
     """
     Gets the coefficient for flow from the config file.
     """
-    ti = flow['ti'] if flow['ti'] != None else - inf
-    tf = flow['tf'] if flow['tf'] != None else inf
 
-    if 'split' in list(flow.keys()):
-        # Pour le flot qui créé un cas index, on ne l'ajoute pas si
-        # on ne sait pas déjà qu'il existe.
-        if flow['split'] == 'New':
-            if t0 < ti:
-                return 0
-        # Pour le flot ajouté à la dynamique, il faut l'enlever si
-        # on le met dans les infectés.
+    string = flow['parameter']
+    tDict = {
+        't': t
+    }
+    t0Dict = {
+        't': t0
+    }
+    value = eval(string, globals(), tDict)
+    if 'copied' in flow:
+        if flow['copied']:
+            # Ce flot crée un cas index et il faut juste l'ajouter
+            # au Rt si on sait qu'il existe !
+            value = value if eval(
+                string, globals(), t0Dict) != 0 else 0
         else:
-            if t0 > ti:
-                return 0
+            # Ce flot est là pour la dynamique seulement !
+            value = value if eval(
+                string, globals(), t0Dict) == 0 else 0
 
-    return flow['parameter'] if ti <= t <= tf else 0
+    return value
+
+
+def integrate(func: str, tRange: tuple, eps: float = 10**-6):
+    """
+    Checks if function integrates to 1.
+    """
+    value = quad(lambda x: eval(func, globals(), {'t': x}),
+                 tRange[0], tRange[1])
+    return (value[0], value[1] < eps)
 
 
 def evalDelta(model: dict, delta: Delta, state: np.ndarray or list,
@@ -483,7 +476,7 @@ def model_derivative(state: np.ndarray or list, t: float, model: dict,
     return dstate_dt
 
 
-def solve(model: dict, range: tuple, refine: int, printText=False) -> tuple:
+def solve(model: dict, tRange: tuple, refine: int, printText=False) -> tuple:
     """
     Model solver. Eventually, we would want the first element of range to be used\n
     in order to determine if we need to consider timed elements in the compuation\n
@@ -493,12 +486,12 @@ def solve(model: dict, range: tuple, refine: int, printText=False) -> tuple:
     ti = time.time()
 
     compartments = getCompartments(model)
-    steps = (range[1] - range[0]) * refine + 1
-    t_span = np.linspace(range[0], range[1], num=ceil(steps))
+    steps = (tRange[1] - tRange[0]) * refine + 1
+    t_span = np.linspace(tRange[0], tRange[1], num=ceil(steps))
 
     solution = odeint(model_derivative, [
         model['compartments'][comp]['initial_condition'] for comp in compartments
-    ], t_span, args=(model, range[0]))
+    ], t_span, args=(model, tRange[0]))
 
     if printText:
         print(f'Model took {time.time() - ti:.1e} seconds to solve.')
@@ -540,15 +533,15 @@ def joinNodeSum(nodes: list) -> str:
     return '+'.join(removeDuplicates(nodes))
 
 
-def mod(model: dict, printWarnings: bool = True, printText: bool = True,
-        autoInfections: bool = False) -> dict:
+def mod(model: dict, printWarnings: bool = True,
+        printText: bool = True, autoInfections: bool = False) -> dict:
     """
     This function is the main point of the research.
     Creates the modified model from the base one.
     TODO this function is very long and needs to be reworked.
     """
     if printText:
-        print('Creating new model!')
+        print('\nCreating new model!')
     ti = time.time()
 
     newModel = {"compartments": {}, "flows": {}}
@@ -593,9 +586,7 @@ def mod(model: dict, printWarnings: bool = True, printText: bool = True,
             "to": "Null_m",
             "rate": "Null_n",
             "contact": "Null_m",
-            "parameter": 0,
-            "ti": None,
-            "tf": None
+            "parameter": "0"
         }
 
         for flow in flows[flowName]:
@@ -629,8 +620,6 @@ def mod(model: dict, printWarnings: bool = True, printText: bool = True,
                         newFlow['rate'] = rateNode
                         newFlow['contact'] = contactNode
                         newFlow['parameter'] = flow['parameter']
-                        newFlow['ti'] = flow['ti']
-                        newFlow['tf'] = flow['tf']
 
                         # print('  ', newFlow)
 
@@ -652,22 +641,20 @@ def mod(model: dict, printWarnings: bool = True, printText: bool = True,
                         if flow2['to'] == v and getFlowType(flow2) == 'contact':
                             splitBatch = True
                             if printWarnings:
-                                print(f'Warning: had to split a batch '
+                                print(f'Warning: had to double a batch '
                                       + f'from {u} to {v}.')
+                                print(f'\n!!! Need to make sure this is accounted '
+                                      + f'for in computation of Rt. !!!\n')
 
                 newFlow['from'] = uPrime
                 newFlow['to'] = vPrime
                 newFlow['rate'] = rateNode
                 newFlow['contact'] = contactNode
-                if not splitBatch or flow['parameter'] == 0:
+                if not splitBatch or flow['parameter'] == '0':
                     newFlow['parameter'] = flow['parameter']
-                    newFlow['ti'] = flow['ti']
-                    newFlow['tf'] = flow['tf']
                 else:
                     newFlow['parameter'] = flow['parameter']
-                    newFlow['ti'] = flow['ti'] + 1 / newFlow['parameter']
-                    newFlow['tf'] = flow['tf']
-                    newFlow['split'] = False
+                    newFlow['copied'] = False
 
                     newBatch = {
                         'from': addI(u, 0),
@@ -675,28 +662,14 @@ def mod(model: dict, printWarnings: bool = True, printText: bool = True,
                         'rate': 'Null_n',
                         'contact': 'Null_m',
                         'parameter': flow['parameter'],
-                        'ti': flow['ti'],
-                        'tf': flow['ti'] + 1 / newFlow['parameter'],
-                        'split': 'New'
-                    }
-                    newBatch2 = {
-                        'from': addI(u, 1),
-                        'to': addI(v, 1),
-                        'rate': 'Null_n',
-                        'contact': 'Null_m',
-                        'parameter': flow['parameter'],
-                        'ti': flow['ti'],
-                        'tf': flow['ti'] + 1 / newFlow['parameter'],
-                        'split': 'Original'
+                        'copied': True
                     }
                     newModel['flows'][flowName].append(newBatch.copy())
-                    newModel['flows'][flowName].append(newBatch2.copy())
 
                     if printWarnings:
                         print(f'From:  {flow},')
-                        print(f'  to:  {newFlow},')
-                        print(f'Added: {newBatch}')
-                        print(f' and:  {newBatch2}.')
+                        print(f'Added: {newFlow}')
+                        print(f' and:  {newBatch}.')
 
                 # print('  ', newFlow)
 
@@ -719,8 +692,6 @@ def mod(model: dict, printWarnings: bool = True, printText: bool = True,
                 newFlow['rate'] = rateNode
                 newFlow['contact'] = contactNode
                 newFlow['parameter'] = flow['parameter']
-                newFlow['ti'] = flow['ti']
-                newFlow['tf'] = flow['tf']
 
                 # print('  ', newFlow)
 
@@ -755,15 +726,13 @@ def mod(model: dict, printWarnings: bool = True, printText: bool = True,
                 newFlow['rate'] = rateNode
                 newFlow['contact'] = contactNode
                 newFlow['parameter'] = flow['parameter']
-                newFlow['ti'] = flow['ti']
-                newFlow['tf'] = flow['tf']
 
                 # print('  ', newFlow)
 
                 newModel['flows'][flowName].append(newFlow.copy())
 
     if printText:
-        print(f'New model created in {time.time() - ti:.1e} seconds.')
+        print(f'New model created in {time.time() - ti:.1e} seconds.\n')
 
     return newModel
 
@@ -825,28 +794,34 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
               scaledInfs=False, autoInfections=True,
               verification: bool = True, write: bool = False,
               overWrite: bool = False, whereToAdd: str = 'contact',
-              printInit=False, printWarnings=True, r0=False) -> tuple:
+              printText=True, printInit=False, printWarnings=True, r0=False) -> tuple:
     """This is an important part. Returns a dictionary with Rt values,
     as well as models and solutions."""
 
-    if r0:
-        print('\nComputation of R0 ' + ('with autoInfections' if autoInfections else ''))
-    else:
-        print('\nComputation of Rt ' + ('with autoInfections' if autoInfections else ''))
+    if printText:
+        if r0:
+            print('\nComputation of R0 ' +
+                  ('with autoInfections' if autoInfections else ''))
+        else:
+            print('\nComputation of Rt ' +
+                  ('with autoInfections' if autoInfections else ''))
 
-    if sub_rt > sub_sim:
-        print('Warning: rt precision too high.')
+    if printWarnings:
+        if sub_rt > sub_sim:
+            print('Warning: rt precision too high.')
 
-    modelOld = loadModel(modelName)
+    modelOld = loadModel(modelName, printText=printText)
     solutionOld, t_spanOld = solve(modelOld, t_span_rt, sub_sim)
     oldCompartments = getCompartments(modelOld)
 
-    newModel = mod(modelOld, printWarnings, True, autoInfections=autoInfections)
+    newModel = mod(modelOld, printWarnings, printText=printText,
+                   autoInfections=autoInfections)
     solution, t_span = solve(newModel, t_span_rt, sub_sim)
     compartments = getCompartments(newModel)
 
     if write:
-        writeModel(newModel, modelName + '_mod', overWrite=overWrite)
+        writeModel(newModel, modelName + '_mod',
+                   overWrite=overWrite, printText=printText)
 
     # Vérification!
     if verification:
@@ -867,11 +842,14 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
             # print(f"{comp + ':':<{length}}", np.allclose(array1, array2))
             if not np.allclose(array1, array2) or not np.allclose(array2, array1):
                 allGood = False
-        if not allGood:
+        if not allGood and printWarnings:
             print('Il semble que les modèles aient des résultats différents.')
             print('On continue l\'expérience quand même, à vérifier.')
         else:
-            print('Véfication faite, les deux modèles sont identiques.')
+            if printText:
+                print('Véfication faite, les deux modèles sont identiques.')
+
+    flows = newModel['flows']
 
     values = {}
     # No need for progress bar if only computing R0
@@ -886,34 +864,48 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
                 for i, key in enumerate(oldCompartments)}
         if printInit:
             print(f'init: {init}')
-        initialize(newModel, init, pointIndex, t_span_rt[0], scaledInfs, modelOld,
+        initialize(newModel, init, pointIndex, pointIndex, scaledInfs, modelOld,
                    printText=printInit, whereToAdd=whereToAdd)
         solutionTemp, t_spanTemp = solve(newModel, t_span_sim, sub_sim)
 
         initialCond = solutionOld[pointIndex]
         initialCond = {comp: initialCond[i]
                        for i, comp in enumerate(getCompartments(modelOld))}
-        initialCond = infs(modelOld, initialCond, t, t_span_rt[0], whereToAdd='to')
+        initialCond = infs(modelOld, initialCond, t,
+                           pointIndex, whereToAdd='to')
         initialCond = {comp: initialCond[comp]
                        for comp in initialCond if initialCond[comp] > 0}
 
         for x in getRtNodes(newModel):
             compartment = x.split(',')[1].split(')')[0]
             if scaledInfs:
-                denom = 1
+                denom = 1 if compartment in initialCond else 0
             else:
-                denom = initialCond[compartment] if compartment in initialCond else 1
+                denom = initialCond[compartment] if compartment in initialCond else 0
+
+            foundBatch = False
+            for flowType in flows:
+                for flow in flows[flowType]:
+                    if 'copied' in flow and removeI(flow['to']) == compartment:
+                        foundBatch = True
+                        denom += integrate(flow['parameter'], t_span_rt)[0]
+
+            if foundBatch:
+                if printWarnings:
+                    print(f'Found batch for {compartment}, denominator is {denom}.')
+
             value = solutionTemp[-1, getCompartments(newModel).index(x)]
             # print(f'{compartment}, {value}, {denom}')
-            value = value / denom
+            value = value / (denom if denom > 10**-8 else 1)
             # print(value)
             values[t][x] = value
         # print(f'{sum(values[t_spanOld[i]]):.2f} ', end='')
 
-    if r0:
-        print('R0 computation done\n')
-    else:
-        print('Rt computation done\n')
+    if printText:
+        if r0:
+            print('R0 computation done\n')
+        else:
+            print('Rt computation done\n')
 
     return modelOld, newModel, solutionOld, t_spanOld, values
 
@@ -922,7 +914,8 @@ def computeR0(modelName: str, t_span_sim: tuple = (0, 100),
               sub_sim: float = 100, scaledInfs=False,
               autoInfections: bool = True, write: bool = False,
               overWrite: bool = False, whereToAdd: str = 'contact',
-              printInit: bool = True, printWarnings: bool = True) -> dict:
+              printText=True, printInit: bool = True,
+              printWarnings: bool = True) -> dict:
     """Computes R0 associated with all contact nodes.
     However, if a variant is not present at start, R0 will be 0.
     This is because it was impossible at t=0 to know that variant would appear."""
@@ -931,7 +924,7 @@ def computeR0(modelName: str, t_span_sim: tuple = (0, 100),
                   sub_sim, scaledInfs=scaledInfs, verification=False, write=write,
                   overWrite=overWrite, whereToAdd=whereToAdd,
                   printInit=printInit, r0=True, autoInfections=autoInfections,
-                  printWarnings=printWarnings)
+                  printWarnings=printWarnings, printText=printText)
 
     initialConds = solutionOld[0]
     return modelOld, newModel, initialConds, values[0]
@@ -980,7 +973,7 @@ def infsScaled(model: dict, y0: dict, t: float, t0: float, whereToAdd: str = 'co
     return scaledInfs
 
 
-def totInfs(model: dict, state: np.ndarray, t:float, t0: float) -> np.ndarray:
+def totInfs(model: dict, state: np.ndarray, t: float, t0: float) -> np.ndarray:
     """Returns total infected for a state."""
 
     if len(state.shape) > 1:
@@ -996,7 +989,8 @@ def totInfs(model: dict, state: np.ndarray, t:float, t0: float) -> np.ndarray:
 def infCurve(model: dict, solution: np.ndarray, t_span: np.ndarray) -> np.ndarray:
     """Returns curve of total infected."""
 
-    curve = np.array([totInfs(model, x, t_span[i], t_span[i]) for i, x in enumerate(solution)])
+    curve = np.array([totInfs(model, x, t_span[i], t_span[i])
+                     for i, x in enumerate(solution)])
     return curve
 
 
@@ -1008,28 +1002,34 @@ def infCurveScaled(model: dict, solution: np.ndarray, t_span: np.ndarray) -> np.
     return curve
 
 
-def writeModel(newModel: dict, modelName: str, overWrite: bool = False) -> None:
+def writeModel(newModel: dict, modelName: str, overWrite: bool = False, printText: bool = True) -> None:
     """Write model to file. This is useful to save modified models."""
     newFileName = modelName + '.json'
-    print(f'Writing new model to file models/{newFileName}.')
+    if printText:
+        print(f'Writing new model to file models/{newFileName}.')
     if not os.path.isfile(f'models/{newFileName}'):
         # File doesn't exist
         try:
             with open(f'models/{newFileName}', 'w') as file:
                 json.dump(newModel, file, indent=4)
-            print('Model written.')
+            if printText:
+                print('Model written.')
         except:
-            print('Problem when writing file.')
+            if printText:
+                print('Problem when writing file.')
     else:
         # File exists already
-        print('File name already exists.')
+        if printText:
+            print('File name already exists.')
         if overWrite:
-            print('Overwriting file.')
+            if printText:
+                print('Overwriting file.')
             try:
                 with open(f'models/{newFileName}', 'w') as file:
                     json.dump(newModel, file, indent=4)
             except:
-                print('Problem when writing file.')
+                if printText:
+                    print('Problem when writing file.')
 
 
 def find_nearest(array: np.ndarray, value: float) -> int:
@@ -1039,18 +1039,34 @@ def find_nearest(array: np.ndarray, value: float) -> int:
     return idx
 
 
-def find_intersections(array: np.ndarray, value: float, eps=10**-4) -> tuple:
+def find_intersections(array: np.ndarray, value: float, eps=10**-8) -> list:
     """Finds intersection between curve and value."""
 
     newCurve = array - value
-    products = newCurve[2:] * newCurve[:-2]
+    products = newCurve[1:] * newCurve[:-1]
 
     where = np.where(products < - eps)[0]
 
-    return where
+    newWhere = []
+    for idx in where:
+        diffIdx = abs(array[idx] - value)
+        diffIdx2 = abs(array[idx + 1] - value)
+
+        if 1/2 <= diffIdx / diffIdx2 <= 2:
+            # Les erreurs sont "assez proches" l'une de l'autre
+            if idx + 1/2 not in newWhere:
+                newWhere.append(idx + 1/2)
+        elif diffIdx < diffIdx2:
+            if idx not in newWhere:
+                newWhere.append(idx)
+        else:
+            if idx + 1 not in newWhere:
+                newWhere.append(idx + 1)
+
+    return newWhere
 
 
-def doesIntersect(curve: np.ndarray, value: int, eps=10**-4):
+def doesIntersect(curve: np.ndarray, value: int, eps=10**-8):
     """Checks if curve intersects y = value."""
 
     return len(find_intersections(curve, value, eps)) > 0

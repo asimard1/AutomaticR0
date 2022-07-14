@@ -38,18 +38,14 @@
                 "to": "I_A",
                 "rate": "S",
                 "contact": "I_A",
-                "parameter": 0.4,
-                "ti": null,
-                "tf": null
+                "parameter": "0.4"
             },
             {
                 "from": "S",
                 "to": "I_B",
                 "rate": "S",
                 "contact": "I_B",
-                "parameter": 0.8,
-                "ti": null,
-                "tf": null
+                "parameter": "0.8"
             }
         ],
         "recoveries": [
@@ -58,18 +54,14 @@
                 "to": "R",
                 "rate": "I_A",
                 "contact": "Null_m",
-                "parameter": 0.2,
-                "ti": null,
-                "tf": null
+                "parameter": "0.2"
             },
             {
                 "from": "I_B",
                 "to": "R",
                 "rate": "I_B",
                 "contact": "Null_m",
-                "parameter": 0.1,
-                "ti": null,
-                "tf": null
+                "parameter": "0.1"
             }
         ],
         "births": [
@@ -78,9 +70,7 @@
                 "to": "S",
                 "rate": "Null_n",
                 "contact": "Null_m",
-                "parameter": 100,
-                "ti": null,
-                "tf": null
+                "parameter": "100"
             }
         ],
         "deaths": [
@@ -89,36 +79,28 @@
                 "to": "Null_m",
                 "rate": "S",
                 "contact": "Null_m",
-                "parameter": 1e-05,
-                "ti": null,
-                "tf": null
+                "parameter": "1e-05"
             },
             {
                 "from": "I_A",
                 "to": "Null_m",
                 "rate": "I_A",
                 "contact": "Null_m",
-                "parameter": 0.0002,
-                "ti": null,
-                "tf": null
+                "parameter": "0.0002"
             },
             {
                 "from": "I_B",
                 "to": "Null_m",
                 "rate": "I_B",
                 "contact": "Null_m",
-                "parameter": 0.0002,
-                "ti": null,
-                "tf": null
+                "parameter": "0.0002"
             },
             {
                 "from": "R",
                 "to": "Null_m",
                 "rate": "R",
                 "contact": "Null_m",
-                "parameter": 1e-05,
-                "ti": null,
-                "tf": null
+                "parameter": "1e-05"
             }
         ],
         "importation": [
@@ -127,9 +109,7 @@
                 "to": "I_B",
                 "rate": "Null_n",
                 "contact": "Null_m",
-                "parameter": 1,
-                "ti": 50,
-                "tf": 51
+                "parameter": "1 if 50 <= t <= 51 else 0"
             }
         ]
     }

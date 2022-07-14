@@ -3,7 +3,7 @@
         "S": {
             "susceptibility": 1,
             "contagiousness": 1,
-            "initial_condition": 1e6
+            "initial_condition": 1e7
         },
         "I": {
             "susceptibility": 1,
@@ -28,9 +28,7 @@
                 "to": "I",
                 "rate": "S",
                 "contact": "I",
-                "parameter": 0.4,
-                "ti": null,
-                "tf": null
+                "parameter": "0.4"
             }
         ],
         "rates": [
@@ -39,9 +37,7 @@
                 "to": "S",
                 "rate": "I",
                 "contact": "Null_m",
-                "parameter": 0.1,
-                "ti": null,
-                "tf": null
+                "parameter": "0.05"
             }
         ]
     }

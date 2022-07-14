@@ -3,7 +3,7 @@
         "S": {
             "susceptibility": 1,
             "contagiousness": 1,
-            "initial_condition": 9999999
+            "initial_condition": 1e7
         },
         "I": {
             "susceptibility": 1,
@@ -42,35 +42,14 @@
                 "to": "R",
                 "rate": "I",
                 "contact": "Null_m",
-                "parameter": "0.1"
-            },
-            {
-                "from": "Null_n",
-                "to": "S",
-                "rate": "Null_n",
-                "contact": "Null_m",
-                "parameter": "100"
-            },
-            {
-                "from": "S",
-                "to": "Null_m",
-                "rate": "S",
-                "contact": "Null_m",
-                "parameter": "0.00001"
-            },
-            {
-                "from": "I",
-                "to": "Null_m",
-                "rate": "I",
-                "contact": "Null_m",
-                "parameter": "0.0002"
+                "parameter": "0.05"
             },
             {
                 "from": "R",
-                "to": "Null_m",
+                "to": "S",
                 "rate": "R",
                 "contact": "Null_m",
-                "parameter": "0.00001"
+                "parameter": "0.1"
             }
         ]
     }
