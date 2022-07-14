@@ -25,6 +25,17 @@ class Flux:
 types = [Flux]
 
 
+functions = {}
+
+
+def storeFunctions(model: dict):
+    global functions
+    flows = model['flows']
+    for flowType_index, flowType in enumerate(flows):
+        for flow_index, flow in enumerate(flows[flowType]):
+            functions[f"{model['name']}{flowType_index, flow_index}"] = eval(flow['parameter'])
+
+
 def removeDuplicates(liste: list) -> list:
     """Retourne la liste sans répétitions."""
     return list(dict.fromkeys(liste))
@@ -186,8 +197,9 @@ def loadModel(name: str, overWrite=False, printText: bool = True) -> dict:
 
     # Verify
     verifyModel(model, printText=printText)
-
     writeModel(model, name, overWrite=overWrite, printText=printText)
+    # Store functions in dictionary
+    storeFunctions(model)
     return model
 
 
@@ -276,16 +288,6 @@ def getFlowsByCompartments(model: dict) -> list:
     return FBC
 
 
-def popTot(model: dict, state: np.ndarray or list) -> float:
-    """Total population at state with given model structure."""
-    compartments = getCompartments(model)
-
-    N = sum([state[i] if (compartment[:4] != 'Null' and compartment[:2] != 'Rt') else 0
-             for i, compartment in enumerate(compartments)])
-
-    return N
-
-
 def getPopNodes(model: dict) -> list:
     """Return compartments that are in the population only."""
     compartments = getCompartments(model)
@@ -315,7 +317,7 @@ def getNodeValues(model: dict, state: np.ndarray or list, weWant: list) -> dict:
     indexes = list(map(lambda x: compartments.index(x), weWant))
     for i in indexes:
         dictNb[compartments[i]] = state[i]
-    dictNb['Sum'] = sum([state[i] for i in indexes])
+    dictNb['Sum'] = sum(state[i] for i in indexes)
 
     return dictNb
 
@@ -349,7 +351,10 @@ def getCoefForFlux(model: dict, flux: Flux, t: float, t0: float) -> float:
     flowType = flowTypes[flux.coef_indices[0]]
     flowJson = flows[flowType][flux.coef_indices[1]]
 
-    return getCoefForFlow(flowJson, t, t0)
+    coef = functions[f"{model['name']}{flux.coef_indices[0], flux.coef_indices[1]}"]
+    return coef(t)
+
+    # return getCoefForFlow(flowJson, t, t0)
 
 
 def getCoefForFlow(flow: dict, t: float, t0: float) -> float:
@@ -358,23 +363,24 @@ def getCoefForFlow(flow: dict, t: float, t0: float) -> float:
     """
 
     string = flow['parameter']
-    tDict = {
-        't': t
-    }
-    t0Dict = {
-        't': t0
-    }
-    value = eval(string, globals(), tDict)
-    if 'copied' in flow:
-        if flow['copied']:
-            # Ce flot crée un cas index et il faut juste l'ajouter
-            # au Rt si on sait qu'il existe !
-            value = value if eval(
-                string, globals(), t0Dict) != 0 else 0
-        else:
-            # Ce flot est là pour la dynamique seulement !
-            value = value if eval(
-                string, globals(), t0Dict) == 0 else 0
+
+    fonc = eval(string)
+    value = fonc(t)
+
+    # t0Dict = {
+    #     't': t0
+    # }
+
+    # if 'copied' in flow:
+    #     if flow['copied']:
+    #         # Ce flot crée un cas index et il faut juste l'ajouter
+    #         # au Rt si on sait qu'il existe !
+    #         value = value if eval(
+    #             string, globals(), t0Dict) != 0 else 0
+    #     else:
+    #         # Ce flot est là pour la dynamique seulement !
+    #         value = value if eval(
+    #             string, globals(), t0Dict) == 0 else 0
 
     return value
 
@@ -406,22 +412,38 @@ def getCoefForFlow(flow: dict, t: float, t0: float) -> float:
 #     return value[0]
 
 
+timesTotal = None
+
+
 def evalDelta(model: dict, delta: Delta, state: np.ndarray or list,
               t: float, t0: float) -> float:
     """
     Computes the actual derivative for a delta (delta is the dataclass defined earlier).
     """
 
+    # Times final: [ 3. 26. 12. 11. 13. 35.]
+
+    ### 0 ###
+    # 2% of time
     compartments = getCompartments(model)
 
-    N = popTot(model, state)
+    ### 1 ###
+    # 18% of time
+    N = sum(state[i] for i, comp in enumerate(compartments)
+            if not comp.startswith(('Null', 'Rt')))
+    # 29% of time
+    # N = getPopulation(model, state)['Sum']
 
+    ### 2 ###
     # A bit useless for the moment...
+    # 9% of time
     susceptibility = [model['compartments'][comp]
                       ['susceptibility'] for comp in compartments]
     contagiousness = [model['compartments'][comp]
                       ['contagiousness'] for comp in compartments]
 
+    ### 3 ###
+    # 8% of time, very good
     rateInfluence = [sum(state[x] for x in flux.rate_index)
                      if len(flux.rate_index) != 1
                      else (state[flux.rate_index[0]]
@@ -434,31 +456,20 @@ def evalDelta(model: dict, delta: Delta, state: np.ndarray or list,
                               if compartments[flux.contact_index[0]][:4] != 'Null'
                               else 1)
                         for flux in delta.flux]
-    # Influence of time on parameter (i.e. different vaccination in time) could
-    # be added in this function: getCoefForFlux. But otherwise, it's too complicated.
+
+    ### 4 ###
     coefsInfluence = [getCoefForFlux(model, flux, t, t0)
                       for flux in delta.flux]
 
-    somme = np.sum(np.array(rateInfluence) *
-                   np.array(contactInfluence) *
-                   np.array(coefsInfluence))
+    ### 5 ###
+    # 25 % of time, 20 secs
+    somme = np.einsum('i,i,i', rateInfluence, contactInfluence, coefsInfluence)
+    # 33 % of time, 22 secs
+    # somme = np.sum(np.array(rateInfluence) *
+    #                np.array(contactInfluence) *
+    #                np.array(coefsInfluence))
 
     return somme
-
-    # b = sum([getCoefForFlux(model, batch) for batch in delta.batches])
-    # r = sum([getCoefForFlux(model, rate) * state[rate.from_index]
-    #         for rate in delta.rates])
-    # m = sum([getCoefForFlux(model, contact) *
-    #          state[contact.from_index] * susceptibility[contact.from_index] *
-    #          state[contact.contact_index] *
-    #          contagiousness[contact.contact_index] / N
-    #          for contact in delta.contacts])
-    # tb = sum(np.hstack([list(map(lambda x: x[2] if x[0] <= t <= x[1] else 0,
-    #                              getCoefForFlux(model, timelyBatch)))
-    #                     for timelyBatch in delta.timelybatches])) \
-    #     if [0 for _ in delta.timelybatches] != [] else 0
-
-    # return b + r + m + tb
 
 
 def derivativeFor(model: dict, compartment: str, t0: float):
@@ -481,8 +492,8 @@ def derivativeFor(model: dict, compartment: str, t0: float):
 timesTotal = None
 
 
-def model_derivative(state: np.ndarray or list, t: float, model: dict,
-                     derivatives) -> list:
+def model_derivative(state: np.ndarray or list, t: float,
+                     model: dict, derivatives) -> list:
     """
     Gets the derivative functions for every compartments evaluated at given state.
     """
@@ -555,7 +566,7 @@ def joinNodeSum(nodes: list) -> str:
     return '+'.join(removeDuplicates(nodes))
 
 
-def mod(model: dict, printWarnings: bool = True,
+def mod(model: dict, # printWarnings: bool = True,
         printText: bool = True, autoInfections: bool = False) -> dict:
     """
     This function is the main point of the research.
@@ -566,7 +577,7 @@ def mod(model: dict, printWarnings: bool = True,
         print('\nCreating new model!')
     ti = time.time()
 
-    newModel = {"compartments": {}, "flows": {}}
+    newModel = {"name": model['name'] + '_mod', "compartments": {}, "flows": {}}
 
     compartments = getCompartments(model)
     flows = model['flows']
@@ -757,6 +768,7 @@ def mod(model: dict, printWarnings: bool = True,
     if printText:
         print(f'New model created in {time.time() - ti:.1e} seconds.\n')
 
+    storeFunctions(newModel)
     return newModel
 
 
@@ -815,7 +827,7 @@ def analysis(model: dict, solution: np.ndarray, nodes: bool = False,
 def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
               t_span_sim: tuple = (0, 100), sub_sim: float = 100,
               scaledInfs=False, autoInfections=True,
-              verification: bool = True, write: bool = False,
+              verification: bool = True, write: bool = True,
               overWrite: bool = False, whereToAdd: str = 'contact',
               printText=True, printInit=False, printWarnings=True, r0=False) -> tuple:
     """This is an important part. Returns a dictionary with Rt values,
@@ -837,7 +849,7 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
     solutionOld, t_spanOld = solve(modelOld, t_span_rt, sub_sim)
     oldCompartments = getCompartments(modelOld)
 
-    newModel = mod(modelOld, printWarnings, printText=printText,
+    newModel = mod(modelOld, printWarnings,
                    autoInfections=autoInfections)
     solution, t_span = solve(newModel, t_span_rt, sub_sim)
     compartments = getCompartments(newModel)
@@ -976,8 +988,8 @@ def infs(model: dict, y0: dict, t: float, t0: float, whereToAdd: str = 'contact'
                 v_r = flow['rate'].split('+')
                 v_c = flow['contact'].split('+')
 
-                rateImpact = sum([y0[x] for x in v_r])
-                contactImpact = sum([y0[x] for x in v_c])
+                rateImpact = sum(y0[x] for x in v_r)
+                contactImpact = sum(y0[x] for x in v_c)
                 # Normally v_r and v_c should not be null. We can use both directly.
                 param = getCoefForFlow(flow, t, t0)
                 contactsFlow = param * rateImpact * contactImpact / N
@@ -993,7 +1005,7 @@ def infsScaled(model: dict, y0: dict, t: float, t0: float, whereToAdd: str = 'co
     infections = infs(model, y0, t, t0, whereToAdd)
     weWant = getCompartments(model)
 
-    sumInfections = sum([infections[node] for node in weWant])
+    sumInfections = sum(infections[node] for node in weWant)
     denom = sumInfections if sumInfections != 0 else 1
 
     scaledInfs = {key: infections[key] / denom for key in infections}
@@ -1009,9 +1021,9 @@ def totInfs(model: dict, state: np.ndarray, t: float, t0: float) -> np.ndarray:
             f'Function can only be used on single state, not solution.')
     weWant = getCompartments(model)
     y0 = {comp: state[i] for i, comp in enumerate(weWant)}
-    infections = infs(model, y0, t, t0)
+    infections = infs(model, y0, t, t0, whereToAdd='to')
 
-    return sum([infections[comp] for comp in weWant])
+    return sum(infections[comp] for comp in weWant)
 
 
 def infCurve(model: dict, solution: np.ndarray, t_span: np.ndarray) -> np.ndarray:

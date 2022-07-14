@@ -1,4 +1,5 @@
 {
+    "name": "SIS",
     "compartments": {
         "S": {
             "susceptibility": 1,
@@ -28,7 +29,7 @@
                 "to": "I",
                 "rate": "S",
                 "contact": "I",
-                "parameter": "0.4"
+                "parameter": "lambda t: 0.4"
             }
         ],
         "rates": [
@@ -37,7 +38,7 @@
                 "to": "S",
                 "rate": "I",
                 "contact": "Null_m",
-                "parameter": "0.05"
+                "parameter": "lambda t: 0.05"
             }
         ]
     }

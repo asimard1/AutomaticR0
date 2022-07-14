@@ -1,4 +1,5 @@
 {
+    "name": "SIS_mod",
     "compartments": {
         "S^0": {
             "susceptibility": 1,
@@ -43,14 +44,14 @@
                 "to": "I^1",
                 "rate": "S^0+S^1",
                 "contact": "I^0+I^1",
-                "parameter": "0.4"
+                "parameter": "lambda t: 0.4"
             },
             {
                 "from": "Null_n",
                 "to": "Rt(S,I)",
                 "rate": "S^0+S^1",
                 "contact": "I^0",
-                "parameter": "0.4"
+                "parameter": "lambda t: 0.4"
             }
         ],
         "rates": [
@@ -59,14 +60,14 @@
                 "to": "S^0",
                 "rate": "I^0",
                 "contact": "Null_m",
-                "parameter": "0.05"
+                "parameter": "lambda t: 0.05"
             },
             {
                 "from": "I^1",
                 "to": "S^1",
                 "rate": "I^1",
                 "contact": "Null_m",
-                "parameter": "0.05"
+                "parameter": "lambda t: 0.05"
             }
         ]
     }

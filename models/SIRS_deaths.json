@@ -1,4 +1,5 @@
 {
+    "name": "SIRS_deaths",
     "compartments": {
         "S": {
             "susceptibility": 1,
@@ -28,7 +29,7 @@
                 "to": "I",
                 "rate": "S",
                 "contact": "I",
-                "parameter": "0.4"
+                "parameter": "lambda t: 0.4"
             }
         ],
         "rates": [
@@ -37,35 +38,35 @@
                 "to": "R",
                 "rate": "I",
                 "contact": "Null",
-                "parameter": "0.1"
+                "parameter": "lambda t: 0.1"
             },
             {
                 "from": "R",
                 "to": "S",
                 "rate": "R",
                 "contact": "Null",
-                "parameter": "0.01"
+                "parameter": "lambda t: 0.01"
             },
             {
                 "from": "S",
                 "to": "Null",
                 "rate": "S",
                 "contact": "Null",
-                "parameter": "0.0005"
+                "parameter": "lambda t: 0.0005"
             },
             {
                 "from": "I",
                 "to": "Null",
                 "rate": "I",
                 "contact": "Null",
-                "parameter": "0.001"
+                "parameter": "lambda t: 0.001"
             },
             {
                 "from": "R",
                 "to": "Null",
                 "rate": "R",
                 "contact": "Null",
-                "parameter": "0.0005"
+                "parameter": "lambda t: 0.0005"
             }
         ],
         "batches": [
@@ -74,14 +75,14 @@
                 "to": "S",
                 "rate": "Null",
                 "contact": "Null",
-                "parameter": "2000"
+                "parameter": "lambda t: 2000"
             },
             {
                 "from": "S",
                 "to": "R",
                 "rate": "Null",
                 "contact": "Null",
-                "parameter": "100"
+                "parameter": "lambda t: 100"
             }
         ]
     }

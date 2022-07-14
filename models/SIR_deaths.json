@@ -1,4 +1,5 @@
 {
+    "name": "SIR_deaths",
     "compartments": {
         "S": {
             "susceptibility": 1,
@@ -33,7 +34,7 @@
                 "to": "I",
                 "rate": "S",
                 "contact": "I",
-                "parameter": "0.4"
+                "parameter": "lambda t: 0.4"
             }
         ],
         "rates": [
@@ -42,35 +43,35 @@
                 "to": "R",
                 "rate": "I",
                 "contact": "Null_m",
-                "parameter": "0.1"
+                "parameter": "lambda t: 0.1"
             },
             {
                 "from": "Null_n",
                 "to": "S",
                 "rate": "Null_n",
                 "contact": "Null_m",
-                "parameter": "100"
+                "parameter": "lambda t: 100"
             },
             {
                 "from": "S",
                 "to": "Null_m",
                 "rate": "S",
                 "contact": "Null_m",
-                "parameter": "0.00001"
+                "parameter": "lambda t: 0.00001"
             },
             {
                 "from": "I",
                 "to": "Null_m",
                 "rate": "I",
                 "contact": "Null_m",
-                "parameter": "0.0002"
+                "parameter": "lambda t: 0.0002"
             },
             {
                 "from": "R",
                 "to": "Null_m",
                 "rate": "R",
                 "contact": "Null_m",
-                "parameter": "0.00001"
+                "parameter": "lambda t: 0.00001"
             }
         ]
     }
