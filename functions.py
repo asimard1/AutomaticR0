@@ -379,13 +379,31 @@ def getCoefForFlow(flow: dict, t: float, t0: float) -> float:
     return value
 
 
-def integrate(func: str, tRange: tuple, eps: float = 10**-6):
-    """
-    Checks if function integrates to 1.
-    """
-    value = quad(lambda x: eval(func, globals(), {'t': x}),
-                 tRange[0], tRange[1])
-    return (value[0], value[1] < eps)
+# def integrate(func: str, tRange: tuple, eps: float = 10**-6):
+#     """
+#     Checks if function integrates to 1.
+#     """
+#     sep = .01
+#     biggerRange = (tRange[0], tRange[1] + sep)
+#     values = np.array([eval(func, globals(), {'t': t})
+#                        for t in np.arange(*biggerRange, sep)])
+#     idx = np.where(values > 0)
+#     valuesPositive = np.arange(*biggerRange, sep)[idx]
+
+#     if len(valuesPositive) == 0:
+#         return 0
+
+#     minimum = np.min(valuesPositive) - 2 * sep
+#     maximum = np.max(valuesPositive) + 2 * sep
+#     newRange = (max(tRange[0], minimum),
+#                 min(tRange[1], maximum))
+
+#     if newRange[0] >= newRange[1]:
+#         return 0
+
+#     value = quad(lambda x: eval(func, globals(), {
+#                  't': x}), *newRange)
+#     return value[0]
 
 
 def evalDelta(model: dict, delta: Delta, state: np.ndarray or list,
@@ -443,8 +461,7 @@ def evalDelta(model: dict, delta: Delta, state: np.ndarray or list,
     # return b + r + m + tb
 
 
-def derivativeFor(model: dict, compartment: str, t: float,
-                  t0: float):
+def derivativeFor(model: dict, compartment: str, t0: float):
     """
     Get the derivative for a compartment as a function.
     """
@@ -461,15 +478,18 @@ def derivativeFor(model: dict, compartment: str, t: float,
     return derivativeForThis
 
 
+timesTotal = None
+
+
 def model_derivative(state: np.ndarray or list, t: float, model: dict,
-                     t0: float) -> list:
+                     derivatives) -> list:
     """
     Gets the derivative functions for every compartments evaluated at given state.
     """
 
-    compartments = getCompartments(model)
-    derivatives = [derivativeFor(model, c, t, t0)
-                   for c in compartments]
+    global timesTotal
+
+    # I think this stays the same for all nodes...
 
     # state = [x if x > 0 else 0 for x in state]
     dstate_dt = [derivatives[i](state, t) for i in range(len(state))]
@@ -482,16 +502,18 @@ def solve(model: dict, tRange: tuple, refine: int, printText=False) -> tuple:
     in order to determine if we need to consider timed elements in the compuation\n
     of R0 (e.g. we don't know whether a new variant will appear or not).
     """
-
     ti = time.time()
 
     compartments = getCompartments(model)
     steps = (tRange[1] - tRange[0]) * refine + 1
     t_span = np.linspace(tRange[0], tRange[1], num=ceil(steps))
 
+    derivatives = [derivativeFor(model, c, tRange[0])
+                   for c in compartments]
+
     solution = odeint(model_derivative, [
         model['compartments'][comp]['initial_condition'] for comp in compartments
-    ], t_span, args=(model, tRange[0]))
+    ], t_span, args=(model, derivatives))
 
     if printText:
         print(f'Model took {time.time() - ti:.1e} seconds to solve.')
@@ -635,41 +657,42 @@ def mod(model: dict, printWarnings: bool = True,
                 # Si une batch crée des infections, il faudra s'assurer qu'au
                 # moins une infection est créée dans la couche 0. Il faut donc
                 # jouer un peu sur ces paramètres...
-                splitBatch = False
-                for _, flowName2 in enumerate(flows):
-                    for flow2 in flows[flowName2]:
-                        if flow2['to'] == v and getFlowType(flow2) == 'contact':
-                            splitBatch = True
-                            if printWarnings:
-                                print(f'Warning: had to double a batch '
-                                      + f'from {u} to {v}.')
-                                print(f'\n!!! Need to make sure this is accounted '
-                                      + f'for in computation of Rt. !!!\n')
+                # splitBatch = False
+                # for _, flowName2 in enumerate(flows):
+                #     for flow2 in flows[flowName2]:
+                #         if flow2['to'] == v and getFlowType(flow2) == 'contact':
+                #             splitBatch = True
+                #             if printWarnings:
+                #                 print(f'Warning: had to double a batch '
+                #                       + f'from {u} to {v}.')
+                #                 print(f'\n!!! Need to make sure this is accounted '
+                #                       + f'for in computation of Rt. !!!\n')
 
                 newFlow['from'] = uPrime
                 newFlow['to'] = vPrime
                 newFlow['rate'] = rateNode
                 newFlow['contact'] = contactNode
-                if not splitBatch or flow['parameter'] == '0':
-                    newFlow['parameter'] = flow['parameter']
-                else:
-                    newFlow['parameter'] = flow['parameter']
-                    newFlow['copied'] = False
+                newFlow['parameter'] = flow['parameter']
+                # if not splitBatch or flow['parameter'] == '0':
+                #     newFlow['parameter'] = flow['parameter']
+                # else:
+                #     newFlow['parameter'] = flow['parameter']
+                # newFlow['copied'] = False
 
-                    newBatch = {
-                        'from': addI(u, 0),
-                        'to': addI(v, 0),
-                        'rate': 'Null_n',
-                        'contact': 'Null_m',
-                        'parameter': flow['parameter'],
-                        'copied': True
-                    }
-                    newModel['flows'][flowName].append(newBatch.copy())
+                # newBatch = {
+                #     'from': addI(u, 0),
+                #     'to': addI(v, 0),
+                #     'rate': 'Null_n',
+                #     'contact': 'Null_m',
+                #     'parameter': flow['parameter'],
+                #     'copied': True
+                # }
+                # newModel['flows'][flowName].append(newBatch.copy())
 
-                    if printWarnings:
-                        print(f'From:  {flow},')
-                        print(f'Added: {newFlow}')
-                        print(f' and:  {newBatch}.')
+                # if printWarnings:
+                #     print(f'From:  {flow},')
+                #     print(f'Added: {newFlow}')
+                #     print(f' and:  {newBatch}.')
 
                 # print('  ', newFlow)
 
@@ -858,14 +881,17 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
                            1 / sub_rt)
     iterator = tqdm(iterations) if len(iterations) > 1 else iterations
     for t in iterator:
+
         values[t] = {}
         pointIndex = find_nearest(t_spanOld, t)
+        pointTime = t_spanOld[pointIndex]
         init = {key: solutionOld[pointIndex, i]
                 for i, key in enumerate(oldCompartments)}
         if printInit:
             print(f'init: {init}')
         initialize(newModel, init, pointIndex, pointIndex, scaledInfs, modelOld,
                    printText=printInit, whereToAdd=whereToAdd)
+
         solutionTemp, t_spanTemp = solve(newModel, t_span_sim, sub_sim)
 
         initialCond = solutionOld[pointIndex]
@@ -883,20 +909,22 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
             else:
                 denom = initialCond[compartment] if compartment in initialCond else 0
 
-            foundBatch = False
-            for flowType in flows:
-                for flow in flows[flowType]:
-                    if 'copied' in flow and removeI(flow['to']) == compartment:
-                        foundBatch = True
-                        denom += integrate(flow['parameter'], t_span_rt)[0]
+            # foundBatch = False
+            # for flowType in flows:
+            #     for flow in flows[flowType]:
+            #         if 'copied' in flow and flow['to'] == addI(compartment, 0):
+            #             foundBatch = True
+            #             print(integrate, flow, pointIndex, t_span_rt)
+            #             denom += integrate(flow['parameter'],
+            #                                (pointTime, t_span_rt[1]))
 
-            if foundBatch:
-                if printWarnings:
-                    print(f'Found batch for {compartment}, denominator is {denom}.')
+            # if foundBatch:
+            #     print(f'Found batch for {compartment}, '
+            #           + f'denominator is {denom}.')
 
             value = solutionTemp[-1, getCompartments(newModel).index(x)]
             # print(f'{compartment}, {value}, {denom}')
-            value = value / (denom if denom > 10**-8 else 1)
+            value = value / (denom if denom != 0 else 1)
             # print(value)
             values[t][x] = value
         # print(f'{sum(values[t_spanOld[i]]):.2f} ', end='')
