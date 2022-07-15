@@ -33,7 +33,8 @@ def storeFunctions(model: dict):
     flows = model['flows']
     for flowType_index, flowType in enumerate(flows):
         for flow_index, flow in enumerate(flows[flowType]):
-            functions[f"{model['name']}{flowType_index, flow_index}"] = eval(flow['parameter'])
+            functions[f"{model['name']}{flowType_index, flow_index}"] = eval(
+                flow['parameter'])
 
 
 def removeDuplicates(liste: list) -> list:
@@ -385,7 +386,7 @@ def getCoefForFlow(flow: dict, t: float, t0: float) -> float:
     return value
 
 
-# def integrate(func: str, tRange: tuple, eps: float = 10**-6):
+# def integrate(func: str, tRange: tuple, eps: float = 10**-5):
 #     """
 #     Checks if function integrates to 1.
 #     """
@@ -566,7 +567,7 @@ def joinNodeSum(nodes: list) -> str:
     return '+'.join(removeDuplicates(nodes))
 
 
-def mod(model: dict, # printWarnings: bool = True,
+def mod(model: dict,  # printWarnings: bool = True,
         printText: bool = True, autoInfections: bool = False) -> dict:
     """
     This function is the main point of the research.
@@ -577,7 +578,8 @@ def mod(model: dict, # printWarnings: bool = True,
         print('\nCreating new model!')
     ti = time.time()
 
-    newModel = {"name": model['name'] + '_mod', "compartments": {}, "flows": {}}
+    newModel = {"name": model['name'] + '_mod',
+                "compartments": {}, "flows": {}}
 
     compartments = getCompartments(model)
     flows = model['flows']
@@ -849,8 +851,7 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
     solutionOld, t_spanOld = solve(modelOld, t_span_rt, sub_sim)
     oldCompartments = getCompartments(modelOld)
 
-    newModel = mod(modelOld, printWarnings,
-                   autoInfections=autoInfections)
+    newModel = mod(modelOld, printText, autoInfections=autoInfections)
     solution, t_span = solve(newModel, t_span_rt, sub_sim)
     compartments = getCompartments(newModel)
 
@@ -1079,13 +1080,16 @@ def find_nearest(array: np.ndarray, value: float) -> int:
     return idx
 
 
-def find_intersections(array: np.ndarray, value: float, eps=10**-8) -> list:
+def find_intersections(array: np.ndarray, value: float, eps=10**-5) -> list:
     """Finds intersection between curve and value."""
 
     newCurve = array - value
     products = newCurve[1:] * newCurve[:-1]
 
     where = np.where(products < - eps)[0]
+
+    if len(where) > 0:
+        print(-np.min(products[where]))
 
     newWhere = []
     for idx in where:
@@ -1106,7 +1110,97 @@ def find_intersections(array: np.ndarray, value: float, eps=10**-8) -> list:
     return newWhere
 
 
-def doesIntersect(curve: np.ndarray, value: int, eps=10**-8):
+def doesIntersect(curve: np.ndarray, value: int, eps=10**-5):
     """Checks if curve intersects y = value."""
 
     return len(find_intersections(curve, value, eps)) > 0
+
+
+def allScenarios(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
+                 R0: float = 0, autoToPlot=[True, False], scaledToPlot=[False],
+                 t_span_sim: tuple = (0, 100), sub_sim: float = 100,
+                 verification: bool = False, write: bool = False,
+                 overWrite: bool = False, whereToAdd: str = 'contact',
+                 printText=False, printInit=False) -> None:
+    """Does all possible scenarios"""
+
+    WIDTH = .5
+    DASH = (10, 10)
+    DOTS = (1, 2)
+
+    fig = plt.figure()
+    # plt.yscale('log')
+
+    plt.axhline(y=1, linestyle='--', color='grey',
+                linewidth=WIDTH, dashes=DASH)
+
+    i = 0
+    rtCurves = {i: None for i in range(4)}
+    plotedInfsLine = False
+
+    for auto in [True, False]:
+        for scaled in [False, True]:
+            model, newModel, solution, t_span, values = computeRt(
+                modelName, t_span_rt, sub_rt, autoInfections=auto,
+                t_span_sim=t_span_sim, sub_sim=sub_sim,
+                verification=verification, whereToAdd=whereToAdd,
+                scaledInfs=scaled, write=write, overWrite=overWrite,
+                printText=printText, printInit=printInit, printWarnings=(i == 0))
+
+            if i == 0:
+                infsScaled = infCurveScaled(model, solution, t_span)
+                rt_ANA = R0 * solution[:, 0] / \
+                    np.array([getPopulation(model, x)['Sum']
+                             for x in solution])
+                rt_times = np.array([key for key in values])
+                plt.plot(t_span, rt_ANA, label='ANA')
+                plt.plot(t_span, infsScaled, label='Inf (scaled)')
+
+            rt = np.zeros_like(rt_times, dtype='float64')
+            for rtNode in getRtNodes(mod(model, False, False)):
+                rt_rtNode = np.array([values[key][rtNode] for key in values])
+                # if len(getRtNodes(mod(model, False, False))) > 1:
+                #     plt.plot(rt_times, rt_rtNode, label=rtNode)
+                rt += rt_rtNode
+
+            rtCurves[i] = rt
+
+            if auto in autoToPlot and scaled in scaledToPlot:
+                # if True:
+                print(f'Scaled: {scaled}, Auto: {auto}')
+                if doesIntersect(rt, 1):
+                    idx_infs = find_nearest(infsScaled, 1)
+                    xTimeInfs = t_span[idx_infs]
+                    idx_rt = find_intersections(rt, 1)[0]
+                    try:
+                        xTimeRt = rt_times[idx_rt]
+                    except:
+                        xTimeRt = (rt_times[int(idx_rt)] +
+                                   rt_times[int(idx_rt + 1)]) / 2
+                    print(f'Time difference: {np.abs(xTimeInfs - xTimeRt)}')
+                    if not plotedInfsLine:
+                        plt.axvline(x=xTimeInfs, linestyle=':', color='grey',
+                                    linewidth=2.5 * WIDTH, dashes=DOTS)
+                        plotedInfsLine = True
+                    plt.axvline(x=xTimeRt, linestyle='--', color='grey',
+                                linewidth=WIDTH, dashes=DASH)
+
+                    # print(f'rt time: {xTimeRt}, inf time: {xTimeInfs}')
+                    # print(f'rt intersections: {find_intersections(rt, 1)}')
+                else:
+                    print('Time difference is not relevant, '
+                          + 'no intersection between rt and 1.')
+
+                ls = ['-', '--', '-.', ':'][i % 4]
+                plt.plot(rt_times, rt, label='SIM' +
+                         (' w/ auto' if auto else ' no auto') +
+                         (', scaled' if scaled else ', raw'),
+                         linestyle=ls)
+
+            i += 1
+
+    # plt.ylim(bottom=.1)
+    plt.legend(loc='best')
+    plt.show()
+
+    return rtCurves
