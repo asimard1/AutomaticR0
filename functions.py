@@ -831,7 +831,8 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
               scaledInfs=False, autoInfections=True,
               verification: bool = True, write: bool = True,
               overWrite: bool = False, whereToAdd: str = 'contact',
-              printText=True, printInit=False, printWarnings=True, r0=False) -> tuple:
+              printText=True, printInit=False, printWarnings=True,
+              r0=False, scaleMethod: str = 'Total') -> tuple:
     """This is an important part. Returns a dictionary with Rt values,
     as well as models and solutions."""
 
@@ -915,12 +916,20 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
         initialCond = {comp: initialCond[comp]
                        for comp in initialCond if initialCond[comp] > 0}
 
-        for x in getRtNodes(newModel):
-            compartment = x.split(',')[1].split(')')[0]
+        if scaleMethod == 'Total':
             if scaledInfs:
-                denom = 1 if compartment in initialCond else 0
+                denom = 1
             else:
-                denom = initialCond[compartment] if compartment in initialCond else 0
+                denom = sum(initialCond[x] for x in initialCond)
+
+        for x in getRtNodes(newModel):
+
+            if scaleMethod == 'PerVariant':
+                compartment = x.split(',')[1].split(')')[0]
+                if scaledInfs:
+                    denom = 1 if compartment in initialCond else 0
+                else:
+                    denom = initialCond[compartment] if compartment in initialCond else 0
 
             # foundBatch = False
             # for flowType in flows:
@@ -956,19 +965,115 @@ def computeR0(modelName: str, t_span_sim: tuple = (0, 100),
               autoInfections: bool = True, write: bool = False,
               overWrite: bool = False, whereToAdd: str = 'contact',
               printText=True, printInit: bool = True,
-              printWarnings: bool = True) -> dict:
+              printWarnings: bool = True, scaleMethod: str = 'Total') -> dict:
     """Computes R0 associated with all contact nodes.
     However, if a variant is not present at start, R0 will be 0.
     This is because it was impossible at t=0 to know that variant would appear."""
     modelOld, newModel, solutionOld, _, values = \
         computeRt(modelName, (0, 0), 1, t_span_sim,
-                  sub_sim, scaledInfs=scaledInfs, verification=False, write=write,
-                  overWrite=overWrite, whereToAdd=whereToAdd,
+                  sub_sim, scaledInfs=scaledInfs, verification=False,
+                  write=write, overWrite=overWrite, whereToAdd=whereToAdd,
                   printInit=printInit, r0=True, autoInfections=autoInfections,
-                  printWarnings=printWarnings, printText=printText)
+                  printWarnings=printWarnings, printText=printText,
+                  scaleMethod=scaleMethod)
 
     initialConds = solutionOld[0]
     return modelOld, newModel, initialConds, values[0]
+
+
+def allScenarios(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
+                 R0: float = 0, autoToPlot=[True, False], scaledToPlot=[False],
+                 t_span_sim: tuple = (0, 100), sub_sim: float = 100,
+                 verification: bool = False, write: bool = False,
+                 overWrite: bool = False, whereToAdd: str = 'contact',
+                 printText=False, printInit=False, plotANA: bool = True,
+                 scaleMethod: str = 'Total') -> None:
+    """Does all possible scenarios"""
+
+    WIDTH = .5
+    DASH = (10, 10)
+    DOTS = (1, 2)
+
+    fig = plt.figure()
+    # plt.yscale('log')
+
+    plt.axhline(y=1, linestyle='--', color='grey',
+                linewidth=WIDTH, dashes=DASH)
+
+    i = 0
+    rtCurves = {i: None for i in range(4)}
+    plotedInfsLine = False
+
+    for auto in [True, False]:
+        for scaled in [False, True]:
+            model, newModel, solution, t_span, values = computeRt(
+                modelName, t_span_rt, sub_rt, autoInfections=auto,
+                t_span_sim=t_span_sim, sub_sim=sub_sim,
+                verification=verification, whereToAdd=whereToAdd,
+                scaledInfs=scaled, write=write, overWrite=overWrite,
+                printText=printText, printInit=printInit,
+                printWarnings=(i == 0), scaleMethod=scaleMethod)
+
+            if i == 0:
+                if plotANA:
+                    rt_ANA = R0 * solution[:, 0] / \
+                        np.array([getPopulation(model, x)['Sum']
+                                  for x in solution])
+                    plt.plot(t_span, rt_ANA, label='ANA')
+
+                infsScaled = infCurveScaled(model, solution, t_span)
+                plt.plot(t_span, infsScaled, label='Inf (scaled)')
+
+                rt_times = np.array([key for key in values])
+
+            rt = np.zeros_like(rt_times, dtype='float64')
+            for rtNode in getRtNodes(mod(model, False, False)):
+                rt_rtNode = np.array([values[key][rtNode] for key in values])
+                # if len(getRtNodes(mod(model, False, False))) > 1:
+                #     plt.plot(rt_times, rt_rtNode, label=rtNode)
+                rt += rt_rtNode
+
+            rtCurves[i] = rt
+
+            if auto in autoToPlot and scaled in scaledToPlot:
+                # if True:
+                print(f'Scaled: {scaled}, Auto: {auto}')
+                if doesIntersect(rt, 1):
+                    idx_infs = find_nearest(infsScaled, 1)
+                    xTimeInfs = t_span[idx_infs]
+                    idx_rt = find_intersections(rt, 1)[0]
+                    try:
+                        xTimeRt = rt_times[idx_rt]
+                    except:
+                        xTimeRt = (rt_times[int(idx_rt)] +
+                                   rt_times[int(idx_rt + 1)]) / 2
+                    print(f'Time difference: {np.abs(xTimeInfs - xTimeRt)}')
+                    if not plotedInfsLine:
+                        plt.axvline(x=xTimeInfs, linestyle=':', color='grey',
+                                    linewidth=2.5 * WIDTH, dashes=DOTS)
+                        plotedInfsLine = True
+                    plt.axvline(x=xTimeRt, linestyle='--', color='grey',
+                                linewidth=WIDTH, dashes=DASH)
+
+                    # print(f'rt time: {xTimeRt}, inf time: {xTimeInfs}')
+                    # print(f'rt intersections: {find_intersections(rt, 1)}')
+                else:
+                    print('Time difference is not relevant, '
+                          + 'no intersection between rt and 1.')
+
+                ls = ['-', '--', '-.', ':'][i % 4]
+                plt.plot(rt_times, rt, label='SIM' +
+                         (' w/ auto' if auto else ' no auto') +
+                         (', scaled' if scaled else ', raw'),
+                         linestyle=ls)
+
+            i += 1
+
+    # plt.ylim(bottom=.1)
+    plt.legend(loc='best')
+    plt.show()
+
+    return rtCurves
 
 
 def infs(model: dict, y0: dict, t: float, t0: float, whereToAdd: str = 'contact') -> dict:
@@ -1114,93 +1219,3 @@ def doesIntersect(curve: np.ndarray, value: int, eps=10**-5):
     """Checks if curve intersects y = value."""
 
     return len(find_intersections(curve, value, eps)) > 0
-
-
-def allScenarios(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
-                 R0: float = 0, autoToPlot=[True, False], scaledToPlot=[False],
-                 t_span_sim: tuple = (0, 100), sub_sim: float = 100,
-                 verification: bool = False, write: bool = False,
-                 overWrite: bool = False, whereToAdd: str = 'contact',
-                 printText=False, printInit=False) -> None:
-    """Does all possible scenarios"""
-
-    WIDTH = .5
-    DASH = (10, 10)
-    DOTS = (1, 2)
-
-    fig = plt.figure()
-    # plt.yscale('log')
-
-    plt.axhline(y=1, linestyle='--', color='grey',
-                linewidth=WIDTH, dashes=DASH)
-
-    i = 0
-    rtCurves = {i: None for i in range(4)}
-    plotedInfsLine = False
-
-    for auto in [True, False]:
-        for scaled in [False, True]:
-            model, newModel, solution, t_span, values = computeRt(
-                modelName, t_span_rt, sub_rt, autoInfections=auto,
-                t_span_sim=t_span_sim, sub_sim=sub_sim,
-                verification=verification, whereToAdd=whereToAdd,
-                scaledInfs=scaled, write=write, overWrite=overWrite,
-                printText=printText, printInit=printInit, printWarnings=(i == 0))
-
-            if i == 0:
-                infsScaled = infCurveScaled(model, solution, t_span)
-                rt_ANA = R0 * solution[:, 0] / \
-                    np.array([getPopulation(model, x)['Sum']
-                             for x in solution])
-                rt_times = np.array([key for key in values])
-                plt.plot(t_span, rt_ANA, label='ANA')
-                plt.plot(t_span, infsScaled, label='Inf (scaled)')
-
-            rt = np.zeros_like(rt_times, dtype='float64')
-            for rtNode in getRtNodes(mod(model, False, False)):
-                rt_rtNode = np.array([values[key][rtNode] for key in values])
-                # if len(getRtNodes(mod(model, False, False))) > 1:
-                #     plt.plot(rt_times, rt_rtNode, label=rtNode)
-                rt += rt_rtNode
-
-            rtCurves[i] = rt
-
-            if auto in autoToPlot and scaled in scaledToPlot:
-                # if True:
-                print(f'Scaled: {scaled}, Auto: {auto}')
-                if doesIntersect(rt, 1):
-                    idx_infs = find_nearest(infsScaled, 1)
-                    xTimeInfs = t_span[idx_infs]
-                    idx_rt = find_intersections(rt, 1)[0]
-                    try:
-                        xTimeRt = rt_times[idx_rt]
-                    except:
-                        xTimeRt = (rt_times[int(idx_rt)] +
-                                   rt_times[int(idx_rt + 1)]) / 2
-                    print(f'Time difference: {np.abs(xTimeInfs - xTimeRt)}')
-                    if not plotedInfsLine:
-                        plt.axvline(x=xTimeInfs, linestyle=':', color='grey',
-                                    linewidth=2.5 * WIDTH, dashes=DOTS)
-                        plotedInfsLine = True
-                    plt.axvline(x=xTimeRt, linestyle='--', color='grey',
-                                linewidth=WIDTH, dashes=DASH)
-
-                    # print(f'rt time: {xTimeRt}, inf time: {xTimeInfs}')
-                    # print(f'rt intersections: {find_intersections(rt, 1)}')
-                else:
-                    print('Time difference is not relevant, '
-                          + 'no intersection between rt and 1.')
-
-                ls = ['-', '--', '-.', ':'][i % 4]
-                plt.plot(rt_times, rt, label='SIM' +
-                         (' w/ auto' if auto else ' no auto') +
-                         (', scaled' if scaled else ', raw'),
-                         linestyle=ls)
-
-            i += 1
-
-    # plt.ylim(bottom=.1)
-    plt.legend(loc='best')
-    plt.show()
-
-    return rtCurves
