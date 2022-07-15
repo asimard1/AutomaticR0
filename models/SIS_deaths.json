@@ -1,0 +1,71 @@
+{
+    "name": "SIS_deaths",
+    "compartments": {
+        "S": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 1e7
+        },
+        "I": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 1
+        },
+        "Null_n": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 0
+        },
+        "Null_m": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 0
+        }
+    },
+    "flows": {
+        "flows": [
+            {
+                "from": "S",
+                "to": "I",
+                "rate": "S",
+                "contact": "I",
+                "parameter": "lambda t: 0.4"
+            },
+            {
+                "from": "I",
+                "to": "S",
+                "rate": "I",
+                "contact": "I",
+                "parameter": "lambda t: 0.05"
+            },
+            {
+                "from": "Null_n",
+                "to": "S",
+                "rate": "S+I",
+                "contact": "Null_m",
+                "parameter": "lambda t: 0.05"
+            },
+            {
+                "from": "Null_n",
+                "to": "I",
+                "rate": "I",
+                "contact": "Null_m",
+                "parameter": "lambda t: 0.05"
+            },
+            {
+                "from": "S",
+                "to": "Null_m",
+                "rate": "S",
+                "contact": "Null_m",
+                "parameter": "lambda t: 0.05"
+            },
+            {
+                "from": "I",
+                "to": "Null_m",
+                "rate": "I",
+                "contact": "Null_m",
+                "parameter": "lambda t: 0.05"
+            }
+        ]
+    }
+}

@@ -1,0 +1,48 @@
+{
+    "name": "SIR",
+    "compartments": {
+        "S": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 1e7
+        },
+        "I": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 1
+        },
+        "R": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 0
+        },
+        "Null_n": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 0
+        },
+        "Null_m": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 0
+        }
+    },
+    "flows": {
+        "flows": [
+            {
+                "from": "S",
+                "to": "I",
+                "rate": "S",
+                "contact": "I",
+                "parameter": "lambda t: .4"
+            },
+            {
+                "from": "I",
+                "to": "R",
+                "rate": "I",
+                "contact": "Null_m",
+                "parameter": "lambda t: .1"
+            }
+        ]
+    }
+}

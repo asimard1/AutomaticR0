@@ -1219,3 +1219,176 @@ def doesIntersect(curve: np.ndarray, value: int, eps=10**-5):
     """Checks if curve intersects y = value."""
 
     return len(find_intersections(curve, value, eps)) > 0
+
+
+def createLaTeX(model: dict, layerDistance: str = ".8cm",
+                nodeDistance: str = "2cm", varDistance: str = ".1cm",
+                nullDistance: str = "1cm") -> str:
+    tab = ' ' * 4
+    modelName = model['name']
+    compartments = model['compartments']
+    flows = model['flows']
+    modified = False
+    joint = {}
+
+    for x in compartments:
+        if x.endswith(('^0, ^1')) or x.startswith(('Rt')):
+            modified = True
+
+    for x in compartments:
+        if '_' in x and not x.startswith(('Null', 'Rt')):
+            if modified:
+                i = int(x.split('^')[1])
+                compBase = x.split('_')[0]
+                joint[x] = [x for x in compartments
+                            if x.startswith(compBase + '_') and x.endswith(f'^{i}')] \
+                    + [addI(compBase, i)]
+
+            else:
+                compBase = x.split('_')[0]
+                joint[x] = [
+                    x for x in compartments if x.startswith(compBase + '_')]
+
+    LaTeX = f"\\begin{{figure}}[H]\n{tab}\\centering\n{tab}\\begin{{tikzpicture}}\n"
+
+    layer0 = []
+    layer1 = []
+    others = []
+    bases = []
+    for x in compartments:
+        if (x.endswith('^0') or (not modified and
+                                 not x.startswith(('Null', 'Rt')))) \
+                and x not in layer0:
+            if x not in joint:
+                LaTeX += f"{tab * 2}\\node [Square] ({x}) " \
+                    + (f"[right={nodeDistance} of {layer0[-1]}] " if len(layer0) != 0 else '') \
+                    + f"{{${x}$}};\n"
+
+                layer0.append(x)
+            else:
+                base = joint[x][2]
+                above = joint[x][0]
+                below = joint[x][1]
+
+                LaTeX += f"{tab * 2}\\node [Empty] ({base}) " \
+                    + (f"[right={nodeDistance} of {layer0[-1]}] " if len(layer0) != 0 else '') \
+                    + f"{{}};\n"
+
+                LaTeX += f"{tab * 2}\\node [Square] ({above}) " \
+                    + f"[above={varDistance} of {base}] " + f"{{${above}$}};\n"
+                LaTeX += f"{tab * 2}\\node [Square] ({below}) " \
+                    + f"[below={varDistance} of {base}] " + f"{{${below}$}};\n"
+
+                layer0.append(above)
+                layer0.append(below)
+                bases.append(base)
+        elif x.endswith('^1') and x not in layer1:
+            if x not in joint:
+                equivalent0 = addI(removeI(x), 0)
+                LaTeX += f"{tab * 2}\\node [Square] ({x}) " + \
+                    f"[below={layerDistance} of {equivalent0}] " + \
+                    f"{{${x}$}};\n"
+                layer1.append(x)
+            else:
+                base = joint[x][2]
+                above = joint[x][0]
+                below = joint[x][1]
+
+                LaTeX += f"{tab * 2}\\node [Empty] ({base}) " \
+                    + (f"[right={nodeDistance} of {layer1[-1]}] ") + f"{{}};\n"
+
+                LaTeX += f"{tab * 2}\\node [Square] ({above}) " \
+                    + (f"[above={varDistance} of {base}] " if len(layer0) != 0 else '') \
+                    + f"{{${above}$}};\n"
+                LaTeX += f"{tab * 2}\\node [Square] ({below}) " \
+                    + (f"[below={varDistance} of {base}] " if len(layer0) != 0 else '') \
+                    + f"{{${below}$}};\n"
+
+                layer1.append(above)
+                layer1.append(below)
+                bases.append(base)
+        elif x not in layer0 and x not in layer1 and not x.startswith('Null'):
+            nameNoProblem = x.replace(
+                '(', '').replace(')', '').replace(',', '')
+            if x.startswith('Rt'):
+                textNoProblem = '$\\\\$('.join(x.split('('))
+            else:
+                textNoProblem = x
+            LaTeX += f"{tab * 2}\\node [Square] ({nameNoProblem}) " \
+                + f"[right={nodeDistance} of {layer1[-1]}] " + \
+                f"{{${textNoProblem}$}};\n"
+
+            others.append(nameNoProblem)
+
+    layer0 = removeDuplicates(layer0)
+    layer1 = removeDuplicates(layer1)
+    others = removeDuplicates(others)
+
+    LaTeX += '\n'
+    for x in layer0 + layer1 + others:
+        LaTeX += f"{tab * 2}\\node [Empty] (Nulln_{x}) " \
+            + f"[above left={nullDistance} of {x}] {{}};\n"
+        LaTeX += f"{tab * 2}\\node [Empty] (Nullm_{x}) " \
+            + f"[below right={nullDistance} of {x}] {{}};\n"
+
+    Arrow = []
+    Dotted = []
+    Dashed = []
+    for flowType in flows:
+        for flow in flows[flowType]:
+            u, v, v_r, v_c = flow['from'], flow['to'], flow['rate'], flow['contact']
+
+            if u.startswith('Rt'):
+                u = u.replace(
+                    '(', '').replace(')', '').replace(',', '')
+                print(u)
+            if v.startswith('Rt'):
+                v = v.replace(
+                    '(', '').replace(')', '').replace(',', '')
+
+            bend = 'right'
+            if u.startswith('Null'):
+                u = u.replace('_', '')
+                print(u)
+                u += '_' + v
+                bend = 'left'
+                print(u)
+            if v.startswith('Null'):
+                v = v.replace('_', '')
+                v += '_' + u
+                bend = 'left'
+
+            Arrow.append(f"({u}) edge [bend left=10] node [Empty, pos=2/5] ({u}-{v}-r) {{}} " +
+                         f"node [Empty, pos=3/5] ({u}-{v}-c) {{}} ({v})")
+
+            for r in v_r.split('+'):
+                if u.startswith('Null') and r != v:
+                    angle = 20
+                else:
+                    angle = 30
+                if r != 'Null_n':
+                    Dotted.append(
+                        f"({u}-{v}-r) edge [bend {bend}={angle}] ({r})")
+
+            for c in v_c.split('+'):
+                if c == u:
+                    angle = 45
+                elif v.startswith('Null') and c != u:
+                    angle = 20
+                else:
+                    angle = 30
+                bend = 'right' if c == u else 'left'
+                if c != 'Null_m':
+                    Dashed.append(
+                        f"({u}-{v}-c) edge [bend {bend}={angle}] ({c})")
+
+    names = ['Arrow', 'Dotted', 'Dashed']
+    for i, table in enumerate([Arrow, Dotted, Dashed]):
+        if len(table) > 0:
+            LaTeX += f'\n{tab * 2}\\path [{names[i]}]'
+            for arrow in table:
+                LaTeX += '\n' + tab * 3 + arrow
+            LaTeX += ';\n'
+
+    LaTeX += f"{tab}\\end{{tikzpicture}}\n\\end{{figure}}"
+    return LaTeX
