@@ -1,5 +1,5 @@
 {
-    "name": "SIR_vars",
+    "name": "SIR_vars_noB",
     "compartments": {
         "S": {
             "susceptibility": 1,

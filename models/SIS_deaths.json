@@ -4,7 +4,7 @@
         "S": {
             "susceptibility": 1,
             "contagiousness": 1,
-            "initial_condition": 1e7
+            "initial_condition": 10000000.0
         },
         "I": {
             "susceptibility": 1,
@@ -35,7 +35,7 @@
                 "from": "I",
                 "to": "S",
                 "rate": "I",
-                "contact": "I",
+                "contact": "Null_m",
                 "parameter": "lambda t: 0.05"
             },
             {

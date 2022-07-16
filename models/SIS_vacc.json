@@ -1,10 +1,10 @@
 {
-    "name": "SIS",
+    "name": "SIS_vacc",
     "compartments": {
         "S": {
             "susceptibility": 1,
             "contagiousness": 1,
-            "initial_condition": 1e7
+            "initial_condition": 10000000.0
         },
         "I": {
             "susceptibility": 1,

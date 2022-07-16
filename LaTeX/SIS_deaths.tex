@@ -1,0 +1,32 @@
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}
+        \node [Square] (S)  {$S$};
+        \node [Square] (I) [right=2cm of S] {$I$};
+
+        \node [Empty] (Nulln_S) [above left=.8cm of S] {};
+        \node [Empty] (Nullm_S) [below right=.8cm of S] {};
+        \node [Empty] (Nulln_I) [above left=.8cm of I] {};
+        \node [Empty] (Nullm_I) [below right=.8cm of I] {};
+
+        \path [Arrow]
+            (S) edge [bend left=0, Plum] node [Empty, pos=2/5] (S-I-r) {} node [Empty, pos=3/5] (S-I-c) {} (I)
+            (I) edge [bend left=0, Red] node [Empty, pos=2/5] (I-S-r) {} node [Empty, pos=3/5] (I-S-c) {} (S)
+            (Nulln_S) edge [bend left=0, Green] node [Empty, pos=2/5] (Nulln_S-S-r) {} node [Empty, pos=3/5] (Nulln_S-S-c) {} (S)
+            (Nulln_I) edge [bend left=0, Green] node [Empty, pos=2/5] (Nulln_I-I-r) {} node [Empty, pos=3/5] (Nulln_I-I-c) {} (I)
+            (S) edge [bend left=0, Red] node [Empty, pos=2/5] (S-Nullm_S-r) {} node [Empty, pos=3/5] (S-Nullm_S-c) {} (Nullm_S)
+            (I) edge [bend left=0, Red] node [Empty, pos=2/5] (I-Nullm_I-r) {} node [Empty, pos=3/5] (I-Nullm_I-c) {} (Nullm_I);
+
+        \path [Dotted]
+            (S-I-r) edge [bend right=30] (S)
+            (I-S-r) edge [bend right=30] (I)
+            (Nulln_S-S-r) edge [bend left=30] (S)
+            (Nulln_S-S-r) edge [bend left=20] (I)
+            (Nulln_I-I-r) edge [bend left=30] (I)
+            (S-Nullm_S-r) edge [bend left=30] (S)
+            (I-Nullm_I-r) edge [bend left=30] (I);
+
+        \path [Dashed]
+            (S-I-c) edge [bend left=30] (I);
+    \end{tikzpicture}
+\end{figure}

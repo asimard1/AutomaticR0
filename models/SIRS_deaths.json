@@ -16,7 +16,12 @@
             "contagiousness": 1,
             "initial_condition": 0
         },
-        "Null": {
+        "Null_n": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 0
+        },
+        "Null_m": {
             "susceptibility": 1,
             "contagiousness": 1,
             "initial_condition": 0
@@ -37,51 +42,51 @@
                 "from": "I",
                 "to": "R",
                 "rate": "I",
-                "contact": "Null",
+                "contact": "Null_m",
                 "parameter": "lambda t: 0.1"
             },
             {
                 "from": "R",
                 "to": "S",
                 "rate": "R",
-                "contact": "Null",
+                "contact": "Null_m",
                 "parameter": "lambda t: 0.01"
             },
             {
                 "from": "S",
-                "to": "Null",
+                "to": "Null_m",
                 "rate": "S",
-                "contact": "Null",
+                "contact": "Null_m",
                 "parameter": "lambda t: 0.0005"
             },
             {
                 "from": "I",
-                "to": "Null",
+                "to": "Null_m",
                 "rate": "I",
-                "contact": "Null",
+                "contact": "Null_m",
                 "parameter": "lambda t: 0.001"
             },
             {
                 "from": "R",
-                "to": "Null",
+                "to": "Null_m",
                 "rate": "R",
-                "contact": "Null",
+                "contact": "Null_m",
                 "parameter": "lambda t: 0.0005"
             }
         ],
         "batches": [
             {
-                "from": "Null",
+                "from": "Null_n",
                 "to": "S",
-                "rate": "Null",
-                "contact": "Null",
+                "rate": "Null_n",
+                "contact": "Null_m",
                 "parameter": "lambda t: 2000"
             },
             {
                 "from": "S",
                 "to": "R",
-                "rate": "Null",
-                "contact": "Null",
+                "rate": "Null_n",
+                "contact": "Null_m",
                 "parameter": "lambda t: 100"
             }
         ]

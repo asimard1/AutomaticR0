@@ -198,7 +198,7 @@ def loadModel(name: str, overWrite=False, printText: bool = True) -> dict:
 
     # Verify
     verifyModel(model, printText=printText)
-    writeModel(model, name, overWrite=overWrite, printText=printText)
+    writeModel(model, overWrite=overWrite, printText=printText)
     # Store functions in dictionary
     storeFunctions(model)
     return model
@@ -354,8 +354,6 @@ def getCoefForFlux(model: dict, flux: Flux, t: float, t0: float) -> float:
 
     coef = functions[f"{model['name']}{flux.coef_indices[0], flux.coef_indices[1]}"]
     return coef(t)
-
-    # return getCoefForFlow(flowJson, t, t0)
 
 
 def getCoefForFlow(flow: dict, t: float, t0: float) -> float:
@@ -563,12 +561,23 @@ def removeI(node: str) -> str:
     return newNode
 
 
+def getI(node: str) -> str:
+    """Pour retrouver un noeud initial."""
+    remove = len(removeI(node))
+
+    if remove == len(node):
+        return -1
+    else:
+        return int(node[remove + 1:])
+
+
 def joinNodeSum(nodes: list) -> str:
     return '+'.join(removeDuplicates(nodes))
 
 
-def mod(model: dict,  # printWarnings: bool = True,
-        printText: bool = True, autoInfections: bool = False) -> dict:
+def mod(model: dict, printWarnings: bool = True,
+        printText: bool = False, autoInfections: bool = True,
+        write=True, overWrite=False) -> dict:
     """
     This function is the main point of the research.
     Creates the modified model from the base one.
@@ -661,55 +670,43 @@ def mod(model: dict,  # printWarnings: bool = True,
                         newModel['flows'][flowName].append(newFlow.copy())
             ### BATCHES ###
             if getFlowType(flow) == 'batch':
+                ### ATTENTION ####
+                # Si une batch crée des infections, il faudra s'assurer qu'au
+                # moins une infection est créée dans la couche 0. Il faut donc
+                # jouer un peu sur ces paramètres...
+                splitBatch = False
+                for _, flowName2 in enumerate(flows):
+                    for flow2 in flows[flowName2]:
+                        if flow2['to'] == v and getFlowType(flow2) == 'contact':
+                            splitBatch = True
+                            if printWarnings:
+                                print(f'Warning: had to double a batch '
+                                      + f'from {u} to {v}.')
+
                 uPrime = addI(u, 1)
                 vPrime = addI(v, 1)
                 rateNode = 'Null_n'
                 contactNode = 'Null_m'
-
-                #### ATTENTION ####
-                # Si une batch crée des infections, il faudra s'assurer qu'au
-                # moins une infection est créée dans la couche 0. Il faut donc
-                # jouer un peu sur ces paramètres...
-                # splitBatch = False
-                # for _, flowName2 in enumerate(flows):
-                #     for flow2 in flows[flowName2]:
-                #         if flow2['to'] == v and getFlowType(flow2) == 'contact':
-                #             splitBatch = True
-                #             if printWarnings:
-                #                 print(f'Warning: had to double a batch '
-                #                       + f'from {u} to {v}.')
-                #                 print(f'\n!!! Need to make sure this is accounted '
-                #                       + f'for in computation of Rt. !!!\n')
 
                 newFlow['from'] = uPrime
                 newFlow['to'] = vPrime
                 newFlow['rate'] = rateNode
                 newFlow['contact'] = contactNode
                 newFlow['parameter'] = flow['parameter']
-                # if not splitBatch or flow['parameter'] == '0':
-                #     newFlow['parameter'] = flow['parameter']
-                # else:
-                #     newFlow['parameter'] = flow['parameter']
-                # newFlow['copied'] = False
 
-                # newBatch = {
+                # newFlow['split'] = False
+
+                # newBatch_split = {
                 #     'from': addI(u, 0),
                 #     'to': addI(v, 0),
-                #     'rate': 'Null_n',
-                #     'contact': 'Null_m',
+                #     'rate': rateNode,
+                #     'contact': contactNode,
                 #     'parameter': flow['parameter'],
-                #     'copied': True
+                #     'split': True
                 # }
-                # newModel['flows'][flowName].append(newBatch.copy())
-
-                # if printWarnings:
-                #     print(f'From:  {flow},')
-                #     print(f'Added: {newFlow}')
-                #     print(f' and:  {newBatch}.')
-
-                # print('  ', newFlow)
 
                 newModel['flows'][flowName].append(newFlow.copy())
+                # newModel['flows'][flowName].append(newBatch_split.copy())
             ### CONTACTS ###
             if getFlowType(flow) == 'contact':
                 uPrime = addI(u, 1)
@@ -770,6 +767,7 @@ def mod(model: dict,  # printWarnings: bool = True,
     if printText:
         print(f'New model created in {time.time() - ti:.1e} seconds.\n')
 
+    writeModel(newModel, overWrite, printText)
     storeFunctions(newModel)
     return newModel
 
@@ -852,19 +850,16 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
     solutionOld, t_spanOld = solve(modelOld, t_span_rt, sub_sim)
     oldCompartments = getCompartments(modelOld)
 
-    newModel = mod(modelOld, printText, autoInfections=autoInfections)
+    newModel = mod(modelOld, printWarnings, printText, autoInfections=autoInfections,
+                   write=write, overWrite=overWrite)
     solution, t_span = solve(newModel, t_span_rt, sub_sim)
     compartments = getCompartments(newModel)
-
-    if write:
-        writeModel(newModel, modelName + '_mod',
-                   overWrite=overWrite, printText=printText)
 
     # Vérification!
     if verification:
         allGood = True
-        length = max(list(map(len, oldCompartments))) + 1
-        for comp in oldCompartments:
+        problems = []
+        for comp in getPopNodes(modelOld):
             if comp[:4] != 'Null':
                 array1 = solutionOld[:, oldCompartments.index(comp)]
                 array2 = np.sum(np.array(
@@ -879,9 +874,11 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
             # print(f"{comp + ':':<{length}}", np.allclose(array1, array2))
             if not np.allclose(array1, array2) or not np.allclose(array2, array1):
                 allGood = False
+                problems.append(comp)
         if not allGood and printWarnings:
             print('Il semble que les modèles aient des résultats différents.')
             print('On continue l\'expérience quand même, à vérifier.')
+            print(f'Problèmes: {problems}.')
         else:
             if printText:
                 print('Véfication faite, les deux modèles sont identiques.')
@@ -971,7 +968,7 @@ def computeR0(modelName: str, t_span_sim: tuple = (0, 100),
     This is because it was impossible at t=0 to know that variant would appear."""
     modelOld, newModel, solutionOld, _, values = \
         computeRt(modelName, (0, 0), 1, t_span_sim,
-                  sub_sim, scaledInfs=scaledInfs, verification=False,
+                  sub_sim, scaledInfs=scaledInfs, verification=True,
                   write=write, overWrite=overWrite, whereToAdd=whereToAdd,
                   printInit=printInit, r0=True, autoInfections=autoInfections,
                   printWarnings=printWarnings, printText=printText,
@@ -1148,11 +1145,12 @@ def infCurveScaled(model: dict, solution: np.ndarray, t_span: np.ndarray) -> np.
     return curve
 
 
-def writeModel(newModel: dict, modelName: str, overWrite: bool = False, printText: bool = True) -> None:
+def writeModel(newModel: dict, overWrite: bool = False, printText: bool = True) -> None:
     """Write model to file. This is useful to save modified models."""
+    modelName = newModel['name']
     newFileName = modelName + '.json'
     if printText:
-        print(f'Writing new model to file models/{newFileName}.')
+        print(f'Writing model to file models/{newFileName}.')
     if not os.path.isfile(f'models/{newFileName}'):
         # File doesn't exist
         try:
@@ -1168,8 +1166,7 @@ def writeModel(newModel: dict, modelName: str, overWrite: bool = False, printTex
         if printText:
             print('File name already exists.')
         if overWrite:
-            if printText:
-                print('Overwriting file.')
+            print('Overwriting file.')
             try:
                 with open(f'models/{newFileName}', 'w') as file:
                     json.dump(newModel, file, indent=4)
@@ -1223,19 +1220,43 @@ def doesIntersect(curve: np.ndarray, value: int, eps=10**-5):
 
 def createLaTeX(model: dict, layerDistance: str = ".8cm",
                 nodeDistance: str = "2cm", varDistance: str = ".1cm",
-                nullDistance: str = "1cm") -> str:
+                nullDistance: str = "1cm", baseAngle: int = 10,
+                contactPositions: tuple = ("2/5", "3/5")) -> str:
+    """
+    Produces tikzfigure for a model. Needs some definitions in preamble:
+    usepackage[usenames,dvipsnames]{xcolor}
+    usepackage{tikz}
+    usetikzlibrary{calc, positioning, arrows.meta, shapes.geometric}
+
+    tikzset{Square/.style={draw=black, rectangle, rounded corners=0pt, align=center, minimum height=1cm, minimum width=1cm}}
+    tikzset{Text/.style={rectangle, rounded corners=0pt, inner sep=0, outer sep=0, draw=none, sloped}}
+    tikzset{Empty/.style={rectangle, inner sep=0, outer sep=0, draw=none}}
+
+    tikzset{Arrow/.style={-Latex, line width=1pt}}
+    tikzset{Dashed/.style={Latex-, dashed, line width=1pt}}
+    tikzset{Dotted/.style={Latex-, dotted, line width=1pt}}
+    """
+    # variables préliminaires
     tab = ' ' * 4
     modelName = model['name']
     compartments = model['compartments']
     flows = model['flows']
     modified = False
     joint = {}
+    colors = {
+        'rate': 'Green',
+        'contact': 'Plum',
+        'batch': 'Cyan',
+    }
 
     for x in compartments:
+        # On veut savoir si le modèle est modifié ou non pour savoir
+        # combien de couches il faut faire
         if x.endswith(('^0, ^1')) or x.startswith(('Rt')):
             modified = True
 
     for x in compartments:
+        # Ici on veut regrouper les variants ensemble pour les mettre proche
         if '_' in x and not x.startswith(('Null', 'Rt')):
             if modified:
                 i = int(x.split('^')[1])
@@ -1247,33 +1268,56 @@ def createLaTeX(model: dict, layerDistance: str = ".8cm",
             else:
                 compBase = x.split('_')[0]
                 joint[x] = [
-                    x for x in compartments if x.startswith(compBase + '_')]
+                    x for x in compartments if x.startswith(compBase + '_')] \
+                    + [compBase]
 
+            if len(joint[x]) > 3:
+                # Il faudra trouver comment gérer le code tikz si on a beaucoup de variants...
+                print("This code doesn't work for 3 variants or more yet.")
+
+    # Création du string qui va contenir le code LaTeX
     LaTeX = f"\\begin{{figure}}[H]\n{tab}\\centering\n{tab}\\begin{{tikzpicture}}\n"
 
+    # Book-keeping
     layer0 = []
     layer1 = []
     others = []
-    bases = []
+    bases0 = []
+    bases1 = []
     for x in compartments:
+        # On créé ici E' (l'ensemble des arrêtes)
         if (x.endswith('^0') or (not modified and
                                  not x.startswith(('Null', 'Rt')))) \
                 and x not in layer0:
+            # Layer 0 (or normal layer in non-modified)
+            if len(layer0) != 0:
+                # Où placer le noeud par rapport à ceux qui existent
+                if layer0[-1] not in joint:
+                    where = f"[right={nodeDistance} of {layer0[-1]}]"
+                else:
+                    where = f"[right={nodeDistance} of {bases0[-1]}]"
+            else:
+                where = ""
+
             if x not in joint:
+                # Si pas un variant, on le place simplement
                 LaTeX += f"{tab * 2}\\node [Square] ({x}) " \
-                    + (f"[right={nodeDistance} of {layer0[-1]}] " if len(layer0) != 0 else '') \
+                    + f"{where} " \
                     + f"{{${x}$}};\n"
 
                 layer0.append(x)
             else:
+                # Si on a variant, il faut placer noeud du centre
+                # et mettre les variants autour
                 base = joint[x][2]
                 above = joint[x][0]
                 below = joint[x][1]
 
                 LaTeX += f"{tab * 2}\\node [Empty] ({base}) " \
-                    + (f"[right={nodeDistance} of {layer0[-1]}] " if len(layer0) != 0 else '') \
+                    + f"{where} " \
                     + f"{{}};\n"
 
+                # Placer les noeuds de variants
                 LaTeX += f"{tab * 2}\\node [Square] ({above}) " \
                     + f"[above={varDistance} of {base}] " + f"{{${above}$}};\n"
                 LaTeX += f"{tab * 2}\\node [Square] ({below}) " \
@@ -1281,12 +1325,21 @@ def createLaTeX(model: dict, layerDistance: str = ".8cm",
 
                 layer0.append(above)
                 layer0.append(below)
-                bases.append(base)
+                bases0.append(base)
         elif x.endswith('^1') and x not in layer1:
+            # on est dans layer 1
+            if len(layer1) != 0:
+                # On regarde si on a point de référence ou pas dans layer 1
+                where = f"[right={nodeDistance} of {layer1[-1]}]"
+            else:
+                # Sinon, on utiliser layer 0 pour construire
+                equivalent0 = addI(removeI(x), 0)
+                where = f"[below={layerDistance} of {equivalent0}]"
+
             if x not in joint:
                 equivalent0 = addI(removeI(x), 0)
                 LaTeX += f"{tab * 2}\\node [Square] ({x}) " + \
-                    f"[below={layerDistance} of {equivalent0}] " + \
+                    f"{where} " + \
                     f"{{${x}$}};\n"
                 layer1.append(x)
             else:
@@ -1295,7 +1348,7 @@ def createLaTeX(model: dict, layerDistance: str = ".8cm",
                 below = joint[x][1]
 
                 LaTeX += f"{tab * 2}\\node [Empty] ({base}) " \
-                    + (f"[right={nodeDistance} of {layer1[-1]}] ") + f"{{}};\n"
+                    + f"{where} " + f"{{}};\n"
 
                 LaTeX += f"{tab * 2}\\node [Square] ({above}) " \
                     + (f"[above={varDistance} of {base}] " if len(layer0) != 0 else '') \
@@ -1306,16 +1359,33 @@ def createLaTeX(model: dict, layerDistance: str = ".8cm",
 
                 layer1.append(above)
                 layer1.append(below)
-                bases.append(base)
+                bases1.append(base)
+
         elif x not in layer0 and x not in layer1 and not x.startswith('Null'):
+            # Ceux qui ne sont pas dans une layer, donc Rt
+            # (Nulls sont placés ici aussi)
+            
+            # Variables pour nom (pas de parenthèses dans Tikz) et texte à écrire
             nameNoProblem = x.replace(
                 '(', '').replace(')', '').replace(',', '')
             if x.startswith('Rt'):
                 textNoProblem = '$\\\\$('.join(x.split('('))
+                textNoProblem = '_'.join([textNoProblem[0], textNoProblem[1:]])
             else:
                 textNoProblem = x
+
+            # On place à gauche de layer 1 ou vers le haut (causera problème pour
+            # trop de Rts différents à calculer)
+            if len(others) == 0:
+                reference = layer1[0]
+                pos = 'left'
+                dist = nodeDistance
+            else:
+                reference = layer0[0]
+                pos = 'left'
+                dist = nodeDistance
             LaTeX += f"{tab * 2}\\node [Square] ({nameNoProblem}) " \
-                + f"[right={nodeDistance} of {layer1[-1]}] " + \
+                + f"[{pos}={dist} of {reference}] " + \
                 f"{{${textNoProblem}$}};\n"
 
             others.append(nameNoProblem)
@@ -1326,51 +1396,107 @@ def createLaTeX(model: dict, layerDistance: str = ".8cm",
 
     LaTeX += '\n'
     for x in layer0 + layer1 + others:
+        # On veut des noeuds vides pour considérer les entrées et sorties
+        # Puisque les noeuds ne sont pas montrés on en crée pour chaque autre noeud
         LaTeX += f"{tab * 2}\\node [Empty] (Nulln_{x}) " \
             + f"[above left={nullDistance} of {x}] {{}};\n"
         LaTeX += f"{tab * 2}\\node [Empty] (Nullm_{x}) " \
             + f"[below right={nullDistance} of {x}] {{}};\n"
 
-    Arrow = []
-    Dotted = []
-    Dashed = []
+    # L'ensemble des flèches
+    Arrow = []  # E(G)
+    Dotted = []  # s(E(G))
+    Dashed = []  # t(E(G))
     for flowType in flows:
         for flow in flows[flowType]:
+            # Couleur du flot (voir document)
+            color = colors[getFlowType(flow)]
             u, v, v_r, v_c = flow['from'], flow['to'], flow['rate'], flow['contact']
 
+            # On modifie le nom des noeuds Rt pour marcher avec avant
             if u.startswith('Rt'):
                 u = u.replace(
                     '(', '').replace(')', '').replace(',', '')
-                print(u)
             if v.startswith('Rt'):
                 v = v.replace(
                     '(', '').replace(')', '').replace(',', '')
 
-            bend = 'right'
+            # Orientation des flèches pointillées et segmentées
             if u.startswith('Null'):
                 u = u.replace('_', '')
-                print(u)
                 u += '_' + v
                 bend = 'left'
-                print(u)
             if v.startswith('Null'):
                 v = v.replace('_', '')
                 v += '_' + u
                 bend = 'left'
 
-            Arrow.append(f"({u}) edge [bend left=10] node [Empty, pos=2/5] ({u}-{v}-r) {{}} " +
-                         f"node [Empty, pos=3/5] ({u}-{v}-c) {{}} ({v})")
+            # Orientation et angle des flèches pleines
+            bendBase = 'left'
+            angle = baseAngle
+            try:
+                if abs(layer0.index(u) - layer0.index(v)) > 1 and \
+                        u not in joint and v not in joint:
+                    angle = 30
+            except:
+                try:
+                    if abs(layer1.index(u) - layer1.index(v)) > 1 and \
+                            u not in joint and v not in joint:
+                        angle = 30
+                except:
+                    pass
 
+            # Position des attaches sur les arrêtes pleines
+            if v.startswith('Rt'):
+                pos1 = "3/5"
+                pos2 = "2/5"
+            elif getFlowType(flow) != 'contact':
+                pos1 = "2/5"
+                pos2 = "3/5"
+            else:
+                pos1 = contactPositions[0]
+                pos2 = contactPositions[1]
+
+            # Définition des couleurs additionnelles
+            if getFlowType(flow) == 'rate' and not u.startswith('Null'):
+                color = 'Red'
+            if getFlowType(flow) == 'contact' and v.startswith('Rt'):
+                color = 'Black'
+            Arrow.append(f"({u}) edge [bend {bendBase}={angle}, {color}] node [Empty, pos={pos1}] ({u}-{v}-r) {{}} " +
+                         f"node [Empty, pos={pos2}] ({u}-{v}-c) {{}} ({v})")
+
+            # Créer arrêtes pointillées
             for r in v_r.split('+'):
+                bend = 'right'
+                if v.startswith('Null') or u.startswith('Null'):
+                    bend = 'left'
+                
                 if u.startswith('Null') and r != v:
+                    # On a un rate de naissances qui vient d'ailleurs
                     angle = 20
                 else:
+                    # Dans les autres cas
                     angle = 30
+
+                if getFlowType(flow) == 'contact' and getI(r) == 0 \
+                        and not v.startswith('Rt'):
+                    # On a un contact (dans layer 1) créé par contact avec
+                    # compartiment de layer 0, mais sans considérer les Rt
+                    angle = 10
+                    # on inverse le bend de la flèche
+                    bend = 'right' if bend == 'left' else (
+                        'left' if bend == 'right' else bend)
+                # Ajouter l'arrête
                 if r != 'Null_n':
                     Dotted.append(
                         f"({u}-{v}-r) edge [bend {bend}={angle}] ({r})")
 
+            # Créer arrêtes segmentées
             for c in v_c.split('+'):
+                bend = 'right'
+                if v.startswith('Null') or u.startswith('Null'):
+                    bend = 'left'
+                
                 if c == u:
                     angle = 45
                 elif v.startswith('Null') and c != u:
@@ -1378,6 +1504,11 @@ def createLaTeX(model: dict, layerDistance: str = ".8cm",
                 else:
                     angle = 30
                 bend = 'right' if c == u else 'left'
+                if getFlowType(flow) == 'contact' and getI(c) == 0 \
+                        and not v.startswith('Rt'):
+                    angle = 10
+                    bend = 'right' if bend == 'left' else (
+                        'left' if bend == 'right' else bend)
                 if c != 'Null_m':
                     Dashed.append(
                         f"({u}-{v}-c) edge [bend {bend}={angle}] ({c})")
@@ -1391,4 +1522,8 @@ def createLaTeX(model: dict, layerDistance: str = ".8cm",
             LaTeX += ';\n'
 
     LaTeX += f"{tab}\\end{{tikzpicture}}\n\\end{{figure}}"
-    return LaTeX
+
+    if not os.path.isdir('LaTeX'):
+        os.mkdir('LaTeX')
+    with open('LaTeX/' + modelName + '.tex', 'w') as file:
+        file.write(LaTeX)

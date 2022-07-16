@@ -1,5 +1,5 @@
 {
-    "name": "SIS_mod",
+    "name": "SIS_vacc_mod",
     "compartments": {
         "S^0": {
             "susceptibility": 1,
@@ -20,6 +20,16 @@
             "susceptibility": 1,
             "contagiousness": 1,
             "initial_condition": 1
+        },
+        "R^0": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 0
+        },
+        "R^1": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 0
         },
         "Null_n": {
             "susceptibility": 1,
@@ -66,6 +76,27 @@
                 "rate": "I^1",
                 "contact": "Null_m",
                 "parameter": "lambda t: .1"
+            },
+            {
+                "from": "S^1",
+                "to": "R^1",
+                "rate": "Null_n",
+                "contact": "Null_m",
+                "parameter": "lambda t: 10"
+            },
+            {
+                "from": "R^0",
+                "to": "S^0",
+                "rate": "R^0",
+                "contact": "Null_m",
+                "parameter": "lambda t: .01"
+            },
+            {
+                "from": "R^1",
+                "to": "S^1",
+                "rate": "R^1",
+                "contact": "Null_m",
+                "parameter": "lambda t: .01"
             }
         ]
     }
