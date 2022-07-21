@@ -1,0 +1,69 @@
+{
+    "name": "SIR_test",
+    "compartments": {
+        "S": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 10000000.0
+        },
+        "I_1": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 1
+        },
+        "I_2": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 1
+        },
+        "R": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 1
+        },
+        "Null_n": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 0
+        },
+        "Null_m": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 0
+        }
+    },
+    "flows": {
+        "contacts": [
+            {
+                "from": "S",
+                "to": "I_1",
+                "rate": "S",
+                "contact": "I_1",
+                "parameter": "lambda t: 0.4"
+            },
+            {
+                "from": "S",
+                "to": "I_2",
+                "rate": "S",
+                "contact": "I_2",
+                "parameter": "lambda t: 0.1"
+            }
+        ],
+        "rates": [
+            {
+                "from": "I_1",
+                "to": "I_2",
+                "rate": "I_1",
+                "contact": "Null_m",
+                "parameter": "lambda t: 0.1"
+            },
+            {
+                "from": "I_2",
+                "to": "R",
+                "rate": "I_2",
+                "contact": "Null_m",
+                "parameter": "lambda t: 0.1"
+            }
+        ]
+    }
+}

@@ -112,6 +112,8 @@ def verifyModel(model: dict, printText: bool = True) -> None:
     if "Null_n" not in model['compartments'] or "Null_m" not in model['compartments']:
         raise Exception('Model doesn\'t have both Null nodes.')
 
+    # TODO try to get name of file to confirm that the "name" parameter fits!
+
     missing = []
     flows = model['flows']
     compartments = getCompartments(model)
@@ -384,36 +386,6 @@ def getCoefForFlow(flow: dict, t: float, t0: float) -> float:
     return value
 
 
-# def integrate(func: str, tRange: tuple, eps: float = 10**-5):
-#     """
-#     Checks if function integrates to 1.
-#     """
-#     sep = .01
-#     biggerRange = (tRange[0], tRange[1] + sep)
-#     values = np.array([eval(func, globals(), {'t': t})
-#                        for t in np.arange(*biggerRange, sep)])
-#     idx = np.where(values > 0)
-#     valuesPositive = np.arange(*biggerRange, sep)[idx]
-
-#     if len(valuesPositive) == 0:
-#         return 0
-
-#     minimum = np.min(valuesPositive) - 2 * sep
-#     maximum = np.max(valuesPositive) + 2 * sep
-#     newRange = (max(tRange[0], minimum),
-#                 min(tRange[1], maximum))
-
-#     if newRange[0] >= newRange[1]:
-#         return 0
-
-#     value = quad(lambda x: eval(func, globals(), {
-#                  't': x}), *newRange)
-#     return value[0]
-
-
-timesTotal = None
-
-
 def evalDelta(model: dict, delta: Delta, state: np.ndarray or list,
               t: float, t0: float) -> float:
     """
@@ -486,9 +458,6 @@ def derivativeFor(model: dict, compartment: str, t0: float):
         outflows = evalDelta(model, FBC[i][1], x, t, t0)
         return inflows - outflows
     return derivativeForThis
-
-
-timesTotal = None
 
 
 def model_derivative(state: np.ndarray or list, t: float,
@@ -830,7 +799,8 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
               verification: bool = True, write: bool = True,
               overWrite: bool = False, whereToAdd: str = 'contact',
               printText=True, printInit=False, printWarnings=True,
-              r0=False, scaleMethod: str = 'Total') -> tuple:
+              r0=False, scaleMethod: str = 'Total',
+              printR0: bool = False) -> tuple:
     """This is an important part. Returns a dictionary with Rt values,
     as well as models and solutions."""
 
@@ -898,10 +868,8 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
         pointTime = t_spanOld[pointIndex]
         init = {key: solutionOld[pointIndex, i]
                 for i, key in enumerate(oldCompartments)}
-        if printInit:
-            print(f'init: {init}')
         initialize(newModel, init, pointIndex, pointIndex, scaledInfs, modelOld,
-                   printText=printInit, whereToAdd=whereToAdd)
+                   printText=printInit and t == t_span_rt[0], whereToAdd=whereToAdd)
 
         solutionTemp, t_spanTemp = solve(newModel, t_span_sim, sub_sim)
 
@@ -919,7 +887,15 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
             else:
                 denom = sum(initialCond[x] for x in initialCond)
 
-        for x in getRtNodes(newModel):
+        RtNodes = getRtNodes(newModel)
+
+        if printR0:
+            length = max(len(x) for x in RtNodes)
+
+            if t == t_span_rt[0]:
+                print(f"{'Node':<{length + 3}}Value  Divide  Rt")
+
+        for x in RtNodes:
 
             if scaleMethod == 'PerVariant':
                 compartment = x.split(',')[1].split(')')[0]
@@ -942,10 +918,13 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
             #           + f'denominator is {denom}.')
 
             value = solutionTemp[-1, getCompartments(newModel).index(x)]
-            # print(f'{compartment}, {value}, {denom}')
-            value = value / (denom if denom != 0 else 1)
-            # print(value)
-            values[t][x] = value
+            newValue = value / (denom if denom != 0 else 1)
+
+            if printR0:
+                if t == t_span_rt[0]:
+                    print(
+                        f"{x + ', ':<{length + 2}}{value:5.2f}, {denom:6.2f}, {newValue:5.2f}")
+            values[t][x] = newValue
         # print(f'{sum(values[t_spanOld[i]]):.2f} ', end='')
 
     if printText:
@@ -962,29 +941,33 @@ def computeR0(modelName: str, t_span_sim: tuple = (0, 100),
               autoInfections: bool = True, write: bool = False,
               overWrite: bool = False, whereToAdd: str = 'contact',
               printText=True, printInit: bool = True,
-              printWarnings: bool = True, scaleMethod: str = 'Total') -> dict:
+              printWarnings: bool = True, scaleMethod: str = 'Total',
+              printR0: bool = False) -> dict:
     """Computes R0 associated with all contact nodes.
     However, if a variant is not present at start, R0 will be 0.
     This is because it was impossible at t=0 to know that variant would appear."""
+
     modelOld, newModel, solutionOld, _, values = \
         computeRt(modelName, (0, 0), 1, t_span_sim,
                   sub_sim, scaledInfs=scaledInfs, verification=True,
                   write=write, overWrite=overWrite, whereToAdd=whereToAdd,
                   printInit=printInit, r0=True, autoInfections=autoInfections,
                   printWarnings=printWarnings, printText=printText,
-                  scaleMethod=scaleMethod)
+                  scaleMethod=scaleMethod, printR0=printR0)
 
     initialConds = solutionOld[0]
     return modelOld, newModel, initialConds, values[0]
 
 
-def allScenarios(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
-                 R0: float = 0, autoToPlot=[True, False], scaledToPlot=[False],
-                 t_span_sim: tuple = (0, 100), sub_sim: float = 100,
-                 verification: bool = False, write: bool = False,
-                 overWrite: bool = False, whereToAdd: str = 'contact',
-                 printText=False, printInit=False, plotANA: bool = True,
-                 scaleMethod: str = 'Total') -> None:
+def compare(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
+            R0: float = 0, autoToPlot=[True], scaledToPlot=[False],
+            t_span_sim: tuple = (0, 100), sub_sim: float = 100,
+            verification: bool = False, write: bool = False,
+            overWrite: bool = False, whereToAdd: str = 'contact',
+            printText=False, printInit=False, plotANA: bool = True,
+            scaleMethod: str = 'Total',
+            plotIndividual: bool = False,
+            printR0: bool = False, plotScaled=True) -> None:
     """Does all possible scenarios"""
 
     WIDTH = .5
@@ -1001,76 +984,78 @@ def allScenarios(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
     rtCurves = {i: None for i in range(4)}
     plotedInfsLine = False
 
-    for auto in [True, False]:
-        for scaled in [False, True]:
+    for auto in autoToPlot:
+        for scaled in scaledToPlot:
             model, newModel, solution, t_span, values = computeRt(
                 modelName, t_span_rt, sub_rt, autoInfections=auto,
                 t_span_sim=t_span_sim, sub_sim=sub_sim,
                 verification=verification, whereToAdd=whereToAdd,
                 scaledInfs=scaled, write=write, overWrite=overWrite,
                 printText=printText, printInit=printInit,
-                printWarnings=(i == 0), scaleMethod=scaleMethod)
+                printWarnings=(i == 0), scaleMethod=scaleMethod,
+                printR0=printR0)
 
             if i == 0:
+                rt_ANA = R0 * solution[:, 0] / \
+                    np.array([getPopulation(model, x)['Sum']
+                              for x in solution])
                 if plotANA:
-                    rt_ANA = R0 * solution[:, 0] / \
-                        np.array([getPopulation(model, x)['Sum']
-                                  for x in solution])
                     plt.plot(t_span, rt_ANA, label='ANA')
 
                 infsScaled = infCurveScaled(model, solution, t_span)
-                plt.plot(t_span, infsScaled, label='Inf (scaled)')
+                infsNotScaled = infCurve(model, solution, t_span)
+                plt.plot(
+                    t_span, infsScaled if plotScaled else infsNotScaled, label='Inf (scaled)')
 
                 rt_times = np.array([key for key in values])
 
             rt = np.zeros_like(rt_times, dtype='float64')
             for rtNode in getRtNodes(mod(model, False, False)):
                 rt_rtNode = np.array([values[key][rtNode] for key in values])
-                # if len(getRtNodes(mod(model, False, False))) > 1:
-                #     plt.plot(rt_times, rt_rtNode, label=rtNode)
+                if len(getRtNodes(mod(model, False, False))) > 1 \
+                        and i == 0 \
+                        and plotIndividual:
+                    plt.plot(rt_times, rt_rtNode, label=rtNode)
                 rt += rt_rtNode
 
             rtCurves[i] = rt
 
-            if auto in autoToPlot and scaled in scaledToPlot:
-                # if True:
-                print(f'Scaled: {scaled}, Auto: {auto}')
-                if doesIntersect(rt, 1):
-                    idx_infs = find_nearest(infsScaled, 1)
-                    xTimeInfs = t_span[idx_infs]
-                    idx_rt = find_intersections(rt, 1)[0]
-                    try:
-                        xTimeRt = rt_times[idx_rt]
-                    except:
-                        xTimeRt = (rt_times[int(idx_rt)] +
-                                   rt_times[int(idx_rt + 1)]) / 2
-                    print(f'Time difference: {np.abs(xTimeInfs - xTimeRt)}')
-                    if not plotedInfsLine:
-                        plt.axvline(x=xTimeInfs, linestyle=':', color='grey',
-                                    linewidth=2.5 * WIDTH, dashes=DOTS)
-                        plotedInfsLine = True
-                    plt.axvline(x=xTimeRt, linestyle='--', color='grey',
-                                linewidth=WIDTH, dashes=DASH)
+            print(f'Scaled: {scaled}, Auto: {auto}')
+            if doesIntersect(rt, 1):
+                idx_infs = find_nearest(infsScaled, 1)
+                xTimeInfs = t_span[idx_infs]
+                idx_rt = find_intersections(rt, 1)[0]
+                try:
+                    xTimeRt = rt_times[idx_rt]
+                except:
+                    xTimeRt = (rt_times[int(idx_rt)] +
+                               rt_times[int(idx_rt + 1)]) / 2
+                print(f'Time difference: {np.abs(xTimeInfs - xTimeRt)}')
+                if not plotedInfsLine:
+                    plt.axvline(x=xTimeInfs, linestyle=':', color='grey',
+                                linewidth=2.5 * WIDTH, dashes=DOTS)
+                    plotedInfsLine = True
+                plt.axvline(x=xTimeRt, linestyle='--', color='grey',
+                            linewidth=WIDTH, dashes=DASH)
 
-                    # print(f'rt time: {xTimeRt}, inf time: {xTimeInfs}')
-                    # print(f'rt intersections: {find_intersections(rt, 1)}')
-                else:
-                    print('Time difference is not relevant, '
-                          + 'no intersection between rt and 1.')
+                # print(f'rt time: {xTimeRt}, inf time: {xTimeInfs}')
+                # print(f'rt intersections: {find_intersections(rt, 1)}')
+            else:
+                print('Time difference is not relevant, '
+                      + 'no intersection between rt and 1.')
 
-                ls = ['-', '--', '-.', ':'][i % 4]
-                plt.plot(rt_times, rt, label='SIM' +
-                         (' w/ auto' if auto else ' no auto') +
-                         (', scaled' if scaled else ', raw'),
-                         linestyle=ls)
+            ls = ['-', '--', '-.', ':'][i % 4]
+            plt.plot(rt_times, rt, label='SIM' +
+                     (' w/ auto' if auto else ' no auto') +
+                     (', scaled' if scaled else ', raw'),
+                     linestyle=ls)
 
             i += 1
 
     # plt.ylim(bottom=.1)
     plt.legend(loc='best')
-    plt.show()
 
-    return rtCurves
+    return rtCurves, infsNotScaled, rt_ANA
 
 
 def infs(model: dict, y0: dict, t: float, t0: float, whereToAdd: str = 'contact') -> dict:
@@ -1189,9 +1174,6 @@ def find_intersections(array: np.ndarray, value: float, eps=10**-5) -> list:
     products = newCurve[1:] * newCurve[:-1]
 
     where = np.where(products < - eps)[0]
-
-    if len(where) > 0:
-        print(-np.min(products[where]))
 
     newWhere = []
     for idx in where:
@@ -1364,7 +1346,7 @@ def createLaTeX(model: dict, layerDistance: str = ".8cm",
         elif x not in layer0 and x not in layer1 and not x.startswith('Null'):
             # Ceux qui ne sont pas dans une layer, donc Rt
             # (Nulls sont placés ici aussi)
-            
+
             # Variables pour nom (pas de parenthèses dans Tikz) et texte à écrire
             nameNoProblem = x.replace(
                 '(', '').replace(')', '').replace(',', '')
@@ -1470,7 +1452,7 @@ def createLaTeX(model: dict, layerDistance: str = ".8cm",
                 bend = 'right'
                 if v.startswith('Null') or u.startswith('Null'):
                     bend = 'left'
-                
+
                 if u.startswith('Null') and r != v:
                     # On a un rate de naissances qui vient d'ailleurs
                     angle = 20
@@ -1496,7 +1478,7 @@ def createLaTeX(model: dict, layerDistance: str = ".8cm",
                 bend = 'right'
                 if v.startswith('Null') or u.startswith('Null'):
                     bend = 'left'
-                
+
                 if c == u:
                     angle = 45
                 elif v.startswith('Null') and c != u:
