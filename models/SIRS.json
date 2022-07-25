@@ -34,7 +34,7 @@
                 "to": "I",
                 "rate": "S",
                 "contact": "I",
-                "parameter": "lambda t: 0.4"
+                "parameter": "0.4"
             }
         ],
         "rates": [
@@ -43,14 +43,14 @@
                 "to": "R",
                 "rate": "I",
                 "contact": "Null_m",
-                "parameter": "lambda t: 0.05"
+                "parameter": "0.05"
             },
             {
                 "from": "R",
                 "to": "S",
                 "rate": "R",
                 "contact": "Null_m",
-                "parameter": "lambda t: 0.1"
+                "parameter": "0.1"
             }
         ]
     }

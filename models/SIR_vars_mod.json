@@ -69,28 +69,28 @@
                 "to": "I_A^1",
                 "rate": "S^0+S^1",
                 "contact": "I_A^0+I_A^1",
-                "parameter": "lambda t: 0.4"
+                "parameter": "0.4"
             },
             {
                 "from": "Null_n",
                 "to": "Rt(S,I_A)",
                 "rate": "S^0+S^1",
                 "contact": "I_A^0",
-                "parameter": "lambda t: 0.4"
+                "parameter": "0.4"
             },
             {
                 "from": "S^1",
                 "to": "I_B^1",
                 "rate": "S^0+S^1",
                 "contact": "I_B^0+I_B^1",
-                "parameter": "lambda t: 0.8"
+                "parameter": "0.8"
             },
             {
                 "from": "Null_n",
                 "to": "Rt(S,I_B)",
                 "rate": "S^0+S^1",
                 "contact": "I_B^0",
-                "parameter": "lambda t: 0.8"
+                "parameter": "0.8"
             }
         ],
         "recoveries": [
@@ -99,28 +99,28 @@
                 "to": "R^0",
                 "rate": "I_A^0",
                 "contact": "Null_m",
-                "parameter": "lambda t: 0.2"
+                "parameter": "0.2"
             },
             {
                 "from": "I_A^1",
                 "to": "R^1",
                 "rate": "I_A^1",
                 "contact": "Null_m",
-                "parameter": "lambda t: 0.2"
+                "parameter": "0.2"
             },
             {
                 "from": "I_B^0",
                 "to": "R^0",
                 "rate": "I_B^0",
                 "contact": "Null_m",
-                "parameter": "lambda t: 0.1"
+                "parameter": "0.1"
             },
             {
                 "from": "I_B^1",
                 "to": "R^1",
                 "rate": "I_B^1",
                 "contact": "Null_m",
-                "parameter": "lambda t: 0.1"
+                "parameter": "0.1"
             }
         ],
         "births": [
@@ -129,7 +129,7 @@
                 "to": "S^1",
                 "rate": "Null_n",
                 "contact": "Null_m",
-                "parameter": "lambda t: 100"
+                "parameter": "100"
             }
         ],
         "deaths": [
@@ -138,56 +138,56 @@
                 "to": "Null_m",
                 "rate": "S^0",
                 "contact": "Null_m",
-                "parameter": "lambda t: 1e-05"
+                "parameter": "1e-05"
             },
             {
                 "from": "S^1",
                 "to": "Null_m",
                 "rate": "S^1",
                 "contact": "Null_m",
-                "parameter": "lambda t: 1e-05"
+                "parameter": "1e-05"
             },
             {
                 "from": "I_A^0",
                 "to": "Null_m",
                 "rate": "I_A^0",
                 "contact": "Null_m",
-                "parameter": "lambda t: 0.0002"
+                "parameter": "0.0002"
             },
             {
                 "from": "I_A^1",
                 "to": "Null_m",
                 "rate": "I_A^1",
                 "contact": "Null_m",
-                "parameter": "lambda t: 0.0002"
+                "parameter": "0.0002"
             },
             {
                 "from": "I_B^0",
                 "to": "Null_m",
                 "rate": "I_B^0",
                 "contact": "Null_m",
-                "parameter": "lambda t: 0.0002"
+                "parameter": "0.0002"
             },
             {
                 "from": "I_B^1",
                 "to": "Null_m",
                 "rate": "I_B^1",
                 "contact": "Null_m",
-                "parameter": "lambda t: 0.0002"
+                "parameter": "0.0002"
             },
             {
                 "from": "R^0",
                 "to": "Null_m",
                 "rate": "R^0",
                 "contact": "Null_m",
-                "parameter": "lambda t: 1e-05"
+                "parameter": "1e-05"
             },
             {
                 "from": "R^1",
                 "to": "Null_m",
                 "rate": "R^1",
                 "contact": "Null_m",
-                "parameter": "lambda t: 1e-05"
+                "parameter": "1e-05"
             }
         ],
         "importation": [
@@ -196,7 +196,7 @@
                 "to": "I_B^1",
                 "rate": "Null_n",
                 "contact": "Null_m",
-                "parameter": "lambda t: 2 if 49.5 <= t <= 50 else 0"
+                "parameter": "2 if 49.5 <= t <= 50 else 0"
             }
         ]
     }

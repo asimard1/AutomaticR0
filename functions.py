@@ -30,11 +30,14 @@ functions = {}
 
 def storeFunctions(model: dict):
     global functions
+    modelName = model['name']
+    functions[modelName] = {}
+
     flows = model['flows']
     for flowType_index, flowType in enumerate(flows):
         for flow_index, flow in enumerate(flows[flowType]):
-            functions[f"{model['name']}{flowType_index, flow_index}"] = eval(
-                flow['parameter'])
+            functions[modelName][f"{flowType_index, flow_index}"] = eval(
+                'lambda t: ' + flow['parameter'])
 
 
 def removeDuplicates(liste: list) -> list:
@@ -354,7 +357,7 @@ def getCoefForFlux(model: dict, flux: Flux, t: float, t0: float) -> float:
     flowType = flowTypes[flux.coef_indices[0]]
     flowJson = flows[flowType][flux.coef_indices[1]]
 
-    coef = functions[f"{model['name']}{flux.coef_indices[0], flux.coef_indices[1]}"]
+    coef = functions[model['name']][f"{flux.coef_indices[0], flux.coef_indices[1]}"]
     return coef(t)
 
 
@@ -365,7 +368,7 @@ def getCoefForFlow(flow: dict, t: float, t0: float) -> float:
 
     string = flow['parameter']
 
-    fonc = eval(string)
+    fonc = eval('lambda t: ' + string)
     value = fonc(t)
 
     # t0Dict = {
