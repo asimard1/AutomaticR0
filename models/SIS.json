@@ -35,7 +35,7 @@
                 "from": "I",
                 "to": "S",
                 "rate": "I",
-                "contact": "Null_m",
+                "contact": "Null",
                 "parameter": ".1"
             }
         ]

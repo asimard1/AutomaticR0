@@ -123,26 +123,26 @@ def verifyModel(model: dict, printText: bool = True) -> None:
     for flowType_index, flowType in enumerate(flows):
         for flow_index, flow in enumerate(flows[flowType]):
             # TODO check that flows don't have v_r and v_c that contain nulls but aren't nulls!
-            if 'rate' in flow:
-                v_r = flow['rate'].split('+')
-                for x in v_r:
-                    if x not in compartments:
-                        raise Exception(
-                            f'Compartment {x} found in rates, not in compartment list.')
-                    if x.startswith('Null'):
-                        if len(v_r) > 1:
-                            raise Exception(
-                                f'Some flow has a rate which is a sum containing {x}.')
-            if 'contact' in flow:
-                v_c = flow['contact'].split('+')
-                for x in v_c:
-                    if x not in compartments:
-                        raise Exception(
-                            f'Compartment {x} found in contacts, not in compartment list.')
-                    if x.startswith('Null'):
-                        if len(v_c) > 1:
-                            raise Exception(
-                                f'Some flow has a contact which is a sum containing {x}.')
+            # if 'rate' in flow:
+            #     v_r = flow['rate'].split('+')
+            #     for x in v_r:
+            #         if x not in compartments:
+            #             raise Exception(
+            #                 f'Compartment {x} found in rates, not in compartment list.')
+            #         if x.startswith('Null'):
+            #             if len(v_r) > 1:
+            #                 raise Exception(
+            #                     f'Some flow has a rate which is a sum containing {x}.')
+            # if 'contact' in flow:
+            #     v_c = flow['contact'].split('+')
+            #     for x in v_c:
+            #         if x not in compartments:
+            #             raise Exception(
+            #                 f'Compartment {x} found in contacts, not in compartment list.')
+            #         if x.startswith('Null'):
+            #             if len(v_c) > 1:
+            #                 raise Exception(
+            #                     f'Some flow has a contact which is a sum containing {x}.')
 
             keys = list(flow.keys())
             for p in ['from', 'to', 'rate', 'contact', 'parameter']:
@@ -273,10 +273,10 @@ def getFlowsByCompartments(model: dict) -> list:
             from_i = compartments.index(
                 flow['from'])
 
-            rate_i = list(map(lambda x: compartments.index(x),
-                          flow['rate'].split('+')))
-            contact_i = list(map(lambda x: compartments.index(x),
-                                 flow['contact'].split('+')))
+            rate_i = list(map(compartments.index,
+                          [x for x in flow['rate'].split('+') if not x.startswith('Null')]))
+            contact_i = list(map(compartments.index,
+                                [x for x in flow['contact'].split('+') if not x.startswith('Null')]))
             term = Flux((flowType_index, flow_index), rate_i, contact_i)
 
             try:
@@ -419,15 +419,15 @@ def evalDelta(model: dict, delta: Delta, state: np.ndarray or list,
     ### 3 ###
     # 8% of time, very good
     rateInfluence = [sum(state[x] for x in flux.rate_index)
-                     if len(flux.rate_index) != 1
+                     if len(flux.rate_index) > 1
                      else (state[flux.rate_index[0]]
-                           if compartments[flux.rate_index[0]][:4] != 'Null'
+                           if len(flux.rate_index) == 1
                            else 1)
                      for flux in delta.flux]
     contactInfluence = [sum(state[x] for x in flux.contact_index) / N
-                        if len(flux.contact_index) != 1
+                        if len(flux.contact_index) > 1
                         else (state[flux.contact_index[0]] / N
-                              if compartments[flux.contact_index[0]][:4] != 'Null'
+                              if len(flux.contact_index) == 1
                               else 1)
                         for flux in delta.flux]
 
@@ -505,13 +505,13 @@ def solve(model: dict, tRange: tuple, refine: int, printText=False) -> tuple:
 
 def getFlowType(flow: dict) -> str:
     """batches, rates, contacts or u-contacts"""
-    if flow['rate'] == 'Null_n':
-        if flow['contact'] == 'Null_m':
+    if flow['rate'].startswith('Null'):
+        if flow['contact'].startswith('Null'):
             return 'batch'
         else:
             return 'u-contact'
     else:
-        if flow['contact'] == 'Null_m':
+        if flow['contact'].startswith('Null'):
             return 'rate'
         else:
             return 'contact'
@@ -1079,12 +1079,14 @@ def infs(model: dict, y0: dict, t: float, t0: float, whereToAdd: str = 'contact'
                 v_r = flow['rate'].split('+')
                 v_c = flow['contact'].split('+')
 
-                rateImpact = sum(y0[x] for x in v_r)
-                contactImpact = sum(y0[x] for x in v_c)
+                rateImpact = sum(y0[x] for x in v_r if not x.startswith('Null'))
+                contactImpact = sum(y0[x] for x in v_c if not x.startswith('Null'))
                 # Normally v_r and v_c should not be null. We can use both directly.
                 param = getCoefForFlow(flow, t, t0)
                 contactsFlow = param * rateImpact * contactImpact / N
                 node = flow[whereToAdd]
+                if node.startswith('Null'):
+                    node = node + '_m'
                 newInfections[node] += contactsFlow
 
     return newInfections
