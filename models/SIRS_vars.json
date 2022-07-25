@@ -110,7 +110,7 @@
                 "to": "I_B",
                 "rate": "Null_n",
                 "contact": "Null_m",
-                "parameter": "2 if 49.5 <= t <= 50 else 0"
+                "parameter": "1 if 49 <= t <= 50 else 0"
             }
         ],
         "waning": [
