@@ -1,0 +1,219 @@
+{
+    "name": "SIRS_vars_mod",
+    "compartments": {
+        "S__0": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 0
+        },
+        "S__1": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 9999999
+        },
+        "I_A_0": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 0
+        },
+        "I_A_1": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 1
+        },
+        "I_B_0": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 0
+        },
+        "I_B_1": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 0
+        },
+        "R__0": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 0
+        },
+        "R__1": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 0
+        },
+        "Null_n": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 0
+        },
+        "Null_m": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 0
+        },
+        "Rt_S_I_A": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 0
+        },
+        "Rt_S_I_B": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 0
+        }
+    },
+    "flows": {
+        "infections": [
+            {
+                "from": "Sz1",
+                "to": "I_Az1",
+                "rate": "Sz0+Sz1",
+                "contact": "I_Az0+I_Az1",
+                "parameter": "0.4"
+            },
+            {
+                "from": "Null_n",
+                "to": "Rt_SI_A",
+                "rate": "Sz0+Sz1",
+                "contact": "I_Az0",
+                "parameter": "0.4"
+            },
+            {
+                "from": "Sz1",
+                "to": "I_Bz1",
+                "rate": "Sz0+Sz1",
+                "contact": "I_Bz0+I_Bz1",
+                "parameter": "0.8"
+            },
+            {
+                "from": "Null_n",
+                "to": "Rt_SI_B",
+                "rate": "Sz0+Sz1",
+                "contact": "I_Bz0",
+                "parameter": "0.8"
+            }
+        ],
+        "recoveries": [
+            {
+                "from": "I_Az0",
+                "to": "Rz0",
+                "rate": "I_Az0",
+                "contact": "Null_m",
+                "parameter": "0.2"
+            },
+            {
+                "from": "I_Az1",
+                "to": "Rz1",
+                "rate": "I_Az1",
+                "contact": "Null_m",
+                "parameter": "0.2"
+            },
+            {
+                "from": "I_Bz0",
+                "to": "Rz0",
+                "rate": "I_Bz0",
+                "contact": "Null_m",
+                "parameter": "0.1"
+            },
+            {
+                "from": "I_Bz1",
+                "to": "Rz1",
+                "rate": "I_Bz1",
+                "contact": "Null_m",
+                "parameter": "0.1"
+            }
+        ],
+        "births": [
+            {
+                "from": "Null_n",
+                "to": "Sz1",
+                "rate": "Null_n",
+                "contact": "Null_m",
+                "parameter": "100"
+            }
+        ],
+        "deaths": [
+            {
+                "from": "Sz0",
+                "to": "Null_m",
+                "rate": "Sz0",
+                "contact": "Null_m",
+                "parameter": "1e-05"
+            },
+            {
+                "from": "Sz1",
+                "to": "Null_m",
+                "rate": "Sz1",
+                "contact": "Null_m",
+                "parameter": "1e-05"
+            },
+            {
+                "from": "I_Az0",
+                "to": "Null_m",
+                "rate": "I_Az0",
+                "contact": "Null_m",
+                "parameter": "0.0002"
+            },
+            {
+                "from": "I_Az1",
+                "to": "Null_m",
+                "rate": "I_Az1",
+                "contact": "Null_m",
+                "parameter": "0.0002"
+            },
+            {
+                "from": "I_Bz0",
+                "to": "Null_m",
+                "rate": "I_Bz0",
+                "contact": "Null_m",
+                "parameter": "0.0002"
+            },
+            {
+                "from": "I_Bz1",
+                "to": "Null_m",
+                "rate": "I_Bz1",
+                "contact": "Null_m",
+                "parameter": "0.0002"
+            },
+            {
+                "from": "Rz0",
+                "to": "Null_m",
+                "rate": "Rz0",
+                "contact": "Null_m",
+                "parameter": "1e-05"
+            },
+            {
+                "from": "Rz1",
+                "to": "Null_m",
+                "rate": "Rz1",
+                "contact": "Null_m",
+                "parameter": "1e-05"
+            }
+        ],
+        "importation": [
+            {
+                "from": "Null_n",
+                "to": "I_Bz1",
+                "rate": "Null_n",
+                "contact": "Null_m",
+                "parameter": "exp(-(t-50)) if t >= 50 else 0"
+            }
+        ],
+        "waning": [
+            {
+                "from": "Rz0",
+                "to": "Sz0",
+                "rate": "Rz0",
+                "contact": "Null_m",
+                "parameter": ".01"
+            },
+            {
+                "from": "Rz1",
+                "to": "Sz1",
+                "rate": "Rz1",
+                "contact": "Null_m",
+                "parameter": ".01"
+            }
+        ]
+    }
+}
