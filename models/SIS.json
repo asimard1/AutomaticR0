@@ -34,7 +34,7 @@
             {
                 "from": "I",
                 "to": "S",
-                "rate": "min(S,I)",
+                "rate": "I",
                 "contact": "Null",
                 "parameter": ".1"
             }
