@@ -1,15 +1,20 @@
 {
-    "name": "SIS",
+    "name": "test",
     "compartments": {
-        "S": {
+        "S_1": {
             "susceptibility": 1,
             "contagiousness": 1,
-            "initial_condition": 10000000.0
+            "initial_condition": 9999999
+        },
+        "S_2": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 1
         },
         "I": {
             "susceptibility": 1,
             "contagiousness": 1,
-            "initial_condition": 1
+            "initial_condition": 0
         },
         "Null_n": {
             "susceptibility": 1,
@@ -23,20 +28,13 @@
         }
     },
     "flows": {
-        "flows": [
+        "contacts": [
             {
-                "from": "S",
+                "from": "S_1",
                 "to": "I",
-                "rate": "S",
+                "rate": "S_1+S_2",
                 "contact": "I",
                 "parameter": "0.4"
-            },
-            {
-                "from": "I",
-                "to": "S",
-                "rate": "I",
-                "contact": "Null",
-                "parameter": ".1"
             }
         ]
     }

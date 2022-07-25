@@ -1,42 +1,42 @@
 {
     "name": "SIRS_vars_mod",
     "compartments": {
-        "S^0": {
+        "Sz0": {
             "susceptibility": 1,
             "contagiousness": 1,
             "initial_condition": 0
         },
-        "S^1": {
+        "Sz1": {
             "susceptibility": 1,
             "contagiousness": 1,
             "initial_condition": 9999999
         },
-        "I_A^0": {
+        "I_Az0": {
             "susceptibility": 1,
             "contagiousness": 1,
             "initial_condition": 0
         },
-        "I_A^1": {
+        "I_Az1": {
             "susceptibility": 1,
             "contagiousness": 1,
             "initial_condition": 1
         },
-        "I_B^0": {
+        "I_Bz0": {
             "susceptibility": 1,
             "contagiousness": 1,
             "initial_condition": 0
         },
-        "I_B^1": {
+        "I_Bz1": {
             "susceptibility": 1,
             "contagiousness": 1,
             "initial_condition": 0
         },
-        "R^0": {
+        "Rz0": {
             "susceptibility": 1,
             "contagiousness": 1,
             "initial_condition": 0
         },
-        "R^1": {
+        "Rz1": {
             "susceptibility": 1,
             "contagiousness": 1,
             "initial_condition": 0
@@ -51,12 +51,12 @@
             "contagiousness": 1,
             "initial_condition": 0
         },
-        "Rt(S,I_A)": {
+        "Rt_SI_A": {
             "susceptibility": 1,
             "contagiousness": 1,
             "initial_condition": 0
         },
-        "Rt(S,I_B)": {
+        "Rt_SI_B": {
             "susceptibility": 1,
             "contagiousness": 1,
             "initial_condition": 0
@@ -65,154 +65,154 @@
     "flows": {
         "infections": [
             {
-                "from": "S^1",
-                "to": "I_A^1",
-                "rate": "S^0+S^1",
-                "contact": "I_A^0+I_A^1",
-                "parameter": "lambda t: 0.4"
+                "from": "Sz1",
+                "to": "I_Az1",
+                "rate": "Sz0+Sz1",
+                "contact": "I_Az0+I_Az1",
+                "parameter": "0.4"
             },
             {
                 "from": "Null_n",
-                "to": "Rt(S,I_A)",
-                "rate": "S^0+S^1",
-                "contact": "I_A^0",
-                "parameter": "lambda t: 0.4"
+                "to": "Rt_SI_A",
+                "rate": "Sz0+Sz1",
+                "contact": "I_Az0",
+                "parameter": "0.4"
             },
             {
-                "from": "S^1",
-                "to": "I_B^1",
-                "rate": "S^0+S^1",
-                "contact": "I_B^0+I_B^1",
-                "parameter": "lambda t: 0.8"
+                "from": "Sz1",
+                "to": "I_Bz1",
+                "rate": "Sz0+Sz1",
+                "contact": "I_Bz0+I_Bz1",
+                "parameter": "0.8"
             },
             {
                 "from": "Null_n",
-                "to": "Rt(S,I_B)",
-                "rate": "S^0+S^1",
-                "contact": "I_B^0",
-                "parameter": "lambda t: 0.8"
+                "to": "Rt_SI_B",
+                "rate": "Sz0+Sz1",
+                "contact": "I_Bz0",
+                "parameter": "0.8"
             }
         ],
         "recoveries": [
             {
-                "from": "I_A^0",
-                "to": "R^0",
-                "rate": "I_A^0",
+                "from": "I_Az0",
+                "to": "Rz0",
+                "rate": "I_Az0",
                 "contact": "Null_m",
-                "parameter": "lambda t: 0.2"
+                "parameter": "0.2"
             },
             {
-                "from": "I_A^1",
-                "to": "R^1",
-                "rate": "I_A^1",
+                "from": "I_Az1",
+                "to": "Rz1",
+                "rate": "I_Az1",
                 "contact": "Null_m",
-                "parameter": "lambda t: 0.2"
+                "parameter": "0.2"
             },
             {
-                "from": "I_B^0",
-                "to": "R^0",
-                "rate": "I_B^0",
+                "from": "I_Bz0",
+                "to": "Rz0",
+                "rate": "I_Bz0",
                 "contact": "Null_m",
-                "parameter": "lambda t: 0.1"
+                "parameter": "0.1"
             },
             {
-                "from": "I_B^1",
-                "to": "R^1",
-                "rate": "I_B^1",
+                "from": "I_Bz1",
+                "to": "Rz1",
+                "rate": "I_Bz1",
                 "contact": "Null_m",
-                "parameter": "lambda t: 0.1"
+                "parameter": "0.1"
             }
         ],
         "births": [
             {
                 "from": "Null_n",
-                "to": "S^1",
+                "to": "Sz1",
                 "rate": "Null_n",
                 "contact": "Null_m",
-                "parameter": "lambda t: 100"
+                "parameter": "100"
             }
         ],
         "deaths": [
             {
-                "from": "S^0",
+                "from": "Sz0",
                 "to": "Null_m",
-                "rate": "S^0",
+                "rate": "Sz0",
                 "contact": "Null_m",
-                "parameter": "lambda t: 1e-05"
+                "parameter": "1e-05"
             },
             {
-                "from": "S^1",
+                "from": "Sz1",
                 "to": "Null_m",
-                "rate": "S^1",
+                "rate": "Sz1",
                 "contact": "Null_m",
-                "parameter": "lambda t: 1e-05"
+                "parameter": "1e-05"
             },
             {
-                "from": "I_A^0",
+                "from": "I_Az0",
                 "to": "Null_m",
-                "rate": "I_A^0",
+                "rate": "I_Az0",
                 "contact": "Null_m",
-                "parameter": "lambda t: 0.0002"
+                "parameter": "0.0002"
             },
             {
-                "from": "I_A^1",
+                "from": "I_Az1",
                 "to": "Null_m",
-                "rate": "I_A^1",
+                "rate": "I_Az1",
                 "contact": "Null_m",
-                "parameter": "lambda t: 0.0002"
+                "parameter": "0.0002"
             },
             {
-                "from": "I_B^0",
+                "from": "I_Bz0",
                 "to": "Null_m",
-                "rate": "I_B^0",
+                "rate": "I_Bz0",
                 "contact": "Null_m",
-                "parameter": "lambda t: 0.0002"
+                "parameter": "0.0002"
             },
             {
-                "from": "I_B^1",
+                "from": "I_Bz1",
                 "to": "Null_m",
-                "rate": "I_B^1",
+                "rate": "I_Bz1",
                 "contact": "Null_m",
-                "parameter": "lambda t: 0.0002"
+                "parameter": "0.0002"
             },
             {
-                "from": "R^0",
+                "from": "Rz0",
                 "to": "Null_m",
-                "rate": "R^0",
+                "rate": "Rz0",
                 "contact": "Null_m",
-                "parameter": "lambda t: 1e-05"
+                "parameter": "1e-05"
             },
             {
-                "from": "R^1",
+                "from": "Rz1",
                 "to": "Null_m",
-                "rate": "R^1",
+                "rate": "Rz1",
                 "contact": "Null_m",
-                "parameter": "lambda t: 1e-05"
+                "parameter": "1e-05"
             }
         ],
         "importation": [
             {
                 "from": "Null_n",
-                "to": "I_B^1",
+                "to": "I_Bz1",
                 "rate": "Null_n",
                 "contact": "Null_m",
-                "parameter": "lambda t: 2 if 49.5 <= t <= 50 else 0"
+                "parameter": "exp(-(t-50)) if t >= 50 else 0"
             }
         ],
         "waning": [
             {
-                "from": "R^0",
-                "to": "S^0",
-                "rate": "R^0",
+                "from": "Rz0",
+                "to": "Sz0",
+                "rate": "Rz0",
                 "contact": "Null_m",
-                "parameter": "lambda t: .01"
+                "parameter": ".01"
             },
             {
-                "from": "R^1",
-                "to": "S^1",
-                "rate": "R^1",
+                "from": "Rz1",
+                "to": "Sz1",
+                "rate": "Rz1",
                 "contact": "Null_m",
-                "parameter": "lambda t: .01"
+                "parameter": ".01"
             }
         ]
     }

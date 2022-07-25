@@ -1,0 +1,46 @@
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}
+        \node [Square] (Sz0)  {$Sz0$};
+        \node [Square] (Sz1) [below=2cm of Sz0] {$Sz1$};
+        \node [Square] (Iz0) [right=2cm of Sz0] {$Iz0$};
+        \node [Square] (Iz1) [right=2cm of Sz1] {$Iz1$};
+        \node [Square] (Rz0) [right=2cm of Iz0] {$Rz0$};
+        \node [Square] (Rz1) [right=2cm of Iz1] {$Rz1$};
+        \node [Square] (Rt_SI) [left=2cm of Sz1] {$R_t_SI$};
+
+        \node [Empty] (Nulln_Sz0) [above left=.8cm of Sz0] {};
+        \node [Empty] (Nullm_Sz0) [below right=.8cm of Sz0] {};
+        \node [Empty] (Nulln_Iz0) [above left=.8cm of Iz0] {};
+        \node [Empty] (Nullm_Iz0) [below right=.8cm of Iz0] {};
+        \node [Empty] (Nulln_Rz0) [above left=.8cm of Rz0] {};
+        \node [Empty] (Nullm_Rz0) [below right=.8cm of Rz0] {};
+        \node [Empty] (Nulln_Sz1) [above left=.8cm of Sz1] {};
+        \node [Empty] (Nullm_Sz1) [below right=.8cm of Sz1] {};
+        \node [Empty] (Nulln_Iz1) [above left=.8cm of Iz1] {};
+        \node [Empty] (Nullm_Iz1) [below right=.8cm of Iz1] {};
+        \node [Empty] (Nulln_Rz1) [above left=.8cm of Rz1] {};
+        \node [Empty] (Nullm_Rz1) [below right=.8cm of Rz1] {};
+        \node [Empty] (Nulln_Rt_SI) [above left=.8cm of Rt_SI] {};
+        \node [Empty] (Nullm_Rt_SI) [below right=.8cm of Rt_SI] {};
+
+        \path [Arrow]
+            (Sz1) edge [bend left=10, Plum] node [Empty, pos=2/5] (Sz1-Iz1-r) {} node [Empty, pos=3/5] (Sz1-Iz1-c) {} (Iz1)
+            (Nulln_Rt_SI) edge [bend left=10, Black] node [Empty, pos=3/5] (Nulln_Rt_SI-Rt_SI-r) {} node [Empty, pos=2/5] (Nulln_Rt_SI-Rt_SI-c) {} (Rt_SI)
+            (Iz0) edge [bend left=10, Red] node [Empty, pos=2/5] (Iz0-Rz0-r) {} node [Empty, pos=3/5] (Iz0-Rz0-c) {} (Rz0)
+            (Iz1) edge [bend left=10, Red] node [Empty, pos=2/5] (Iz1-Rz1-r) {} node [Empty, pos=3/5] (Iz1-Rz1-c) {} (Rz1);
+
+        \path [Dotted]
+            (Sz1-Iz1-r) edge [bend left=10] (Sz0)
+            (Sz1-Iz1-r) edge [bend right=30] (Sz1)
+            (Nulln_Rt_SI-Rt_SI-r) edge [bend left=20] (Sz0)
+            (Nulln_Rt_SI-Rt_SI-r) edge [bend left=20] (Sz1)
+            (Iz0-Rz0-r) edge [bend right=30] (Iz0)
+            (Iz1-Rz1-r) edge [bend right=30] (Iz1);
+
+        \path [Dashed]
+            (Sz1-Iz1-c) edge [bend right=10] (Iz0)
+            (Sz1-Iz1-c) edge [bend left=30] (Iz1)
+            (Nulln_Rt_SI-Rt_SI-c) edge [bend left=30] (Iz0);
+    \end{tikzpicture}
+\end{figure}

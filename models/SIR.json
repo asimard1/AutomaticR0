@@ -34,14 +34,14 @@
                 "to": "I",
                 "rate": "S",
                 "contact": "I",
-                "parameter": "lambda t: .4"
+                "parameter": ".4"
             },
             {
                 "from": "I",
                 "to": "R",
                 "rate": "I",
                 "contact": "Null_m",
-                "parameter": "lambda t: .1"
+                "parameter": ".1"
             }
         ]
     }

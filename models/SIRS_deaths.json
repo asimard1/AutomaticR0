@@ -34,7 +34,7 @@
                 "to": "I",
                 "rate": "S",
                 "contact": "I",
-                "parameter": "lambda t: 0.4"
+                "parameter": "0.4"
             }
         ],
         "rates": [
@@ -43,35 +43,35 @@
                 "to": "R",
                 "rate": "I",
                 "contact": "Null_m",
-                "parameter": "lambda t: 0.1"
+                "parameter": "0.1"
             },
             {
                 "from": "R",
                 "to": "S",
                 "rate": "R",
                 "contact": "Null_m",
-                "parameter": "lambda t: 0.01"
+                "parameter": "0.01"
             },
             {
                 "from": "S",
                 "to": "Null_m",
                 "rate": "S",
                 "contact": "Null_m",
-                "parameter": "lambda t: 0.0005"
+                "parameter": "0.0005"
             },
             {
                 "from": "I",
                 "to": "Null_m",
                 "rate": "I",
                 "contact": "Null_m",
-                "parameter": "lambda t: 0.001"
+                "parameter": "0.001"
             },
             {
                 "from": "R",
                 "to": "Null_m",
                 "rate": "R",
                 "contact": "Null_m",
-                "parameter": "lambda t: 0.0005"
+                "parameter": "0.0005"
             }
         ],
         "batches": [
@@ -80,14 +80,14 @@
                 "to": "S",
                 "rate": "Null_n",
                 "contact": "Null_m",
-                "parameter": "lambda t: 2000"
+                "parameter": "2000"
             },
             {
                 "from": "S",
                 "to": "R",
                 "rate": "Null_n",
                 "contact": "Null_m",
-                "parameter": "lambda t: 100"
+                "parameter": "100"
             }
         ]
     }

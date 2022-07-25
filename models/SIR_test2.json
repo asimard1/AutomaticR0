@@ -1,5 +1,5 @@
 {
-    "name": "SIS",
+    "name": "SIR_test2",
     "compartments": {
         "S": {
             "susceptibility": 1,
@@ -7,6 +7,11 @@
             "initial_condition": 10000000.0
         },
         "I": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 1
+        },
+        "R": {
             "susceptibility": 1,
             "contagiousness": 1,
             "initial_condition": 1
@@ -23,20 +28,23 @@
         }
     },
     "flows": {
-        "flows": [
+        "contacts": [
             {
                 "from": "S",
                 "to": "I",
                 "rate": "S",
                 "contact": "I",
                 "parameter": "0.4"
-            },
+            }
+        ],
+        "rates": [
             {
                 "from": "I",
-                "to": "S",
+                "to": "R",
                 "rate": "I",
                 "contact": "Null",
-                "parameter": ".1"
+                "parameter": "0.1",
+                "special": "min_v_r"
             }
         ]
     }

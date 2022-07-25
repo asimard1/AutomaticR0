@@ -11,15 +11,13 @@ import os
 
 
 @dataclass
-class Delta:
-    flux: list
+class Flux:
+    coef_indices: Tuple[int, int]
 
 
 @dataclass
-class Flux:
-    coef_indices: Tuple[int, int]
-    rate_index: list
-    contact_index: list
+class Delta:
+    flux: list
 
 
 types = [Flux]
@@ -31,10 +29,31 @@ functions = {}
 def storeFunctions(model: dict):
     global functions
     flows = model['flows']
+    modelName = model['name']
+    functions[modelName] = {}
     for flowType_index, flowType in enumerate(flows):
         for flow_index, flow in enumerate(flows[flowType]):
-            functions[f"{model['name']}{flowType_index, flow_index}"] = eval(
-                flow['parameter'])
+            pos = f"{flowType_index, flow_index}"
+            functions[modelName][pos] = {}
+            compartmentsVars = ', '.join(getCompartments(model))
+            populationSum = '+'.join(getPopNodes(model))
+
+            # Parameter
+            functions[modelName][pos]['f'] \
+                = eval("lambda t: " + flow['parameter'])
+
+            r = flow['rate'] if not flow['rate'].startswith('Null') else '1'
+            c = f"({flow['contact']}) / ({populationSum})" \
+                if not flow['contact'].startswith('Null') else '1'
+            # print(flow, getFlowType(flow))
+            # print(f"r: {r}")
+            # print(f"c: {c}")
+            # Rate (adjusted for if Null)
+            functions[modelName][pos]['r'] \
+                = eval(f"lambda {compartmentsVars}: " + r)
+            # Contact (adjusted for if Null)
+            functions[modelName][pos]['c'] \
+                = eval(f"lambda {compartmentsVars}: " + c)
 
 
 def removeDuplicates(liste: list) -> list:
@@ -107,39 +126,23 @@ def plotCurves(xPoints: np.ndarray or list, curves, toPlot: list, labels: list,
         fig.set_yscale(scales[1])
 
 
-def verifyModel(model: dict, printText: bool = True) -> None:
+def verifyModel(model: dict, fileName: str, printText: bool = True) -> None:
     """Verifies if model has the right properties. Might not be complete."""
     if "Null_n" not in model['compartments'] or "Null_m" not in model['compartments']:
         raise Exception('Model doesn\'t have both Null nodes.')
 
     # TODO try to get name of file to confirm that the "name" parameter fits!
 
+    modelName = fileName.split('.')[0]
+    if model['name'] != modelName:
+        raise Exception(
+            f"Model name ({modelName}) doesn't match name in file ({model['name']}).")
+
     missing = []
     flows = model['flows']
     compartments = getCompartments(model)
     for flowType_index, flowType in enumerate(flows):
         for flow_index, flow in enumerate(flows[flowType]):
-            # TODO check that flows don't have v_r and v_c that contain nulls but aren't nulls!
-            if 'rate' in flow:
-                v_r = flow['rate'].split('+')
-                for x in v_r:
-                    if x not in compartments:
-                        raise Exception(
-                            f'Compartment {x} found in rates, not in compartment list.')
-                    if x.startswith('Null'):
-                        if len(v_r) > 1:
-                            raise Exception(
-                                f'Some flow has a rate which is a sum containing {x}.')
-            if 'contact' in flow:
-                v_c = flow['contact'].split('+')
-                for x in v_c:
-                    if x not in compartments:
-                        raise Exception(
-                            f'Compartment {x} found in contacts, not in compartment list.')
-                    if x.startswith('Null'):
-                        if len(v_c) > 1:
-                            raise Exception(
-                                f'Some flow has a contact which is a sum containing {x}.')
 
             keys = list(flow.keys())
             for p in ['from', 'to', 'rate', 'contact', 'parameter']:
@@ -199,7 +202,7 @@ def loadModel(name: str, overWrite=False, printText: bool = True) -> dict:
         print('Model should be fixed...')
 
     # Verify
-    verifyModel(model, printText=printText)
+    verifyModel(model, name, printText=printText)
     writeModel(model, overWrite=overWrite, printText=printText)
     # Store functions in dictionary
     storeFunctions(model)
@@ -208,7 +211,7 @@ def loadModel(name: str, overWrite=False, printText: bool = True) -> dict:
 
 def initialize(model: dict, y0: dict, t: float, t0: float, scaled=False, originalModel:
                dict = None, printText: bool = True,
-               whereToAdd: str = 'contact') -> None:
+               whereToAdd: str = 'to') -> None:
     """This modifies "model", but doesn't modify the file it comes from."""
 
     if originalModel != None:
@@ -270,11 +273,7 @@ def getFlowsByCompartments(model: dict) -> list:
             from_i = compartments.index(
                 flow['from'])
 
-            rate_i = list(map(lambda x: compartments.index(x),
-                          flow['rate'].split('+')))
-            contact_i = list(map(lambda x: compartments.index(x),
-                                 flow['contact'].split('+')))
-            term = Flux((flowType_index, flow_index), rate_i, contact_i)
+            term = Flux((flowType_index, flow_index))
 
             try:
                 FBC[to_i][0].append(term)
@@ -345,6 +344,34 @@ def getOtherChange(model: dict, solution: np.ndarray) -> float:
     return getOthers(model, solution[-1])['Sum'] - getOthers(model, solution[0])['Sum']
 
 
+def getVrForFlux(model: dict, flux: Flux, state: list, t0: float) -> float:
+    """
+    Gets the coefficient for flux from the config file.
+    """
+    flows = model['flows']
+    flowTypes = list(model['flows'].keys())
+    flowType = flowTypes[flux.coef_indices[0]]
+
+    coef = functions[model['name']
+                     ][f"({flux.coef_indices[0]}, {flux.coef_indices[1]})"
+                       ]['r']
+    return coef(*state)
+
+
+def getVcForFlux(model: dict, flux: Flux, state: list, t0: float) -> float:
+    """
+    Gets the coefficient for flux from the config file.
+    """
+    flows = model['flows']
+    flowTypes = list(model['flows'].keys())
+    flowType = flowTypes[flux.coef_indices[0]]
+
+    coef = functions[model['name']
+                     ][f"({flux.coef_indices[0]}, {flux.coef_indices[1]})"
+                       ]['c']
+    return coef(*state)
+
+
 def getCoefForFlux(model: dict, flux: Flux, t: float, t0: float) -> float:
     """
     Gets the coefficient for flux from the config file.
@@ -352,9 +379,9 @@ def getCoefForFlux(model: dict, flux: Flux, t: float, t0: float) -> float:
     flows = model['flows']
     flowTypes = list(model['flows'].keys())
     flowType = flowTypes[flux.coef_indices[0]]
-    flowJson = flows[flowType][flux.coef_indices[1]]
 
-    coef = functions[f"{model['name']}{flux.coef_indices[0], flux.coef_indices[1]}"]
+    coef = functions[model['name']][
+        f"({flux.coef_indices[0]}, {flux.coef_indices[1]})"]['f']
     return coef(t)
 
 
@@ -365,23 +392,8 @@ def getCoefForFlow(flow: dict, t: float, t0: float) -> float:
 
     string = flow['parameter']
 
-    fonc = eval(string)
+    fonc = eval('lambda t: ' + string)
     value = fonc(t)
-
-    # t0Dict = {
-    #     't': t0
-    # }
-
-    # if 'copied' in flow:
-    #     if flow['copied']:
-    #         # Ce flot crée un cas index et il faut juste l'ajouter
-    #         # au Rt si on sait qu'il existe !
-    #         value = value if eval(
-    #             string, globals(), t0Dict) != 0 else 0
-    #     else:
-    #         # Ce flot est là pour la dynamique seulement !
-    #         value = value if eval(
-    #             string, globals(), t0Dict) == 0 else 0
 
     return value
 
@@ -393,6 +405,8 @@ def evalDelta(model: dict, delta: Delta, state: np.ndarray or list,
     """
 
     # Times final: [ 3. 26. 12. 11. 13. 35.]
+
+    modified = isModified(model)
 
     ### 0 ###
     # 2% of time
@@ -413,19 +427,13 @@ def evalDelta(model: dict, delta: Delta, state: np.ndarray or list,
     contagiousness = [model['compartments'][comp]
                       ['contagiousness'] for comp in compartments]
 
+    # specialConds = [getSpecialForFlux(model, flux) for flux in delta.flux]
+
     ### 3 ###
     # 8% of time, very good
-    rateInfluence = [sum(state[x] for x in flux.rate_index)
-                     if len(flux.rate_index) != 1
-                     else (state[flux.rate_index[0]]
-                           if compartments[flux.rate_index[0]][:4] != 'Null'
-                           else 1)
+    rateInfluence = [getVrForFlux(model, flux, state, t0)
                      for flux in delta.flux]
-    contactInfluence = [sum(state[x] for x in flux.contact_index) / N
-                        if len(flux.contact_index) != 1
-                        else (state[flux.contact_index[0]] / N
-                              if compartments[flux.contact_index[0]][:4] != 'Null'
-                              else 1)
+    contactInfluence = [getVcForFlux(model, flux, state, t0)
                         for flux in delta.flux]
 
     ### 4 ###
@@ -502,13 +510,13 @@ def solve(model: dict, tRange: tuple, refine: int, printText=False) -> tuple:
 
 def getFlowType(flow: dict) -> str:
     """batches, rates, contacts or u-contacts"""
-    if flow['rate'] == 'Null_n':
-        if flow['contact'] == 'Null_m':
+    if flow['rate'].startswith('Null'):
+        if flow['contact'].startswith('Null'):
             return 'batch'
         else:
             return 'u-contact'
     else:
-        if flow['contact'] == 'Null_m':
+        if flow['contact'].startswith('Null'):
             return 'rate'
         else:
             return 'contact'
@@ -516,7 +524,7 @@ def getFlowType(flow: dict) -> str:
 
 def addI(node: str, i: int) -> str:
     """Pour ne pas ajouter des indices à Null ou R0."""
-    newNode = (node + f'^{i}') if not (node[:4]
+    newNode = (node + f'z{i}') if not (node[:4]
                                        == 'Null' or node[:2] == 'Rt') else (node)
     return newNode
 
@@ -524,7 +532,7 @@ def addI(node: str, i: int) -> str:
 def removeI(node: str) -> str:
     """Pour retrouver un noeud initial."""
     if len(node) > 1:
-        newNode = node[:-2] if node[-2] == '^' else node
+        newNode = node[:-2] if node[-2] == 'z' else node
     else:
         newNode = node
     return newNode
@@ -546,7 +554,7 @@ def joinNodeSum(nodes: list) -> str:
 
 def mod(model: dict, printWarnings: bool = True,
         printText: bool = False, autoInfections: bool = True,
-        write=True, overWrite=False) -> dict:
+        write=False, overWrite=False) -> dict:
     """
     This function is the main point of the research.
     Creates the modified model from the base one.
@@ -560,6 +568,7 @@ def mod(model: dict, printWarnings: bool = True,
                 "compartments": {}, "flows": {}}
 
     compartments = getCompartments(model)
+    compsSorted = sorted(compartments, key=len, reverse=True)
     flows = model['flows']
 
     # Verify if structure is already well implemented
@@ -577,14 +586,14 @@ def mod(model: dict, printWarnings: bool = True,
     for compartment in compartments:
         if compartment[:4] != 'Null':
             for i in range(2):
-                newModel["compartments"][compartment + f'^{i}'] \
+                newModel["compartments"][compartment + f'z{i}'] \
                     = model["compartments"][compartment].copy()
                 # Pour le moment, on place toute la population dans la couche 1
                 # Il faudra initialiser le modèle avec les bonnes valeurs pour régler ceci
                 # Bonne solution temporaire puisqu'on peut utiliser le modèle comme normal
                 if i == 0:
                     newModel["compartments"][compartment +
-                                             f'^{i}']["initial_condition"] = 0
+                                             f'z{i}']["initial_condition"] = 0
         else:
             # Null node is not duplicated
             newModel["compartments"][compartment] \
@@ -597,8 +606,8 @@ def mod(model: dict, printWarnings: bool = True,
         newFlow = {
             "from": "Null_n",
             "to": "Null_m",
-            "rate": "Null_n",
-            "contact": "Null_m",
+            "rate": "Null",
+            "contact": "Null",
             "parameter": "0"
         }
 
@@ -606,137 +615,107 @@ def mod(model: dict, printWarnings: bool = True,
             # Information du flot original
             u = flow['from']
             v = flow['to']
-            vr = flow['rate'].split('+')
-            vc = flow['contact'].split('+')
+            vr = flow['rate']
+            vc = flow['contact']
+            f = flow['parameter']
 
             ### RATES ###
             if getFlowType(flow) == 'rate':
-                for i in range(2):
-                    if not (i == 0 and u[:4] == 'Null'):
-                        uPrime = addI(u, i)
-                        vPrime = addI(v, i)
-                        # Find vr' and vc'
-                        if u[:4] == 'Null':
-                            rateNode = joinNodeSum(list(map(
-                                lambda x: joinNodeSum([addI(x, j)
-                                                   for j in range(2)]),
-                                vr)))
-                        else:
-                            rateNode = joinNodeSum(list(map(
-                                lambda x: addI(x, i),
-                                vr
-                            )))
-                        contactNode = 'Null_m'
+                if u.startswith('Null'):
+                    # Rate, naissances
+                    newVr = vr
+                    newVc = vc
+                    for comp in compsSorted:
+                        somme = joinNodeSum([addI(comp, j) for j in range(2)])
+                        newVr = newVr.replace(comp, somme)
 
-                        newFlow['from'] = uPrime
-                        newFlow['to'] = vPrime
-                        newFlow['rate'] = rateNode
-                        newFlow['contact'] = contactNode
-                        newFlow['parameter'] = flow['parameter']
+                    newFlow['from'] = addI(u, 1)
+                    newFlow['to'] = addI(v, 1)
+                    newFlow['rate'] = newVr
+                    newFlow['contact'] = newVc
+                    newFlow['parameter'] = f
 
-                        # print('  ', newFlow)
+                    newModel['flows'][flowName].append(newFlow.copy())
+                else:
+                    # Rate, pas naissances
+                    for i in range(2):
+                        newVr = vr
+                        newVc = vc
+                        for comp in compsSorted:
+                            newVr = newVr.replace(comp, addI(comp, i))
+
+                        newFlow['from'] = addI(u, i)
+                        newFlow['to'] = addI(v, i)
+                        newFlow['rate'] = newVr
+                        newFlow['contact'] = newVc
+                        newFlow['parameter'] = f
 
                         newModel['flows'][flowName].append(newFlow.copy())
+
             ### BATCHES ###
             if getFlowType(flow) == 'batch':
-                ### ATTENTION ####
-                # Si une batch crée des infections, il faudra s'assurer qu'au
-                # moins une infection est créée dans la couche 0. Il faut donc
-                # jouer un peu sur ces paramètres...
-                splitBatch = False
-                for _, flowName2 in enumerate(flows):
-                    for flow2 in flows[flowName2]:
-                        if flow2['to'] == v and getFlowType(flow2) == 'contact':
-                            splitBatch = True
-                            if printWarnings:
-                                print(f'Warning: had to double a batch '
-                                      + f'from {u} to {v}.')
 
-                uPrime = addI(u, 1)
-                vPrime = addI(v, 1)
-                rateNode = 'Null_n'
-                contactNode = 'Null_m'
-
-                newFlow['from'] = uPrime
-                newFlow['to'] = vPrime
-                newFlow['rate'] = rateNode
-                newFlow['contact'] = contactNode
-                newFlow['parameter'] = flow['parameter']
-
-                # newFlow['split'] = False
-
-                # newBatch_split = {
-                #     'from': addI(u, 0),
-                #     'to': addI(v, 0),
-                #     'rate': rateNode,
-                #     'contact': contactNode,
-                #     'parameter': flow['parameter'],
-                #     'split': True
-                # }
+                newFlow['from'] = addI(u, 1)
+                newFlow['to'] = addI(v, 1)
+                newFlow['rate'] = 'Null_n'
+                newFlow['contact'] = 'Null_m'
+                newFlow['parameter'] = f
 
                 newModel['flows'][flowName].append(newFlow.copy())
-                # newModel['flows'][flowName].append(newBatch_split.copy())
+
             ### CONTACTS ###
             if getFlowType(flow) == 'contact':
-                uPrime = addI(u, 1)
-                vPrime = addI(v, 1)
-                rateNode = joinNodeSum(list(map(
-                    lambda x: joinNodeSum([addI(x, j)
-                                           for j in range(2)]),
-                    vr)))
-                contactNode = joinNodeSum(list(map(
-                    lambda x: joinNodeSum([addI(x, j)
-                                           for j in range(2)]),
-                    vc)))
+                newVr = vr
+                newVc = vc
+                for comp in compsSorted:
+                    somme = joinNodeSum([addI(comp, j) for j in range(2)])
+                    newVr = newVr.replace(comp, somme)
+                    newVc = newVc.replace(comp, somme)
 
-                newFlow['from'] = uPrime
-                newFlow['to'] = vPrime
-                newFlow['rate'] = rateNode
-                newFlow['contact'] = contactNode
-                newFlow['parameter'] = flow['parameter']
-
-                # print('  ', newFlow)
+                newFlow['from'] = addI(u, 1)
+                newFlow['to'] = addI(v, 1)
+                newFlow['rate'] = newVr
+                newFlow['contact'] = newVc
+                newFlow['parameter'] = f
 
                 newModel['flows'][flowName].append(newFlow.copy())
 
-                compartName = f"Rt({flow['from']},{flow['to']})"
-                newModel["compartments"][compartName] = {
+                # Rt node and flow !
+                rtName = f"Rt_{flow['from']}{flow['to']}"
+                newModel["compartments"][rtName] = {
                     "susceptibility": 1,
                     "contagiousness": 1,
                     "initial_condition": 0
                 }
 
-                uPrime = 'Null_n'
-                vPrime = compartName
-                if autoInfections:
-                    rateNode = joinNodeSum(list(map(
-                        lambda x: joinNodeSum([addI(x, 0), addI(x, 1)]),
-                        vr
-                    )))
-                else:
-                    rateNode = joinNodeSum(list(map(
-                        lambda x: addI(x, 1),
-                        vr
-                    )))
-                contactNode = joinNodeSum(list(map(
-                    lambda x: addI(x, 0),
-                    vc
-                )))
+                newVr = vr
+                newVc = vc
+                for comp in compsSorted:
+                    somme = joinNodeSum([addI(comp, j) for j in range(2)])
+                    if autoInfections:
+                        newVr = newVr.replace(comp, somme)
+                    else:
+                        newVr = newVr.replace(comp, addI(comp, 1))
+                    newVc = newVc.replace(comp, addI(comp, 0))
 
-                newFlow['from'] = uPrime
-                newFlow['to'] = vPrime
-                newFlow['rate'] = rateNode
-                newFlow['contact'] = contactNode
+                newFlow['from'] = 'Null_n'
+                newFlow['to'] = rtName
+                newFlow['rate'] = newVr
+                newFlow['contact'] = newVc
                 newFlow['parameter'] = flow['parameter']
 
                 # print('  ', newFlow)
 
                 newModel['flows'][flowName].append(newFlow.copy())
 
+    # printModel(model['flows'])
+    # printModel(newModel['flows'])
+
     if printText:
         print(f'New model created in {time.time() - ti:.1e} seconds.\n')
 
-    writeModel(newModel, overWrite, printText)
+    if write:
+        writeModel(newModel, overWrite, printText)
     storeFunctions(newModel)
     return newModel
 
@@ -788,7 +767,7 @@ def analysis(model: dict, solution: np.ndarray, nodes: bool = False,
     if maximums:
         maximums = {}
         for i in list(map(lambda y: getCompartments(model).index(y),
-                          [x for x in getCompartments(model) if x.endswith(('^0'))])):
+                          [x for x in getCompartments(model) if x.endswith(('z0'))])):
             maximums[getCompartments(model)[i]] = np.max(solution[:, i])
         print(f'Maximums: {roundDict(maximums, 2)}')
 
@@ -797,7 +776,7 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
               t_span_sim: tuple = (0, 100), sub_sim: float = 100,
               scaledInfs=False, autoInfections=True,
               verification: bool = True, write: bool = True,
-              overWrite: bool = False, whereToAdd: str = 'contact',
+              overWrite: bool = False, whereToAdd: str = 'to',
               printText=True, printInit=False, printWarnings=True,
               r0=False, scaleMethod: str = 'Total',
               printR0: bool = False) -> tuple:
@@ -821,7 +800,7 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
     oldCompartments = getCompartments(modelOld)
 
     newModel = mod(modelOld, printWarnings, printText, autoInfections=autoInfections,
-                   write=write, overWrite=overWrite)
+                   overWrite=overWrite, write=write)
     solution, t_span = solve(newModel, t_span_rt, sub_sim)
     compartments = getCompartments(newModel)
 
@@ -939,7 +918,7 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
 def computeR0(modelName: str, t_span_sim: tuple = (0, 100),
               sub_sim: float = 100, scaledInfs=False,
               autoInfections: bool = True, write: bool = False,
-              overWrite: bool = False, whereToAdd: str = 'contact',
+              overWrite: bool = False, whereToAdd: str = 'to',
               printText=True, printInit: bool = True,
               printWarnings: bool = True, scaleMethod: str = 'Total',
               printR0: bool = False) -> dict:
@@ -963,7 +942,7 @@ def compare(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
             R0: float = 0, autoToPlot=[True], scaledToPlot=[False],
             t_span_sim: tuple = (0, 100), sub_sim: float = 100,
             verification: bool = False, write: bool = False,
-            overWrite: bool = False, whereToAdd: str = 'contact',
+            overWrite: bool = False, whereToAdd: str = 'to',
             printText=False, printInit=False, plotANA: bool = True,
             scaleMethod: str = 'Total',
             plotIndividual: bool = False,
@@ -1058,7 +1037,7 @@ def compare(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
     return rtCurves, infsNotScaled, rt_ANA
 
 
-def infs(model: dict, y0: dict, t: float, t0: float, whereToAdd: str = 'contact') -> dict:
+def infs(model: dict, y0: dict, t: float, t0: float, whereToAdd: str = 'to') -> dict:
     """Returns incidences."""
 
     weWant = getCompartments(model)
@@ -1069,25 +1048,44 @@ def infs(model: dict, y0: dict, t: float, t0: float, whereToAdd: str = 'contact'
 
     newInfections = {key: 0 for key in weWant}
     flows = model['flows']
-    N = sum(y0[x] for x in getPopNodes(model))
-    for _, flowType in enumerate(flows):
-        for _, flow in enumerate(flows[flowType]):
-            if getFlowType(flow) == 'contact':
-                v_r = flow['rate'].split('+')
-                v_c = flow['contact'].split('+')
 
-                rateImpact = sum(y0[x] for x in v_r)
-                contactImpact = sum(y0[x] for x in v_c)
-                # Normally v_r and v_c should not be null. We can use both directly.
-                param = getCoefForFlow(flow, t, t0)
-                contactsFlow = param * rateImpact * contactImpact / N
+    modelName = model['name']
+
+    # for flowType_index, flowType in enumerate(flows):
+    #     for flow_index, flow in enumerate(flows[flowType]):
+    #         pos = f"{flowType_index, flow_index}"
+    #         functions[modelName][pos] = {}
+    #         compartmentsVars = ', '.join(getCompartments(model))
+    #         populationSum = '+'.join(getPopNodes(model))
+
+    #         # Parameter
+    #         functions[modelName][pos]['f'] \
+    #             = eval("lambda t: " + flow['parameter'])
+
+    #         r = flow['rate'] if not flow['rate'].startswith('Null') else '1'
+    #         c = f"({flow['contact']}) / ({populationSum})" \
+    #             if not flow['contact'].startswith('Null') else '1'
+    #         # Rate (adjusted for if Null)
+    #         functions[modelName][pos]['r'] \
+    #             = eval(f"lambda {compartmentsVars}: " + r)
+    #         # Contact (adjusted for if Null)
+    #         functions[modelName][pos]['c'] \
+    #             = eval(f"lambda {compartmentsVars}: " + c)
+    for flowType_index, flowType in enumerate(flows):
+        for flow_index, flow in enumerate(flows[flowType]):
+            if getFlowType(flow) == 'contact':
+                pos = f"{flowType_index, flow_index}"
+                f = functions[modelName][pos]['f'](t)
+                r = functions[modelName][pos]['r'](**y0)
+                c = functions[modelName][pos]['c'](**y0)
+
                 node = flow[whereToAdd]
-                newInfections[node] += contactsFlow
+                newInfections[node] += f * r * c
 
     return newInfections
 
 
-def infsScaled(model: dict, y0: dict, t: float, t0: float, whereToAdd: str = 'contact') -> dict:
+def infsScaled(model: dict, y0: dict, t: float, t0: float, whereToAdd: str = 'to') -> dict:
     """Returns scaled incidences, sums to 1."""
 
     infections = infs(model, y0, t, t0, whereToAdd)
@@ -1132,6 +1130,7 @@ def infCurveScaled(model: dict, solution: np.ndarray, t_span: np.ndarray) -> np.
 
 def writeModel(newModel: dict, overWrite: bool = False, printText: bool = True) -> None:
     """Write model to file. This is useful to save modified models."""
+    print('Writing model')
     modelName = newModel['name']
     newFileName = modelName + '.json'
     if printText:
@@ -1200,6 +1199,20 @@ def doesIntersect(curve: np.ndarray, value: int, eps=10**-5):
     return len(find_intersections(curve, value, eps)) > 0
 
 
+def isModified(model):
+    """Check if model is modified or not."""
+
+    compartments = model['compartments']
+    modified = False
+    for x in compartments:
+        # On veut savoir si le modèle est modifié ou non pour savoir
+        # combien de couches il faut faire
+        if x.endswith(('z0, z1')) or x.startswith(('Rt')):
+            modified = True
+
+    return modified
+
+
 def createLaTeX(model: dict, layerDistance: str = ".8cm",
                 nodeDistance: str = "2cm", varDistance: str = ".1cm",
                 nullDistance: str = "1cm", baseAngle: int = 10,
@@ -1223,7 +1236,7 @@ def createLaTeX(model: dict, layerDistance: str = ".8cm",
     modelName = model['name']
     compartments = model['compartments']
     flows = model['flows']
-    modified = False
+    modified = isModified(model)
     joint = {}
     colors = {
         'rate': 'Green',
@@ -1232,19 +1245,13 @@ def createLaTeX(model: dict, layerDistance: str = ".8cm",
     }
 
     for x in compartments:
-        # On veut savoir si le modèle est modifié ou non pour savoir
-        # combien de couches il faut faire
-        if x.endswith(('^0, ^1')) or x.startswith(('Rt')):
-            modified = True
-
-    for x in compartments:
         # Ici on veut regrouper les variants ensemble pour les mettre proche
         if '_' in x and not x.startswith(('Null', 'Rt')):
             if modified:
-                i = int(x.split('^')[1])
+                i = int(x.split('z')[1])
                 compBase = x.split('_')[0]
                 joint[x] = [x for x in compartments
-                            if x.startswith(compBase + '_') and x.endswith(f'^{i}')] \
+                            if x.startswith(compBase + '_') and x.endswith(f'z{i}')] \
                     + [addI(compBase, i)]
 
             else:
@@ -1268,7 +1275,7 @@ def createLaTeX(model: dict, layerDistance: str = ".8cm",
     bases1 = []
     for x in compartments:
         # On créé ici E' (l'ensemble des arrêtes)
-        if (x.endswith('^0') or (not modified and
+        if (x.endswith('z0') or (not modified and
                                  not x.startswith(('Null', 'Rt')))) \
                 and x not in layer0:
             # Layer 0 (or normal layer in non-modified)
@@ -1308,7 +1315,7 @@ def createLaTeX(model: dict, layerDistance: str = ".8cm",
                 layer0.append(above)
                 layer0.append(below)
                 bases0.append(base)
-        elif x.endswith('^1') and x not in layer1:
+        elif x.endswith('z1') and x not in layer1:
             # on est dans layer 1
             if len(layer1) != 0:
                 # On regarde si on a point de référence ou pas dans layer 1
