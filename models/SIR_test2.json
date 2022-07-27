@@ -1,5 +1,5 @@
 {
-    "name": "SIR_test",
+    "name": "SIR_test2",
     "compartments": {
         "S": {
             "susceptibility": 1,
@@ -12,11 +12,6 @@
             "initial_condition": 1
         },
         "I_2": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 0
-        },
-        "I_3": {
             "susceptibility": 1,
             "contagiousness": 1,
             "initial_condition": 0
@@ -48,16 +43,9 @@
             },
             {
                 "from": "S",
-                "to": "I_1",
+                "to": "I_2",
                 "rate": "S",
                 "contact": "I_2",
-                "parameter": "0.2"
-            },
-            {
-                "from": "S",
-                "to": "I_1",
-                "rate": "S",
-                "contact": "I_3",
                 "parameter": "0.2"
             }
         ],
@@ -71,15 +59,8 @@
             },
             {
                 "from": "I_2",
-                "to": "I_3",
-                "rate": "I_2",
-                "contact": "Null_m",
-                "parameter": "0.1"
-            },
-            {
-                "from": "I_3",
                 "to": "R",
-                "rate": "I_3",
+                "rate": "I_2",
                 "contact": "Null_m",
                 "parameter": "0.1"
             }

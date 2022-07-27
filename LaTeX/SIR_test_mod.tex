@@ -2,69 +2,85 @@
     \centering
     \begin{tikzpicture}
         \node [Square] (S^0)  {$S^0$};
-        \node [Square] (S^1) [below=layerDistance of S^0] {$S^1$};
-        \node [Empty] (I^0) [right=nodeDistance of S^0] {};
-        \node [Square] (I_1^0) [above=varDistance of I^0] {$I_1^0$};
-        \node [Square] (I_2^0) [below=varDistance of I^0] {$I_2^0$};
-        \node [Empty] (I^1) [right=nodeDistance of S^1] {};
-        \node [Square] (I_1^1) [above=varDistance of I^1] {$I_1^1$};
-        \node [Square] (I_2^1) [below=varDistance of I^1] {$I_2^1$};
-        \node [Square] (R^0) [right=nodeDistance of I^0] {$R^0$};
-        \node [Square] (R^1) [right=nodeDistance of I_2^1] {$R^1$};
-        \node [Square] (RtSI_1) [left=nodeDistance of S^1] {$R_t$\\$(S,I_1)$};
-        \node [Square] (RtSI_2) [left=nodeDistance of S^0] {$R_t$\\$(S,I_2)$};
+        \node [Square] (S^1) [below=2cm of S^0] {$S^1$};
+        \node [Empty] (I_3^0) [right=2cm of S^0] {};
+        \node [Square] (I_1^0) [above=.5cm of I_3^0] {$I_1^0$};
+        \node [Square] (I_2^0) [below=.5cm of I_3^0] {$I_2^0$};
+        \node [Empty] (I_3^1) [right=2cm of S^1] {};
+        \node [Square] (I_1^1) [above=.5cm of I_3^1] {$I_1^1$};
+        \node [Square] (I_2^1) [below=.5cm of I_3^1] {$I_2^1$};
+        \node [Empty] (I_3^0) [right=2cm of I_3^0] {};
+        \node [Square] (I_1^0) [above=.5cm of I_3^0] {$I_1^0$};
+        \node [Square] (I_2^0) [below=.5cm of I_3^0] {$I_2^0$};
+        \node [Empty] (I_3^1) [right=2cm of I_2^1] {};
+        \node [Square] (I_1^1) [above=.5cm of I_3^1] {$I_1^1$};
+        \node [Square] (I_2^1) [below=.5cm of I_3^1] {$I_2^1$};
+        \node [Square] (R^0) [right=2cm of I_3^0] {$R^0$};
+        \node [Square] (R^1) [right=2cm of I_2^1] {$R^1$};
+        \node [Square] (RtSI_1) [left=2cm of S^1] {$R_t$\\$(S,I_1)$};
 
-        \node [Empty] (Nulln_S^0) [above left=nullDistance of S^0] {};
-        \node [Empty] (Nullm_S^0) [below right=nullDistance of S^0] {};
-        \node [Empty] (Nulln_I_1^0) [above left=nullDistance of I_1^0] {};
-        \node [Empty] (Nullm_I_1^0) [below right=nullDistance of I_1^0] {};
-        \node [Empty] (Nulln_I_2^0) [above left=nullDistance of I_2^0] {};
-        \node [Empty] (Nullm_I_2^0) [below right=nullDistance of I_2^0] {};
-        \node [Empty] (Nulln_R^0) [above left=nullDistance of R^0] {};
-        \node [Empty] (Nullm_R^0) [below right=nullDistance of R^0] {};
-        \node [Empty] (Nulln_S^1) [above left=nullDistance of S^1] {};
-        \node [Empty] (Nullm_S^1) [below right=nullDistance of S^1] {};
-        \node [Empty] (Nulln_I_1^1) [above left=nullDistance of I_1^1] {};
-        \node [Empty] (Nullm_I_1^1) [below right=nullDistance of I_1^1] {};
-        \node [Empty] (Nulln_I_2^1) [above left=nullDistance of I_2^1] {};
-        \node [Empty] (Nullm_I_2^1) [below right=nullDistance of I_2^1] {};
-        \node [Empty] (Nulln_R^1) [above left=nullDistance of R^1] {};
-        \node [Empty] (Nullm_R^1) [below right=nullDistance of R^1] {};
-        \node [Empty] (Nulln_RtSI_1) [above left=nullDistance of RtSI_1] {};
-        \node [Empty] (Nullm_RtSI_1) [below right=nullDistance of RtSI_1] {};
-        \node [Empty] (Nulln_RtSI_2) [above left=nullDistance of RtSI_2] {};
-        \node [Empty] (Nullm_RtSI_2) [below right=nullDistance of RtSI_2] {};
+        \node [Empty] (Nulln_S^0) [above left=.8cm of S^0] {};
+        \node [Empty] (Nullm_S^0) [below right=.8cm of S^0] {};
+        \node [Empty] (Nulln_I_1^0) [above left=.8cm of I_1^0] {};
+        \node [Empty] (Nullm_I_1^0) [below right=.8cm of I_1^0] {};
+        \node [Empty] (Nulln_I_2^0) [above left=.8cm of I_2^0] {};
+        \node [Empty] (Nullm_I_2^0) [below right=.8cm of I_2^0] {};
+        \node [Empty] (Nulln_R^0) [above left=.8cm of R^0] {};
+        \node [Empty] (Nullm_R^0) [below right=.8cm of R^0] {};
+        \node [Empty] (Nulln_S^1) [above left=.8cm of S^1] {};
+        \node [Empty] (Nullm_S^1) [below right=.8cm of S^1] {};
+        \node [Empty] (Nulln_I_1^1) [above left=.8cm of I_1^1] {};
+        \node [Empty] (Nullm_I_1^1) [below right=.8cm of I_1^1] {};
+        \node [Empty] (Nulln_I_2^1) [above left=.8cm of I_2^1] {};
+        \node [Empty] (Nullm_I_2^1) [below right=.8cm of I_2^1] {};
+        \node [Empty] (Nulln_R^1) [above left=.8cm of R^1] {};
+        \node [Empty] (Nullm_R^1) [below right=.8cm of R^1] {};
+        \node [Empty] (Nulln_RtSI_1) [above left=.8cm of RtSI_1] {};
+        \node [Empty] (Nullm_RtSI_1) [below right=.8cm of RtSI_1] {};
 
         \path [Arrow]
-            (S^1) edge [bend left=baseAngle, Plum] node [Empty, pos=c] (S^1-I_1^1-r) {} node [Empty, pos=o] (S^1-I_1^1-c) {} (I_1^1)
-            (Nulln_RtSI_1) edge [bend left=baseAngle, Black] node [Empty, pos=3/5] (Nulln_RtSI_1-RtSI_1-r) {} node [Empty, pos=2/5] (Nulln_RtSI_1-RtSI_1-c) {} (RtSI_1)
-            (S^1) edge [bend left=baseAngle, Plum] node [Empty, pos=c] (S^1-I_2^1-r) {} node [Empty, pos=o] (S^1-I_2^1-c) {} (I_2^1)
-            (Nulln_RtSI_2) edge [bend left=baseAngle, Black] node [Empty, pos=3/5] (Nulln_RtSI_2-RtSI_2-r) {} node [Empty, pos=2/5] (Nulln_RtSI_2-RtSI_2-c) {} (RtSI_2)
-            (I_1^0) edge [bend left=baseAngle, Red] node [Empty, pos=2/5] (I_1^0-I_2^0-r) {} node [Empty, pos=3/5] (I_1^0-I_2^0-c) {} (I_2^0)
-            (I_1^1) edge [bend left=baseAngle, Red] node [Empty, pos=2/5] (I_1^1-I_2^1-r) {} node [Empty, pos=3/5] (I_1^1-I_2^1-c) {} (I_2^1)
-            (I_2^0) edge [bend left=baseAngle, Red] node [Empty, pos=2/5] (I_2^0-R^0-r) {} node [Empty, pos=3/5] (I_2^0-R^0-c) {} (R^0)
-            (I_2^1) edge [bend left=baseAngle, Red] node [Empty, pos=2/5] (I_2^1-R^1-r) {} node [Empty, pos=3/5] (I_2^1-R^1-c) {} (R^1);
+            (S^1) edge [bend left=10, Plum] node [Empty, pos=2/5] (S^1-I_1^1-r) {} node [Empty, pos=3/5] (S^1-I_1^1-c) {} (I_1^1)
+            (Nulln_RtSI_1) edge [bend left=10, Black] node [Empty, pos=3/5] (Nulln_RtSI_1-RtSI_1-r) {} node [Empty, pos=2/5] (Nulln_RtSI_1-RtSI_1-c) {} (RtSI_1)
+            (S^1) edge [bend left=10, Plum] node [Empty, pos=2/5] (S^1-I_1^1-r) {} node [Empty, pos=3/5] (S^1-I_1^1-c) {} (I_1^1)
+            (Nulln_RtSI_1) edge [bend left=10, Black] node [Empty, pos=3/5] (Nulln_RtSI_1-RtSI_1-r) {} node [Empty, pos=2/5] (Nulln_RtSI_1-RtSI_1-c) {} (RtSI_1)
+            (S^1) edge [bend left=10, Plum] node [Empty, pos=2/5] (S^1-I_1^1-r) {} node [Empty, pos=3/5] (S^1-I_1^1-c) {} (I_1^1)
+            (Nulln_RtSI_1) edge [bend left=10, Black] node [Empty, pos=3/5] (Nulln_RtSI_1-RtSI_1-r) {} node [Empty, pos=2/5] (Nulln_RtSI_1-RtSI_1-c) {} (RtSI_1)
+            (I_1^0) edge [bend left=10, Red] node [Empty, pos=2/5] (I_1^0-I_2^0-r) {} node [Empty, pos=3/5] (I_1^0-I_2^0-c) {} (I_2^0)
+            (I_1^1) edge [bend left=10, Red] node [Empty, pos=2/5] (I_1^1-I_2^1-r) {} node [Empty, pos=3/5] (I_1^1-I_2^1-c) {} (I_2^1)
+            (I_2^0) edge [bend left=10, Red] node [Empty, pos=2/5] (I_2^0-I_3^0-r) {} node [Empty, pos=3/5] (I_2^0-I_3^0-c) {} (I_3^0)
+            (I_2^1) edge [bend left=10, Red] node [Empty, pos=2/5] (I_2^1-I_3^1-r) {} node [Empty, pos=3/5] (I_2^1-I_3^1-c) {} (I_3^1)
+            (I_3^0) edge [bend left=10, Red] node [Empty, pos=2/5] (I_3^0-R^0-r) {} node [Empty, pos=3/5] (I_3^0-R^0-c) {} (R^0)
+            (I_3^1) edge [bend left=10, Red] node [Empty, pos=2/5] (I_3^1-R^1-r) {} node [Empty, pos=3/5] (I_3^1-R^1-c) {} (R^1);
 
         \path [Dotted]
             (S^1-I_1^1-r) edge [bend left=10] (S^0)
             (S^1-I_1^1-r) edge [bend right=30] (S^1)
             (Nulln_RtSI_1-RtSI_1-r) edge [bend left=20] (S^0)
             (Nulln_RtSI_1-RtSI_1-r) edge [bend left=20] (S^1)
-            (S^1-I_2^1-r) edge [bend left=10] (S^0)
-            (S^1-I_2^1-r) edge [bend right=30] (S^1)
-            (Nulln_RtSI_2-RtSI_2-r) edge [bend left=20] (S^0)
-            (Nulln_RtSI_2-RtSI_2-r) edge [bend left=20] (S^1)
+            (S^1-I_1^1-r) edge [bend left=10] (S^0)
+            (S^1-I_1^1-r) edge [bend right=30] (S^1)
+            (Nulln_RtSI_1-RtSI_1-r) edge [bend left=20] (S^0)
+            (Nulln_RtSI_1-RtSI_1-r) edge [bend left=20] (S^1)
+            (S^1-I_1^1-r) edge [bend left=10] (S^0)
+            (S^1-I_1^1-r) edge [bend right=30] (S^1)
+            (Nulln_RtSI_1-RtSI_1-r) edge [bend left=20] (S^0)
+            (Nulln_RtSI_1-RtSI_1-r) edge [bend left=20] (S^1)
             (I_1^0-I_2^0-r) edge [bend right=30] (I_1^0)
             (I_1^1-I_2^1-r) edge [bend right=30] (I_1^1)
-            (I_2^0-R^0-r) edge [bend right=30] (I_2^0)
-            (I_2^1-R^1-r) edge [bend right=30] (I_2^1);
+            (I_2^0-I_3^0-r) edge [bend right=30] (I_2^0)
+            (I_2^1-I_3^1-r) edge [bend right=30] (I_2^1)
+            (I_3^0-R^0-r) edge [bend right=30] (I_3^0)
+            (I_3^1-R^1-r) edge [bend right=30] (I_3^1);
 
         \path [Dashed]
             (S^1-I_1^1-c) edge [bend right=10] (I_1^0)
             (S^1-I_1^1-c) edge [bend left=30] (I_1^1)
             (Nulln_RtSI_1-RtSI_1-c) edge [bend left=30] (I_1^0)
-            (S^1-I_2^1-c) edge [bend right=10] (I_2^0)
-            (S^1-I_2^1-c) edge [bend left=30] (I_2^1)
-            (Nulln_RtSI_2-RtSI_2-c) edge [bend left=30] (I_2^0);
+            (S^1-I_1^1-c) edge [bend right=10] (I_2^0)
+            (S^1-I_1^1-c) edge [bend left=30] (I_2^1)
+            (Nulln_RtSI_1-RtSI_1-c) edge [bend left=30] (I_2^0)
+            (S^1-I_1^1-c) edge [bend right=10] (I_3^0)
+            (S^1-I_1^1-c) edge [bend left=30] (I_3^1)
+            (Nulln_RtSI_1-RtSI_1-c) edge [bend left=30] (I_3^0);
     \end{tikzpicture}
 \end{figure}

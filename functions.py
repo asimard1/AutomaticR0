@@ -211,7 +211,7 @@ def loadModel(name: str, overWrite=False, printText: bool = True) -> dict:
 
 def initialize(model: dict, y0: dict, t: float, t0: float, scaled=False, originalModel:
                dict = None, printText: bool = True,
-               whereToAdd: str = 'contact') -> None:
+               whereToAdd: str = 'to') -> None:
     """This modifies "model", but doesn't modify the file it comes from."""
 
     if originalModel != None:
@@ -276,7 +276,7 @@ def getFlowsByCompartments(model: dict) -> list:
             rate_i = list(map(compartments.index,
                           [x for x in flow['rate'].split('+') if not x.startswith('Null')]))
             contact_i = list(map(compartments.index,
-                                [x for x in flow['contact'].split('+') if not x.startswith('Null')]))
+                                 [x for x in flow['contact'].split('+') if not x.startswith('Null')]))
             term = Flux((flowType_index, flow_index), rate_i, contact_i)
 
             try:
@@ -357,7 +357,8 @@ def getCoefForFlux(model: dict, flux: Flux, t: float, t0: float) -> float:
     flowType = flowTypes[flux.coef_indices[0]]
     flowJson = flows[flowType][flux.coef_indices[1]]
 
-    coef = functions[model['name']][f"{flux.coef_indices[0], flux.coef_indices[1]}"]
+    coef = functions[model['name']
+                     ][f"{flux.coef_indices[0], flux.coef_indices[1]}"]
     return coef(t)
 
 
@@ -800,7 +801,7 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
               t_span_sim: tuple = (0, 100), sub_sim: float = 100,
               scaledInfs=False, autoInfections=True,
               verification: bool = True, write: bool = True,
-              overWrite: bool = False, whereToAdd: str = 'contact',
+              overWrite: bool = False, whereToAdd: str = 'to',
               printText=True, printInit=False, printWarnings=True,
               r0=False, scaleMethod: str = 'Total',
               printR0: bool = False) -> tuple:
@@ -872,7 +873,7 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
         init = {key: solutionOld[pointIndex, i]
                 for i, key in enumerate(oldCompartments)}
         initialize(newModel, init, pointIndex, pointIndex, scaledInfs, modelOld,
-                   printText=printInit and t == t_span_rt[0], whereToAdd=whereToAdd)
+                   printText=printInit and t == t_span_rt[0], whereToAdd=whereToAdd)  # and t == t_span_rt[0]
 
         solutionTemp, t_spanTemp = solve(newModel, t_span_sim, sub_sim)
 
@@ -942,7 +943,7 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
 def computeR0(modelName: str, t_span_sim: tuple = (0, 100),
               sub_sim: float = 100, scaledInfs=False,
               autoInfections: bool = True, write: bool = False,
-              overWrite: bool = False, whereToAdd: str = 'contact',
+              overWrite: bool = False, whereToAdd: str = 'to',
               printText=True, printInit: bool = True,
               printWarnings: bool = True, scaleMethod: str = 'Total',
               printR0: bool = False) -> dict:
@@ -966,7 +967,7 @@ def compare(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
             R0: float = 0, autoToPlot=[True], scaledToPlot=[False],
             t_span_sim: tuple = (0, 100), sub_sim: float = 100,
             verification: bool = False, write: bool = False,
-            overWrite: bool = False, whereToAdd: str = 'contact',
+            overWrite: bool = False, whereToAdd: str = 'to',
             printText=False, printInit=False, plotANA: bool = True,
             scaleMethod: str = 'Total',
             plotIndividual: bool = False,
@@ -984,7 +985,7 @@ def compare(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
                 linewidth=WIDTH, dashes=DASH)
 
     i = 0
-    rtCurves = {i: None for i in range(4)}
+    rtCurves = {i: {} for i in range(4)}
     plotedInfsLine = False
 
     for auto in autoToPlot:
@@ -1015,19 +1016,21 @@ def compare(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
             rt = np.zeros_like(rt_times, dtype='float64')
             for rtNode in getRtNodes(mod(model, False, False)):
                 rt_rtNode = np.array([values[key][rtNode] for key in values])
+                rtCurves[i][rtNode] = rt_rtNode
                 if len(getRtNodes(mod(model, False, False))) > 1 \
                         and i == 0 \
                         and plotIndividual:
                     plt.plot(rt_times, rt_rtNode, label=rtNode)
                 rt += rt_rtNode
 
-            rtCurves[i] = rt
+            rtCurves[i]['Sum'] = rt
 
             print(f'Scaled: {scaled}, Auto: {auto}')
             if doesIntersect(rt, 1):
                 idx_infs = find_nearest(infsScaled, 1)
                 xTimeInfs = t_span[idx_infs]
                 idx_rt = find_intersections(rt, 1)[0]
+                print(idx_rt)
                 try:
                     xTimeRt = rt_times[idx_rt]
                 except:
@@ -1058,10 +1061,10 @@ def compare(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
     # plt.ylim(bottom=.1)
     plt.legend(loc='best')
 
-    return rtCurves, infsNotScaled, rt_ANA
+    return rt_times, rtCurves, infsNotScaled
 
 
-def infs(model: dict, y0: dict, t: float, t0: float, whereToAdd: str = 'contact') -> dict:
+def infs(model: dict, y0: dict, t: float, t0: float, whereToAdd: str = 'to') -> dict:
     """Returns incidences."""
 
     weWant = getCompartments(model)
@@ -1079,8 +1082,10 @@ def infs(model: dict, y0: dict, t: float, t0: float, whereToAdd: str = 'contact'
                 v_r = flow['rate'].split('+')
                 v_c = flow['contact'].split('+')
 
-                rateImpact = sum(y0[x] for x in v_r if not x.startswith('Null'))
-                contactImpact = sum(y0[x] for x in v_c if not x.startswith('Null'))
+                rateImpact = sum(y0[x]
+                                 for x in v_r if not x.startswith('Null'))
+                contactImpact = sum(y0[x]
+                                    for x in v_c if not x.startswith('Null'))
                 # Normally v_r and v_c should not be null. We can use both directly.
                 param = getCoefForFlow(flow, t, t0)
                 contactsFlow = param * rateImpact * contactImpact / N
@@ -1092,7 +1097,7 @@ def infs(model: dict, y0: dict, t: float, t0: float, whereToAdd: str = 'contact'
     return newInfections
 
 
-def infsScaled(model: dict, y0: dict, t: float, t0: float, whereToAdd: str = 'contact') -> dict:
+def infsScaled(model: dict, y0: dict, t: float, t0: float, whereToAdd: str = 'to') -> dict:
     """Returns scaled incidences, sums to 1."""
 
     infections = infs(model, y0, t, t0, whereToAdd)
@@ -1176,30 +1181,22 @@ def find_intersections(array: np.ndarray, value: float, eps=10**-5) -> list:
     """Finds intersection between curve and value."""
 
     newCurve = array - value
-    products = newCurve[1:] * newCurve[:-1]
-
-    where = np.where(products < - eps)[0]
+    where = np.where(abs(newCurve) > eps)[0]
 
     newWhere = []
-    for idx in where:
-        diffIdx = abs(array[idx] - value)
-        diffIdx2 = abs(array[idx + 1] - value)
 
-        if 1/2 <= diffIdx / diffIdx2 <= 2:
-            # Les erreurs sont "assez proches" l'une de l'autre
-            if idx + 1/2 not in newWhere:
-                newWhere.append(idx + 1/2)
-        elif diffIdx < diffIdx2:
-            if idx not in newWhere:
-                newWhere.append(idx)
-        else:
-            if idx + 1 not in newWhere:
-                newWhere.append(idx + 1)
+    newCurveEps = newCurve[where]
+
+    for i in range(len(newCurveEps) - 1):
+        product = newCurveEps[i] * newCurveEps[i + 1]
+
+        if product < 0:
+            newWhere.append((where[i] + where[i+1]) / 2)
 
     return newWhere
 
 
-def doesIntersect(curve: np.ndarray, value: int, eps=10**-5):
+def doesIntersect(curve: np.ndarray, value: int, eps=10**-3):
     """Checks if curve intersects y = value."""
 
     return len(find_intersections(curve, value, eps)) > 0
