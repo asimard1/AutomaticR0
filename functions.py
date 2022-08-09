@@ -968,7 +968,11 @@ def compare(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
             t_span_sim: tuple = (0, 100), sub_sim: float = 100,
             verification: bool = False, write: bool = False,
             overWrite: bool = False, whereToAdd: str = 'to',
-            printText=False, printInit=False, plotANA: bool = True,
+            printText=False, printInit=False,
+            plotANA: bool = True,
+            susceptibles: list = [0],
+            plotANA_v2: bool = False,
+            infected: list = [1],
             scaleMethod: str = 'Total',
             plotIndividual: bool = False,
             printR0: bool = False, plotScaled=True) -> None:
@@ -1000,16 +1004,22 @@ def compare(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
                 printR0=printR0)
 
             if i == 0:
-                rt_ANA = R0 * solution[:, 0] / \
+                rt_ANA = R0 * np.sum(solution[:, susceptibles], axis=1) / \
                     np.array([getPopulation(model, x)['Sum']
                               for x in solution])
                 if plotANA:
                     plt.plot(t_span, rt_ANA, label='ANA')
+                rt_ANA_v2 = R0 * (np.sum(solution[:, susceptibles], axis=1)
+                                  - np.sum(solution[:, infected], axis=1)) / \
+                    np.array([getPopulation(model, x)['Sum']
+                              for x in solution])
+                if plotANA_v2:
+                    plt.plot(t_span, rt_ANA_v2, label='ANA_v2')
 
                 infsScaled = infCurveScaled(model, solution, t_span)
                 infsNotScaled = infCurve(model, solution, t_span)
                 plt.plot(
-                    t_span, infsScaled if plotScaled else infsNotScaled, label='Inf (scaled)')
+                    t_span, infsScaled if plotScaled else infsNotScaled, label='Inci (scaled)' if plotScaled else 'Inci')
 
                 rt_times = np.array([key for key in values])
 
@@ -1030,12 +1040,47 @@ def compare(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
                 idx_infs = find_nearest(infsScaled, 1)
                 xTimeInfs = t_span[idx_infs]
                 idx_rt = find_intersections(rt, 1)[0]
-                print(idx_rt)
                 try:
                     xTimeRt = rt_times[idx_rt]
                 except:
                     xTimeRt = (rt_times[int(idx_rt)] +
                                rt_times[int(idx_rt + 1)]) / 2
+                print(f'Rt = 1 at {xTimeRt:.3f}')
+                if doesIntersect(rt_ANA_v2, 1):
+                    idx_rt_ANA_v2 = find_intersections(rt_ANA_v2, 1)[0]
+                    try:
+                        xTimeRt_ANA_v2 = t_span[idx_rt_ANA_v2]
+                    except:
+                        xTimeRt_ANA_v2 = (t_span[int(idx_rt_ANA_v2)] +
+                                          t_span[int(idx_rt_ANA_v2 + 1)]) / 2
+                    print(f'Rt_ANA_v2 = 1 at {xTimeRt_ANA_v2:.3f}')
+
+                print(f'Lower bound respected? ' +
+                      ('Yes' if xTimeRt_ANA_v2 < xTimeRt else 'No'))
+
+                idxs_after_rt_eq_1 = np.where(t_span >= xTimeRt)[0]
+                times_after_rt_eq_1 = t_span[idxs_after_rt_eq_1]
+
+                # CHECK BOUND !!
+                diff_at_moment = np.sum(
+                    solution[idxs_after_rt_eq_1[0] - 1, susceptibles]) - np.sum(
+                    solution[idxs_after_rt_eq_1[0] - 1, infected])
+                susceptibles_after = np.sum(
+                    solution[idxs_after_rt_eq_1][:, susceptibles], axis=1)
+                idx_problems = np.where(susceptibles_after < diff_at_moment)[0]
+
+                prob_times = times_after_rt_eq_1[idx_problems]
+                print(f'No. of moments where susceptibles < difference (i.e. problems): '
+                      + f'{len(prob_times)} / {len(susceptibles_after)}')
+
+                print(
+                    f'Difference (S - I) at time of importance: {diff_at_moment:.3f}')
+                if len(idx_problems) > 0:
+                    print(f'Susceptibles at problem time:             ' +
+                          f'{susceptibles_after[idx_problems[0]]:.3f}')
+                    print(f'Susceptibles just before:                 ' +
+                          f'{susceptibles_after[idx_problems[0] - 1]:.3f}')
+
                 print(f'Time difference: {np.abs(xTimeInfs - xTimeRt)}')
                 if not plotedInfsLine:
                     plt.axvline(x=xTimeInfs, linestyle=':', color='grey',
@@ -1057,6 +1102,7 @@ def compare(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
                      linestyle=ls)
 
             i += 1
+    plt.title(modelName)
 
     # plt.ylim(bottom=.1)
     plt.legend(loc='best')
