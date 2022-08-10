@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.integrate import odeint, quad
+from scipy.integrate import odeint
 from dataclasses import dataclass
 from typing import Tuple
 from math import *
@@ -29,6 +29,16 @@ functions = {}
 
 
 def storeFunctions(model: dict):
+    """
+    Stores all functions from model into dictionary.
+
+    Inputs:
+        model: dictionary
+            Model for which we store the functions.
+
+    Outputs:
+        None.
+    """
     global functions
     modelName = model['name']
     functions[modelName] = {}
@@ -36,22 +46,51 @@ def storeFunctions(model: dict):
     flows = model['flows']
     for flowType_index, flowType in enumerate(flows):
         for flow_index, flow in enumerate(flows[flowType]):
-            functions[modelName][f"{flowType_index, flow_index}"] = eval(
-                'lambda t: ' + flow['parameter'])
+            functions[modelName][f"{flowType_index, flow_index}"] \
+                = eval('lambda t: ' + flow['parameter'])
 
 
 def removeDuplicates(liste: list) -> list:
-    """Retourne la liste sans répétitions."""
-    return list(dict.fromkeys(liste))
+    """
+    Removes duplicates from list.
+
+    Inputs:
+        liste: list
+            List to modify.
+
+    Outputs:
+        newList: list
+            List without duplicates.
+    """
+    newList = list(dict.fromkeys(liste))
+    return newList
 
 
 def rreplace(s, old, new, n):
-    """Taken from stack exchange, replaces last n occurences."""
+    """
+    Replaces last n occurences in string.
+
+    Inputs:
+        s: string
+            Original string to modify.
+        old: string
+            What to replace in string.
+        new: string
+            What to replace with.
+        n: int
+            Number of instances to replace.
+
+    Outputs:
+        newString: string
+            Modified string.
+    """
     li = s.rsplit(old, n)
-    return new.join(li)
+    newString = new.join(li)
+    return newString
 
 
-def plotCurves(xPoints: np.ndarray or list, curves, toPlot: list, labels: list,
+def plotCurves(xPoints: np.ndarray or list, curves: np.ndarray or list,
+               toPlot: list, labels: list,
                title: str = 'Infection curves', style: list = None,
                xlabel: str = 'Time', ylabel: str = 'Number of people',
                scales: list = ['linear', 'linear'],
@@ -61,8 +100,41 @@ def plotCurves(xPoints: np.ndarray or list, curves, toPlot: list, labels: list,
     Plots given curves. If xPoints are the same for all curves, give only np.ndarray.
     Otherwise, a list of np.ndarrays works, in which case it has to be given for every curve.
     Other options (title, labels, scales, etc.) are the same as for matplotlib.pyplot.plot function.
+    Need to use 
+
+    Inputs:
+        xPoints: np.ndarray or list
+            Points to use for x axis.
+        curves: np.ndarray or list
+            Points to use for y axis.
+        toPlot: list
+            Curves to plot in given curves.
+        labels: list
+            Labels to use for given curves.
+        title: string
+            Title for graph.
+        style: list
+            Styles to use for each curve.
+        xLabel: str
+            Label of x axis.
+        yLabel: str
+            Label of y axis.
+        scales: list
+            Scales to use for each axis.
+        fig: figure or axes
+            Where to draw the curves.
+        legendLoc: str
+            Where to place legend.
+        colors: list
+            Colors to use for each curve.
+        ycolor: str
+            Color to use for y axis.
+
+    Ouputs:
+        None.
     """
 
+    # Create missing lists if given None.
     liste = list(range(max(toPlot) + 1))
     if style == None:
         style = ['-' for _ in liste]
@@ -70,10 +142,14 @@ def plotCurves(xPoints: np.ndarray or list, curves, toPlot: list, labels: list,
         colors = [None for _ in liste]
 
     k = 0
+    # TODO rewrite using try except
     if type(xPoints) is np.ndarray:  # Only one set of x coordinates
         for curve in toPlot:
             if labels == None:
-                fig.plot(xPoints, curves[curve], style[curve], c=colors[curve])
+                fig.plot(xPoints,
+                         curves[curve],
+                         style[curve],
+                         c=colors[curve])
                 k += 1
             else:
                 fig.plot(xPoints,
@@ -85,12 +161,17 @@ def plotCurves(xPoints: np.ndarray or list, curves, toPlot: list, labels: list,
     else:  # Different time scales
         for curve in toPlot:
             if labels == None:
-                fig.plot(xPoints[curve], curves[curve],
-                         style[curve], c=colors[curve])
+                fig.plot(xPoints[curve],
+                         curves[curve],
+                         style[curve],
+                         c=colors[curve])
                 k += 1
             else:
-                fig.plot(xPoints[curve], curves[curve],
-                         style[curve], label=labels[curve], c=colors[curve])
+                fig.plot(xPoints[curve],
+                         curves[curve],
+                         style[curve],
+                         label=labels[curve],
+                         c=colors[curve])
                 k += 1
 
     if labels != None:
@@ -110,40 +191,35 @@ def plotCurves(xPoints: np.ndarray or list, curves, toPlot: list, labels: list,
         fig.set_yscale(scales[1])
 
 
-def verifyModel(model: dict, printText: bool = True) -> None:
-    """Verifies if model has the right properties. Might not be complete."""
+def verifyModel(model: dict, modelName: str, printText: bool = True) -> None:
+    """
+    Verifies if model has the right properties. Might not be complete.
+
+    Inputs:
+        model: dict
+            Model to verify.
+        modelFile: str
+            Name to compare model with.
+        printText: bool
+            Whether or not to print debug text.
+
+    Ouputs:
+        None.
+    """
+
     if "Null_n" not in model['compartments'] or "Null_m" not in model['compartments']:
         raise Exception('Model doesn\'t have both Null nodes.')
 
-    # TODO try to get name of file to confirm that the "name" parameter fits!
+    if model['name'] != modelName:
+        raise Exception(f"Model doesn\'t have right name in file. "
+                        + f"Name in file: {model['name']}. Wanted name: {modelName}.")
 
     missing = []
     flows = model['flows']
     compartments = getCompartments(model)
     for flowType_index, flowType in enumerate(flows):
         for flow_index, flow in enumerate(flows[flowType]):
-            # TODO check that flows don't have v_r and v_c that contain nulls but aren't nulls!
-            # if 'rate' in flow:
-            #     v_r = flow['rate'].split('+')
-            #     for x in v_r:
-            #         if x not in compartments:
-            #             raise Exception(
-            #                 f'Compartment {x} found in rates, not in compartment list.')
-            #         if x.startswith('Null'):
-            #             if len(v_r) > 1:
-            #                 raise Exception(
-            #                     f'Some flow has a rate which is a sum containing {x}.')
-            # if 'contact' in flow:
-            #     v_c = flow['contact'].split('+')
-            #     for x in v_c:
-            #         if x not in compartments:
-            #             raise Exception(
-            #                 f'Compartment {x} found in contacts, not in compartment list.')
-            #         if x.startswith('Null'):
-            #             if len(v_c) > 1:
-            #                 raise Exception(
-            #                     f'Some flow has a contact which is a sum containing {x}.')
-
+            # Check for missing keys in flows
             keys = list(flow.keys())
             for p in ['from', 'to', 'rate', 'contact', 'parameter']:
                 if p not in keys and p not in missing:
@@ -160,9 +236,19 @@ def verifyModel(model: dict, printText: bool = True) -> None:
 
 def loadModel(name: str, overWrite=False, printText: bool = True) -> dict:
     """
-    Envoie un dictionaire contenant le fichier json "name.json".
-    Seulement besoin d'appeler sur le nom du modèle.
-    Par exemple, loadModel('SIR') fonctionne.
+    Loads model from file.
+
+    Inputs:
+        name: str
+            Name of model to load. Function will load model [name].json.
+        overWrite: bool
+            Whether or not to overwrite file after loading model. (Might fix formatting.)
+        printText: bool
+            Whether or not to print debug text.
+
+    Outputs:
+        model: dict
+            Model loaded.
     """
     with open(f'models/{name}.json') as file:
         model = json.load(file)
@@ -202,7 +288,7 @@ def loadModel(name: str, overWrite=False, printText: bool = True) -> dict:
         print('Model should be fixed...')
 
     # Verify
-    verifyModel(model, printText=printText)
+    verifyModel(model, name, printText=printText)
     writeModel(model, overWrite=overWrite, printText=printText)
     # Store functions in dictionary
     storeFunctions(model)
