@@ -975,6 +975,7 @@ def compare(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
             infected: list = [1],
             scaleMethod: str = 'Total',
             plotIndividual: bool = False,
+            plotBound: bool = False,
             printR0: bool = False, plotScaled=True) -> None:
     """Does all possible scenarios"""
 
@@ -985,6 +986,8 @@ def compare(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
     fig = plt.figure()
     # plt.yscale('log')
 
+    plt.axhline(y=0, linestyle='--', color='grey',
+                linewidth=WIDTH, dashes=DASH)
     plt.axhline(y=1, linestyle='--', color='grey',
                 linewidth=WIDTH, dashes=DASH)
 
@@ -1004,17 +1007,21 @@ def compare(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
                 printR0=printR0)
 
             if i == 0:
-                rt_ANA = R0 * np.sum(solution[:, susceptibles], axis=1) / \
+                susceptiblesDivPop = np.sum(solution[:, susceptibles], axis=1) / \
                     np.array([getPopulation(model, x)['Sum']
                               for x in solution])
+                infectedDivPop = np.sum(solution[:, infected], axis=1) / \
+                    np.array([getPopulation(model, x)['Sum']
+                              for x in solution])
+                rt_ANA = R0 * susceptiblesDivPop
                 if plotANA:
                     plt.plot(t_span, rt_ANA, label='ANA')
-                rt_ANA_v2 = R0 * (np.sum(solution[:, susceptibles], axis=1)
-                                  - np.sum(solution[:, infected], axis=1)) / \
-                    np.array([getPopulation(model, x)['Sum']
-                              for x in solution])
+                rt_ANA_v2 = R0 * (susceptiblesDivPop - infectedDivPop)
                 if plotANA_v2:
                     plt.plot(t_span, rt_ANA_v2, label='ANA_v2')
+                bound = rt_ANA * (1 - R0 * infectedDivPop)
+                if plotBound:
+                    plt.plot(t_span, bound, label='Bound')
 
                 infsScaled = infCurveScaled(model, solution, t_span)
                 infsNotScaled = infCurve(model, solution, t_span)
