@@ -1525,8 +1525,6 @@ def compare(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
         plt.axvline(x=xTimeRt, linestyle='--', color='grey',
                     linewidth=WIDTH, dashes=DASH)
 
-        # print(f'rt time: {xTimeRt}, inf time: {xTimeInfs}')
-        # print(f'rt intersections: {find_intersections(rt, 1)}')
     else:
         print('Time difference is not relevant, '
               + 'no intersection between rt and 1.')
@@ -1544,7 +1542,23 @@ def compare(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
 
 
 def infs(model: dict, y0: dict, t: float, whereToAdd: str = 'to') -> dict:
-    """Returns incidences."""
+    """
+    Returns incidence value for y0.
+
+    Inputs:
+        model: dict
+            Model of interest.
+        y0: dict
+            Value for each compartment of model.
+        t: float
+            Time at which we compute incidences.
+        whereToAdd: str
+            Where to add new infections.
+
+    Outputs:
+        newInfections: dict
+            Incidences created in each compartment of the model.
+    """
 
     weWant = getCompartments(model)
     if sorted(list(y0.keys())) != sorted(weWant):
@@ -1577,7 +1591,23 @@ def infs(model: dict, y0: dict, t: float, whereToAdd: str = 'to') -> dict:
 
 
 def infsScaled(model: dict, y0: dict, t: float, whereToAdd: str = 'to') -> dict:
-    """Returns scaled incidences, sums to 1."""
+    """
+    Returns scaled incidence value for y0.
+
+    Inputs:
+        model: dict
+            Model of interest.
+        y0: dict
+            Value for each compartment of model.
+        t: float
+            Time at which we compute incidences.
+        whereToAdd: str
+            Where to add new infections.
+
+    Outputs:
+        newInfections: dict
+            Scaled incidences created in each compartment of the model.
+    """
 
     infections = infs(model, y0, t, whereToAdd)
     weWant = getCompartments(model)
@@ -1591,7 +1621,20 @@ def infsScaled(model: dict, y0: dict, t: float, whereToAdd: str = 'to') -> dict:
 
 
 def totInfs(model: dict, state: np.ndarray, t: float) -> np.ndarray:
-    """Returns total infected for a state."""
+    """
+    Returns total incidence for a state.
+
+        model: dict
+            Model of interest.
+        state: np.ndarray
+            Value for each compartment of model.
+        t: float
+            Time at which we compute incidences.
+
+    Outputs:
+        infectious: float
+            Number of incidences created in the model at time t.
+    """
 
     if len(state.shape) > 1:
         raise Exception(
@@ -1600,11 +1643,26 @@ def totInfs(model: dict, state: np.ndarray, t: float) -> np.ndarray:
     y0 = {comp: state[i] for i, comp in enumerate(weWant)}
     infections = infs(model, y0, t, whereToAdd='to')
 
-    return sum(infections[comp] for comp in weWant)
+    infectious = sum(infections[comp] for comp in weWant)
+    return infectious
 
 
 def infCurve(model: dict, solution: np.ndarray, t_span: np.ndarray) -> np.ndarray:
-    """Returns curve of total infected."""
+    """
+    Returns curve of incidence for given solution.
+
+    Inputs:
+        model: dict
+            Model of interest.
+        solution: np.ndarray
+            Solution given by solve function.
+        t_span: np.ndarray
+            Time frame for solution.
+
+    Outputs:
+        curve: np.ndarray
+            Curve of newly infected at each time.
+    """
 
     curve = np.array([totInfs(model, x, t_span[i])
                      for i, x in enumerate(solution)])
@@ -1612,23 +1670,50 @@ def infCurve(model: dict, solution: np.ndarray, t_span: np.ndarray) -> np.ndarra
 
 
 def infCurveScaled(model: dict, solution: np.ndarray, t_span: np.ndarray) -> np.ndarray:
-    """Returns curve of total infected, scaled so max = 1."""
+    """
+    Returns scaled curve of incidence for given solution.
+
+    Inputs:
+        model: dict
+            Model of interest.
+        solution: np.ndarray
+            Solution given by solve function.
+        t_span: np.ndarray
+            Time frame for solution.
+
+    Outputs:
+        curve: np.ndarray
+            Scaled curve of newly infected at each time.
+    """
 
     curve = infCurve(model, solution, t_span)
     curve = curve / np.max(curve)
     return curve
 
 
-def writeModel(newModel: dict, overWrite: bool = False, printText: bool = True) -> None:
-    """Write model to file. This is useful to save modified models."""
-    modelName = newModel['name']
+def writeModel(model: dict, overWrite: bool = True, printText: bool = True) -> None:
+    """
+    Write given model to file.
+
+    Inputs:
+        newModel: dict
+            Model to write to file.
+        overWrite: bool
+            Whether or not to overwrite existing file.
+        printText: bool
+            Whether or not to print debug text.
+
+    Outputs:
+        None.
+    """
+    modelName = model['name']
     newFileName = modelName + '.json'
     print(f'Writing model to file models/{newFileName}.')
     if not os.path.isfile(f'models/{newFileName}'):
         # File doesn't exist
         try:
             with open(f'models/{newFileName}', 'w') as file:
-                json.dump(newModel, file, indent=4)
+                json.dump(model, file, indent=4)
             if printText:
                 print('Model written.')
         except:
@@ -1643,21 +1728,47 @@ def writeModel(newModel: dict, overWrite: bool = False, printText: bool = True) 
             os.remove(f'models/{newFileName}')
             try:
                 with open(f'models/{newFileName}', 'w') as file:
-                    json.dump(newModel, file, indent=4)
+                    json.dump(model, file, indent=4)
             except:
                 if printText:
                     print('Problem when writing file.')
 
 
 def find_nearest(array: np.ndarray, value: float) -> int:
-    """Retourne l'indice avec la valueur la plus proche."""
+    """
+    Find index of array for which array value is closest to given value.
+
+    Inputs:
+        array: np.ndarray
+            Array of interest.
+        value: float
+            Value to find.
+
+    Outputs:
+        idx: int
+            Position of closest element.
+    """
     array = np.asarray(array)
     idx = (np.abs(array - value)).argmin()
     return idx
 
 
 def find_intersections(array: np.ndarray, value: float, eps=10**-5) -> list:
-    """Finds intersection between curve and value."""
+    """
+    Finds all intersections between curve and value.
+
+    Inputs:
+        array: np.ndarray
+            Array of interest.
+        value: float
+            Value to find.
+        eps: float
+            Permitted error.
+
+    Outputs:
+        newWhere: list
+            List of couple, intersection is between both values in couple.
+    """
 
     newCurve = array - value
     where = np.where(abs(newCurve) > eps)[0]
@@ -1670,15 +1781,29 @@ def find_intersections(array: np.ndarray, value: float, eps=10**-5) -> list:
         product = newCurveEps[i] * newCurveEps[i + 1]
 
         if product < 0:
-            newWhere.append((where[i] + where[i+1]) / 2)
+            newWhere.append((where[i] + where[i + 1]) / 2)
 
     return newWhere
 
 
-def doesIntersect(curve: np.ndarray, value: int, eps=10**-3):
-    """Checks if curve intersects y = value."""
+def doesIntersect(curve: np.ndarray, value: int, eps=10**-5):
+    """
+    Checks if curve intersects y = value.
+    
+    Inputs:
+        curve: np.ndarray
+            Array of interest.
+        value: float
+            Value to find.
+        eps: float
+            Permitted error.
 
-    return len(find_intersections(curve, value, eps)) > 0
+    Outputs:
+        doesInter: bool
+            Whether or not the curve intersects the value given.
+    """
+    doesInter = len(find_intersections(curve, value, eps)) > 0
+    return doesInter
 
 
 def createLaTeX(model: dict, layerDistance: str = ".8cm",
