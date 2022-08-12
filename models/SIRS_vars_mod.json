@@ -1,37 +1,17 @@
 {
     "name": "SIRS_vars_mod",
     "compartments": {
-        "S^0": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 0
-        },
         "S^1": {
             "susceptibility": 1,
             "contagiousness": 1,
             "initial_condition": 9999999
-        },
-        "I_A^0": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 0
         },
         "I_A^1": {
             "susceptibility": 1,
             "contagiousness": 1,
             "initial_condition": 1
         },
-        "I_B^0": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 0
-        },
         "I_B^1": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 0
-        },
-        "R^0": {
             "susceptibility": 1,
             "contagiousness": 1,
             "initial_condition": 0
@@ -41,12 +21,12 @@
             "contagiousness": 1,
             "initial_condition": 0
         },
-        "Null_n": {
+        "I_A^0": {
             "susceptibility": 1,
             "contagiousness": 1,
             "initial_condition": 0
         },
-        "Null_m": {
+        "I_B^0": {
             "susceptibility": 1,
             "contagiousness": 1,
             "initial_condition": 0
@@ -60,6 +40,16 @@
             "susceptibility": 1,
             "contagiousness": 1,
             "initial_condition": 0
+        },
+        "Null_n": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 0
+        },
+        "Null_m": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 0
         }
     },
     "flows": {
@@ -67,40 +57,33 @@
             {
                 "from": "S^1",
                 "to": "I_A^1",
-                "rate": "S^0+S^1",
+                "rate": "S^1",
                 "contact": "I_A^0+I_A^1",
                 "parameter": "0.4"
             },
             {
                 "from": "Null_n",
                 "to": "Rt(S,I_A)",
-                "rate": "S^0+S^1",
+                "rate": "S^1",
                 "contact": "I_A^0",
                 "parameter": "0.4"
             },
             {
                 "from": "S^1",
                 "to": "I_B^1",
-                "rate": "S^0+S^1",
+                "rate": "S^1",
                 "contact": "I_B^0+I_B^1",
                 "parameter": "0.8"
             },
             {
                 "from": "Null_n",
                 "to": "Rt(S,I_B)",
-                "rate": "S^0+S^1",
+                "rate": "S^1",
                 "contact": "I_B^0",
                 "parameter": "0.8"
             }
         ],
         "recoveries": [
-            {
-                "from": "I_A^0",
-                "to": "R^0",
-                "rate": "I_A^0",
-                "contact": "Null_m",
-                "parameter": "0.2"
-            },
             {
                 "from": "I_A^1",
                 "to": "R^1",
@@ -109,16 +92,23 @@
                 "parameter": "0.2"
             },
             {
-                "from": "I_B^0",
-                "to": "R^0",
-                "rate": "I_B^0",
+                "from": "I_A^0",
+                "to": "R^1",
+                "rate": "I_A^0",
                 "contact": "Null_m",
-                "parameter": "0.1"
+                "parameter": "0.2"
             },
             {
                 "from": "I_B^1",
                 "to": "R^1",
                 "rate": "I_B^1",
+                "contact": "Null_m",
+                "parameter": "0.1"
+            },
+            {
+                "from": "I_B^0",
+                "to": "R^1",
+                "rate": "I_B^0",
                 "contact": "Null_m",
                 "parameter": "0.1"
             }
@@ -134,25 +124,11 @@
         ],
         "deaths": [
             {
-                "from": "S^0",
-                "to": "Null_m",
-                "rate": "S^0",
-                "contact": "Null_m",
-                "parameter": "1e-05"
-            },
-            {
                 "from": "S^1",
                 "to": "Null_m",
                 "rate": "S^1",
                 "contact": "Null_m",
                 "parameter": "1e-05"
-            },
-            {
-                "from": "I_A^0",
-                "to": "Null_m",
-                "rate": "I_A^0",
-                "contact": "Null_m",
-                "parameter": "0.0002"
             },
             {
                 "from": "I_A^1",
@@ -162,9 +138,9 @@
                 "parameter": "0.0002"
             },
             {
-                "from": "I_B^0",
+                "from": "I_A^0",
                 "to": "Null_m",
-                "rate": "I_B^0",
+                "rate": "I_A^0",
                 "contact": "Null_m",
                 "parameter": "0.0002"
             },
@@ -176,11 +152,11 @@
                 "parameter": "0.0002"
             },
             {
-                "from": "R^0",
+                "from": "I_B^0",
                 "to": "Null_m",
-                "rate": "R^0",
+                "rate": "I_B^0",
                 "contact": "Null_m",
-                "parameter": "1e-05"
+                "parameter": "0.0002"
             },
             {
                 "from": "R^1",
@@ -196,17 +172,10 @@
                 "to": "I_B^1",
                 "rate": "Null_n",
                 "contact": "Null_m",
-                "parameter": "2 if 49.5 <= t <= 50 else 0"
+                "parameter": "1 if 49 <= t <= 50 else 0"
             }
         ],
         "waning": [
-            {
-                "from": "R^0",
-                "to": "S^0",
-                "rate": "R^0",
-                "contact": "Null_m",
-                "parameter": ".01"
-            },
             {
                 "from": "R^1",
                 "to": "S^1",

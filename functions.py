@@ -1,3 +1,4 @@
+from inspect import getcomments
 import numpy as np
 from scipy.integrate import odeint
 from dataclasses import dataclass
@@ -335,24 +336,20 @@ def initialize(model: dict, y0: dict, t: float, scaled=False, originalModel:
                             + f"    Entries obtained: {list(y0.keys())}.")
 
         if scaled:
-            scaledInfs = infsScaled(originalModel, y0, t, whereToAdd)
+            infectious = infsScaled(originalModel, y0, t, whereToAdd)
         else:
-            scaledInfs = infs(originalModel, y0, t, whereToAdd)
+            infectious = infs(originalModel, y0, t, whereToAdd)
 
-        # ! this will not work with new modification...
         for compartment in y0:
-            model['compartments'][addI(
-                compartment, 0)]["initial_condition"] = scaledInfs[compartment]
-            model['compartments'][addI(
-                compartment, 1)]["initial_condition"] = y0[compartment] - scaledInfs[compartment]
-
-        if printText:
-            print(f'NewDelta: {[round(scaledInfs[x], 2) for x in scaledInfs]}')
-            print(f"Init done. Values for layer 0: " +
-                  f"{[round(model['compartments'][addI(x, 0)]['initial_condition'], 2) for x in weWant if not x.startswith('Null')]}")
-            print(f"           Values for layer 1: " +
-                  f"{[round(model['compartments'][addI(x, 1)]['initial_condition'], 2) for x in weWant if not x.startswith('Null')]}")
-
+            try:
+                model['compartments'][addI(
+                    compartment, 0)]["initial_condition"] = infectious[compartment]
+                model['compartments'][addI(
+                    compartment, 1)]["initial_condition"] = y0[compartment] \
+                    - infectious[compartment]
+            except:
+                model['compartments'][addI(
+                    compartment, 1)]["initial_condition"] = y0[compartment]
     else:
         # No need for any ajustments. Simply write the values.
         for compartment in list(y0.keys()):
@@ -792,13 +789,13 @@ def getFlowType(flow: dict) -> str:
 def addI(node: str, i: int) -> str:
     """
     Adds layer number to a given node.
-    
+
     Inputs:
         node: str
             Node name to modify.
         i: int
             Number to add.
-    
+
     Outputs:
         newNode: str
             Modified node name.
@@ -864,13 +861,54 @@ def joinNodeSum(nodes: list) -> str:
     return '+'.join(removeDuplicates(nodes))
 
 
-def mod(model: dict, printWarnings: bool = True,
-        printText: bool = False, autoInfections: bool = True,
-        write=True, overWrite=False) -> dict:
+def splitVrVc(nodes, newCompartments) -> str:
     """
-    This function is the main point of the research.
-    Creates the modified model from the base one.
-    TODO this function is very long and needs to be reworked.
+    Splits vr or vc node if there is something to split to.
+
+    Inputs:
+        nodes: list
+            List of nodes to split.
+        newCompartments: list
+            List of compartments in the new model.
+
+    Outputs:
+        newVrVc: str
+            String containing split nodes.
+    """
+    def splitIfExists(x):
+        if addI(x, 0) in newCompartments:
+            return joinNodeSum([addI(x, j) for j in range(2)])
+        else:
+            return addI(x, 1)
+    newVrVc = joinNodeSum(list(map(splitIfExists,
+                                   nodes)))
+
+    return newVrVc
+
+
+def mod(model: dict,
+        printText: bool = False,
+        write=True, overWrite=True) -> dict:
+    """
+    This function modifies the given model to let us compute Rt.
+
+    Inputs:
+        model: dict
+            Given model to modify.
+        printWarnings: bool
+            Whether or not to print warning text.
+        printText: bool
+            Whether or not to print debug text.
+        autoInfections: bool
+            Whether or not to include autoinfections in modification.
+        write: bool
+            Whether or not to write modified model to json file.
+        overWrite: bool
+            Whether or not to overwrite old file when writing.
+
+    Outputs:
+        newModel: dict
+            Modified model.
     """
     if printText:
         print('\nCreating new model!')
@@ -893,37 +931,53 @@ def mod(model: dict, printWarnings: bool = True,
         raise Exception(
             "There are no nodes called 'Null_m'. Cannot identify empty nodes.")
 
-    # Add compartment copies and Null node
+    # Add base compartments
     for compartment in compartments:
-        if compartment[:4] != 'Null':
-            for i in range(2):
-                newModel["compartments"][compartment + f'^{i}'] \
-                    = model["compartments"][compartment].copy()
-                # Pour le moment, on place toute la population dans la couche 1
-                # Il faudra initialiser le modèle avec les bonnes valeurs pour régler ceci
-                # Bonne solution temporaire puisqu'on peut utiliser le modèle comme normal
-                if i == 0:
-                    newModel["compartments"][compartment +
-                                             f'^{i}']["initial_condition"] = 0
-        else:
-            # Null node is not duplicated
-            newModel["compartments"][compartment] \
+        if not compartment.startswith('Null'):
+            newModel["compartments"][addI(compartment, 1)] \
                 = model["compartments"][compartment].copy()
 
-    # Ajouter les nouvelles arrêtes et leurs informations
+    # Add isolated layer
+    for _, flowName in enumerate(flows):
+        for flow in flows[flowName]:
+            newFlow = {
+                "from": "Null_n",
+                "to": "Null_m",
+                "rate": "Null_n",
+                "contact": "Null_m",
+                "parameter": "0"
+            }
+
+            u = flow['from']
+            v = flow['to']
+            vr = flow['rate'].split('+')
+            vc = flow['contact'].split('+')
+
+            if getFlowType(flow) == 'contact':
+                newModel["compartments"][addI(v, 0)] \
+                    = model["compartments"][v].copy()
+                newModel["compartments"][addI(v, 0)]['initial_condition'] = 0
+                for contact_node in vc:
+                    newModel["compartments"][addI(contact_node, 0)] \
+                        = model["compartments"][contact_node].copy()
+                    newModel["compartments"][addI(
+                        contact_node, 0)]['initial_condition'] = 0
+
+    newCompartments = getCompartments(newModel)
+
+    # Add edges and their informations
     for _, flowName in enumerate(flows):
         newModel['flows'][flowName] = []
-
-        newFlow = {
-            "from": "Null_n",
-            "to": "Null_m",
-            "rate": "Null_n",
-            "contact": "Null_m",
-            "parameter": "0"
-        }
-
         for flow in flows[flowName]:
-            # Information du flot original
+            newFlow = {
+                "from": "Null_n",
+                "to": "Null_m",
+                "rate": "Null_n",
+                "contact": "Null_m",
+                "parameter": "0"
+            }
+
+            # Informations from original flow
             u = flow['from']
             v = flow['to']
             vr = flow['rate'].split('+')
@@ -931,46 +985,47 @@ def mod(model: dict, printWarnings: bool = True,
 
             ### RATES ###
             if getFlowType(flow) == 'rate':
-                for i in range(2):
-                    if not (i == 0 and u[:4] == 'Null'):
-                        uPrime = addI(u, i)
-                        vPrime = addI(v, i)
-                        # Find vr' and vc'
-                        if u[:4] == 'Null':
-                            rateNode = joinNodeSum(list(map(
-                                lambda x: joinNodeSum([addI(x, j)
-                                                   for j in range(2)]),
-                                vr)))
-                        else:
-                            rateNode = joinNodeSum(list(map(
-                                lambda x: addI(x, i),
-                                vr
-                            )))
-                        contactNode = 'Null_m'
+                uPrime = addI(u, 1)
+                vPrime = addI(v, 1)
+                # Find vr' and vc'
+                if u[:4] == 'Null':
+                    rateNode = splitVrVc(vr, newCompartments)
+                else:
+                    rateNode = joinNodeSum(list(map(
+                        lambda x: addI(x, 1),
+                        vr
+                    )))
+                contactNode = 'Null_m'
 
-                        newFlow['from'] = uPrime
-                        newFlow['to'] = vPrime
-                        newFlow['rate'] = rateNode
-                        newFlow['contact'] = contactNode
-                        newFlow['parameter'] = flow['parameter']
+                newFlow['from'] = uPrime
+                newFlow['to'] = vPrime
+                newFlow['rate'] = rateNode
+                newFlow['contact'] = contactNode
+                newFlow['parameter'] = flow['parameter']
 
-                        # print('  ', newFlow)
+                newModel['flows'][flowName].append(newFlow.copy())
 
-                        newModel['flows'][flowName].append(newFlow.copy())
+                if addI(u, 0) in newCompartments:
+                    uPrime = addI(u, 0)
+                    if addI(v, 0) in newCompartments:
+                        vPrime = addI(v, 0)
+                    else:
+                        vPrime = addI(v, 1)
+                    rateNode = joinNodeSum(list(map(
+                        lambda x: addI(x, 0),
+                        vr
+                    )))
+                    contactNode = 'Null_m'
+
+                    newFlow['from'] = uPrime
+                    newFlow['to'] = vPrime
+                    newFlow['rate'] = rateNode
+                    newFlow['contact'] = contactNode
+                    newFlow['parameter'] = flow['parameter']
+
+                    newModel['flows'][flowName].append(newFlow.copy())
             ### BATCHES ###
             if getFlowType(flow) == 'batch':
-                ### ATTENTION ####
-                # Si une batch crée des infections, il faudra s'assurer qu'au
-                # moins une infection est créée dans la couche 0. Il faut donc
-                # jouer un peu sur ces paramètres...
-                # splitBatch = False
-                # for _, flowName2 in enumerate(flows):
-                #     for flow2 in flows[flowName2]:
-                #         if flow2['to'] == v and getFlowType(flow2) == 'contact':
-                #             splitBatch = True
-                #             if printWarnings:
-                #                 print(f'Warning: had to double a batch '
-                #                       + f'from {u} to {v}.')
 
                 uPrime = addI(u, 1)
                 vPrime = addI(v, 1)
@@ -983,31 +1038,13 @@ def mod(model: dict, printWarnings: bool = True,
                 newFlow['contact'] = contactNode
                 newFlow['parameter'] = flow['parameter']
 
-                # newFlow['split'] = False
-
-                # newBatch_split = {
-                #     'from': addI(u, 0),
-                #     'to': addI(v, 0),
-                #     'rate': rateNode,
-                #     'contact': contactNode,
-                #     'parameter': flow['parameter'],
-                #     'split': True
-                # }
-
                 newModel['flows'][flowName].append(newFlow.copy())
-                # newModel['flows'][flowName].append(newBatch_split.copy())
             ### CONTACTS ###
             if getFlowType(flow) == 'contact':
                 uPrime = addI(u, 1)
                 vPrime = addI(v, 1)
-                rateNode = joinNodeSum(list(map(
-                    lambda x: joinNodeSum([addI(x, j)
-                                           for j in range(2)]),
-                    vr)))
-                contactNode = joinNodeSum(list(map(
-                    lambda x: joinNodeSum([addI(x, j)
-                                           for j in range(2)]),
-                    vc)))
+                rateNode = splitVrVc(vr, newCompartments)
+                contactNode = splitVrVc(vc, newCompartments)
 
                 newFlow['from'] = uPrime
                 newFlow['to'] = vPrime
@@ -1015,10 +1052,9 @@ def mod(model: dict, printWarnings: bool = True,
                 newFlow['contact'] = contactNode
                 newFlow['parameter'] = flow['parameter']
 
-                # print('  ', newFlow)
-
                 newModel['flows'][flowName].append(newFlow.copy())
 
+                # COMPUTE RT
                 compartName = f"Rt({flow['from']},{flow['to']})"
                 newModel["compartments"][compartName] = {
                     "susceptibility": 1,
@@ -1028,16 +1064,10 @@ def mod(model: dict, printWarnings: bool = True,
 
                 uPrime = 'Null_n'
                 vPrime = compartName
-                if autoInfections:
-                    rateNode = joinNodeSum(list(map(
-                        lambda x: joinNodeSum([addI(x, 0), addI(x, 1)]),
-                        vr
-                    )))
-                else:
-                    rateNode = joinNodeSum(list(map(
-                        lambda x: addI(x, 1),
-                        vr
-                    )))
+                rateNode = joinNodeSum(list(map(
+                    lambda x: addI(x, 1),
+                    vr
+                )))
                 contactNode = joinNodeSum(list(map(
                     lambda x: addI(x, 0),
                     vc
@@ -1053,6 +1083,12 @@ def mod(model: dict, printWarnings: bool = True,
 
                 newModel['flows'][flowName].append(newFlow.copy())
 
+    # Add Null compartments
+    for compartment in compartments:
+        if compartment.startswith('Null'):
+            newModel["compartments"][compartment] \
+                = model["compartments"][compartment].copy()
+
     if printText:
         print(f'New model created in {time.time() - ti:.1e} seconds.\n')
 
@@ -1062,13 +1098,34 @@ def mod(model: dict, printWarnings: bool = True,
     return newModel
 
 
-def printModel(model: dict) -> None:
-    """Imprime tout le dictionaire du modèle de manière formattée."""
-    print(json.dumps(model, sort_keys=True, indent=2))
+def printModel(dictionary: dict) -> None:
+    """
+    Prints given dictionary in a formatted manner.
+
+    Inputs:
+        dictionary: dict
+            Given model to print.
+
+    Ouputs:
+        None.
+    """
+    print(json.dumps(dictionary, sort_keys=True, indent=2))
 
 
 def roundDict(dictionary: dict, i: int) -> dict:
-    """Renvoie le dictionaire arrondi, utile pour les tailles des noeuds."""
+    """
+    Returns the same dictionary with rounded values.
+
+    Inputs:
+        dictionary: dict
+            Given model to round.
+        i: int
+            Number of digits to round to.
+
+    Outputs:
+        roundedDict: dict
+            Rounded dictionary.
+    """
     roundedDict = {key: round(dictionary[key], i) for key in dictionary}
 
     if i < 1:
@@ -1077,63 +1134,69 @@ def roundDict(dictionary: dict, i: int) -> dict:
     return roundedDict
 
 
-def analysis(model: dict, solution: np.ndarray, nodes: bool = False,
-             changes: bool = False, end: bool = False, R0: bool = True,
-             maximums: bool = True) -> None:
-    """Prints important information on solutions, all togglable."""
-
-    if nodes:
-        print(f"Compartments: {getCompartments(model)}")
-        print(f"Population:  {getPopNodes(model)}")
-        print(f"Other nodes: {getOtherNodes(model)}")
-
-    if changes:
-        print(f"Population change:  {getPopChange(model, solution):+.2f}")
-        print(f"Other nodes change: {getOtherChange(model, solution):+.2f}")
-
-    if end:
-        print(f"Population at end:  " +
-              f"{roundDict(getPopulation(model, solution[-1]), 2)}")
-        print(f"Other nodes at end: " +
-              f"{roundDict(getOthers(model, solution[-1]), 2)}")
-
-    if R0:
-        RtNodes = getRtNodes(model)
-        compartments = getCompartments(model)
-        length = max(list(map(len, RtNodes))) + 1
-        for x in RtNodes:
-            compName = f"{x + ':':<{length}}"
-            value = f'{solution[-1, compartments.index(x)]: .2f}'
-            print(f"{compName}{value}")
-
-    if maximums:
-        maximums = {}
-        for i in list(map(lambda y: getCompartments(model).index(y),
-                          [x for x in getCompartments(model) if x.endswith(('^0'))])):
-            maximums[getCompartments(model)[i]] = np.max(solution[:, i])
-        print(f'Maximums: {roundDict(maximums, 2)}')
-
-
 def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
-              t_span_sim: tuple = (0, 100), sub_sim: float = 100,
-              scaledInfs=False, autoInfections=True,
+              t_span_sim: tuple = (0, 100), sub_sim: int = 100,
+              scaledInfs=False,
               verification: bool = True, write: bool = True,
               overWrite: bool = False, whereToAdd: str = 'to',
               printText=True, printInit=False, printWarnings=True,
               r0=False, scaleMethod: str = 'Total',
               printR0: bool = False) -> tuple:
     """
-    Returns a dictionary with Rt values,
-    as well as models and solutions.
+    Returns a dictionary with Rt values, as well as models and solutions.
+
+    Inputs:
+        modelName: str
+            Name of model to simulate.
+        t_span_rt: tuple
+            Time range for which we require rt values.
+        sub_rt: float
+            Time precision with which to compute rt.
+        t_span_sim: tuple
+            Time range used for simulations.
+        sub_sim: int
+            Time precision for simulations.
+        scaledInfs: bool
+            Whether or not to rescale infected when initializing.
+        verification: bool
+            Whether or not to confirm that modified and original have same dynamic.
+        write: bool
+            Whether or not to write json files.
+        overWrite: bool
+            Whether or not to overwrite json files.
+        whereToAdd: str
+            Where to add new infected individuals.
+        printText: bool
+            Whether or not to print debug text.
+        printInit: bool
+            Whether or not to print initialization text.
+        printWarnings: bool
+            Whether or not to print warning text.
+        r0: bool
+            Whether or not we are computing R0 (false if Rt).
+        scaleMethod: str
+            Total: scale all rt values together, PerVariant: variant-wise.
+        printR0: bool
+            Whether or not to print R0 values.
+
+    Outputs:
+        modelOld: dict
+            Old (original) model.
+        newModel: dict
+            Modified model.
+        solutionOld: np.ndarray
+            Integration solution (only keep time values that fit with t_span_rt)
+        t_spanOld: np.ndarray
+            Integration time points (only keep time values that fit with t_span_rt)
+        values: dict
+            Dictionary containing all rt values of interest.
     """
 
     if printText:
         if r0:
-            print('\nComputation of R0 ' +
-                  ('with autoInfections' if autoInfections else ''))
+            print('\nComputation of R0')
         else:
-            print('\nComputation of Rt ' +
-                  ('with autoInfections' if autoInfections else ''))
+            print('\nComputation of Rt')
 
     if printWarnings:
         if sub_rt > sub_sim:
@@ -1143,7 +1206,7 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
     solutionOld, t_spanOld = solve(modelOld, (0, t_span_rt[1]), sub_sim)
     oldCompartments = getCompartments(modelOld)
 
-    newModel = mod(modelOld, printWarnings, printText, autoInfections=autoInfections,
+    newModel = mod(modelOld, printText,
                    write=write, overWrite=overWrite)
     solution, _ = solve(newModel, (0, t_span_rt[1]), sub_sim)
     compartments = getCompartments(newModel)
@@ -1155,9 +1218,12 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
         for comp in getPopNodes(modelOld):
             if comp[:4] != 'Null':
                 array1 = solutionOld[:, oldCompartments.index(comp)]
-                array2 = np.sum(np.array(
-                    [solution[:, compartments.index(addI(comp, i))]
-                     for i in range(2)]), axis=0)
+                try:
+                    array2 = np.sum(np.array(
+                        [solution[:, compartments.index(addI(comp, i))]
+                         for i in range(2)]), axis=0)
+                except:
+                    array2 = solution[:, compartments.index(addI(comp, 1))]
             else:
                 array1 = solutionOld[:, oldCompartments.index(comp)]
                 array2 = np.sum(np.array(
@@ -1249,20 +1315,59 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
 
 def computeR0(modelName: str, t_span_sim: tuple = (0, 100),
               sub_sim: float = 100, scaledInfs=False,
-              autoInfections: bool = True, write: bool = False,
+              verification: bool = True,
+              write: bool = False,
               overWrite: bool = False, whereToAdd: str = 'to',
               printText=True, printInit: bool = True,
               printWarnings: bool = True, scaleMethod: str = 'Total',
               printR0: bool = False) -> dict:
-    """Computes R0 associated with all contact nodes.
-    However, if a variant is not present at start, R0 will be 0.
-    This is because it was impossible at t=0 to know that variant would appear."""
+    """
+    Returns a dictionary with R0 values, as well as models and initial conditions.
+
+    Inputs:
+        modelName: str
+            Name of model to simulate.
+        t_span_sim: tuple
+            Time range used for simulations.
+        sub_sim: int
+            Time precision for simulations.
+        scaledInfs: bool
+            Whether or not to rescale infected when initializing.
+        verification: bool
+            Whether or not to confirm that modified and original have same dynamic.
+        write: bool
+            Whether or not to write json files.
+        overWrite: bool
+            Whether or not to overwrite json files.
+        whereToAdd: str
+            Where to add new infected individuals.
+        printText: bool
+            Whether or not to print debug text.
+        printInit: bool
+            Whether or not to print initialization text.
+        printWarnings: bool
+            Whether or not to print warning text.
+        scaleMethod: str
+            Total: scale all rt values together, PerVariant: variant-wise.
+        printR0: bool
+            Whether or not to print R0 values.
+
+    Outputs:
+        modelOld: dict
+            Old (original) model.
+        newModel: dict
+            Modified model.
+        initialConds: np.ndarray
+            Values of compartments at time 0.
+        values: dict
+            Dictionary containing all R0 values of interest.
+    """
 
     modelOld, newModel, solutionOld, _, values = \
         computeRt(modelName, (0, 0), 1, t_span_sim,
-                  sub_sim, scaledInfs=scaledInfs, verification=True,
+                  sub_sim, scaledInfs=scaledInfs, verification=verification,
                   write=write, overWrite=overWrite, whereToAdd=whereToAdd,
-                  printInit=printInit, r0=True, autoInfections=autoInfections,
+                  printInit=printInit, r0=True,
                   printWarnings=printWarnings, printText=printText,
                   scaleMethod=scaleMethod, printR0=printR0)
 
@@ -1271,9 +1376,9 @@ def computeR0(modelName: str, t_span_sim: tuple = (0, 100),
 
 
 def compare(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
-            R0: float = 0, autoToPlot=[True], scaledToPlot=[False],
+            R0: float = 0,
             t_span_sim: tuple = (0, 100), sub_sim: float = 100,
-            verification: bool = False, write: bool = False,
+            verification: bool = True, write: bool = True,
             overWrite: bool = False, whereToAdd: str = 'to',
             printText=False, printInit=False,
             plotANA: bool = True,
@@ -1282,9 +1387,63 @@ def compare(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
             infected: list = [1],
             scaleMethod: str = 'Total',
             plotIndividual: bool = False,
-            plotBound: bool = False,
-            printR0: bool = False, plotScaled=True) -> None:
-    """Does all possible scenarios"""
+            plotBound: bool = True,
+            printR0: bool = False,
+            scaledInfectedPlot=True) -> None:
+    """
+    Runs through all steps and produces a graph (call plt.plot() after).
+
+    Inputs:
+        modelName: str
+            Name of model to simulate.
+        t_span_rt: tuple
+            Time range for which we require rt values.
+        sub_rt: float
+            Time precision with which to compute rt.
+        R0: float
+            Analytical value of R0 to compare to.
+        t_span_sim: tuple
+            Time range used for simulations.
+        sub_sim: int
+            Time precision for simulations.
+        verification: bool
+            Whether or not to confirm that modified and original have same dynamic.
+        write: bool
+            Whether or not to write json files.
+        overWrite: bool
+            Whether or not to overwrite json files.
+        whereToAdd: str
+            Where to add new infected individuals.
+        printText: bool
+            Whether or not to print debug text.
+        printInit: bool
+            Whether or not to print initialization text.
+        plotANA: bool
+            Whether or not to plot analytical Rt.
+        susceptibles: list
+            List of susceptible compartments (integers).
+        plotANA_v2: bool
+            Whether or not to plot the 2nd version of analytical Rt.
+        infected: list
+            List of infected compartments (integers).
+        scaleMethod: str
+            Total: scale all rt values together, PerVariant: variant-wise.
+        plotIndividual: bool
+            Whether or not to plot individual Rt lines (e.g. for variants).
+        plotBound: bool
+            Whether or not to plot suspected lower bound.
+        printR0: bool
+            Whether or not to print R0 values.
+        scaledInfectedPlot: bool
+            Whether or not to plot incident cases scaled (better visualization).
+
+    Outputs:
+        rt_times: np.ndarray
+            Times for which we compute Rt.
+        rtCurves: dict
+            Dictionary containing all rtCurves of interest.
+        infsNotScaled
+    """
 
     WIDTH = .5
     DASH = (10, 10)
@@ -1298,124 +1457,84 @@ def compare(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
     plt.axhline(y=1, linestyle='--', color='grey',
                 linewidth=WIDTH, dashes=DASH)
 
-    i = 0
-    rtCurves = {i: {} for i in range(4)}
+    rtCurves = {}
     plotedInfsLine = False
 
-    for auto in autoToPlot:
-        for scaled in scaledToPlot:
-            model, newModel, solution, t_span, values = computeRt(
-                modelName, t_span_rt, sub_rt, autoInfections=auto,
-                t_span_sim=t_span_sim, sub_sim=sub_sim,
-                verification=verification, whereToAdd=whereToAdd,
-                scaledInfs=scaled, write=write, overWrite=overWrite,
-                printText=printText, printInit=printInit,
-                printWarnings=(i == 0), scaleMethod=scaleMethod,
-                printR0=printR0)
+    model, newModel, solution, t_span, values = computeRt(
+        modelName, t_span_rt, sub_rt,
+        t_span_sim=t_span_sim, sub_sim=sub_sim,
+        verification=verification, whereToAdd=whereToAdd,
+        scaledInfs=False, write=write, overWrite=overWrite,
+        printText=printText, printInit=printInit,
+        printWarnings=True, scaleMethod=scaleMethod,
+        printR0=printR0)
 
-            if i == 0:
-                susceptiblesDivPop = np.sum(solution[:, susceptibles], axis=1) / \
-                    np.array([getPopulation(model, x)['Sum']
-                              for x in solution])
-                infectedDivPop = np.sum(solution[:, infected], axis=1) / \
-                    np.array([getPopulation(model, x)['Sum']
-                              for x in solution])
-                rt_ANA = R0 * susceptiblesDivPop
-                if plotANA:
-                    plt.plot(t_span, rt_ANA, label='ANA')
-                rt_ANA_v2 = R0 * (susceptiblesDivPop - infectedDivPop)
-                if plotANA_v2:
-                    plt.plot(t_span, rt_ANA_v2, label='ANA_v2')
-                bound = rt_ANA * (1 - R0 * infectedDivPop)
-                if plotBound:
-                    plt.plot(t_span, bound, label='Bound')
+    if True:
+        susceptiblesDivPop = np.sum(solution[:, susceptibles], axis=1) / \
+            np.array([getPopulation(model, x)['Sum']
+                      for x in solution])
+        infectedDivPop = np.sum(solution[:, infected], axis=1) / \
+            np.array([getPopulation(model, x)['Sum']
+                      for x in solution])
+        rt_ANA = R0 * susceptiblesDivPop
+        if plotANA:
+            plt.plot(t_span, rt_ANA, label='ANA')
+        rt_ANA_v2 = R0 * (susceptiblesDivPop - infectedDivPop)
+        if plotANA_v2:
+            plt.plot(t_span, rt_ANA_v2, label='ANA_v2')
+        bound = rt_ANA * (1 - R0 * infectedDivPop)
+        if plotBound:
+            plt.plot(t_span, bound, label='Bound')
 
-                infsScaled = infCurveScaled(model, solution, t_span)
-                infsNotScaled = infCurve(model, solution, t_span)
-                plt.plot(
-                    t_span, infsScaled if plotScaled else infsNotScaled, label='Inci (scaled)' if plotScaled else 'Inci')
+        infsScaled = infCurveScaled(model, solution, t_span)
+        infsNotScaled = infCurve(model, solution, t_span)
+        plt.plot(
+            t_span, infsScaled if scaledInfectedPlot else infsNotScaled,
+            label='Inci (scaled)' if scaledInfectedPlot else 'Inci')
 
-                rt_times = np.array([key for key in values])
+        rt_times = np.array([key for key in values])
 
-            rt = np.zeros_like(rt_times, dtype='float64')
-            for rtNode in getRtNodes(mod(model, False, False)):
-                rt_rtNode = np.array([values[key][rtNode] for key in values])
-                rtCurves[i][rtNode] = rt_rtNode
-                if len(getRtNodes(mod(model, False, False))) > 1 \
-                        and i == 0 \
-                        and plotIndividual:
-                    plt.plot(rt_times, rt_rtNode, label=rtNode)
-                rt += rt_rtNode
+    rt = np.zeros_like(rt_times, dtype='float64')
+    for rtNode in getRtNodes(mod(model, False)):
+        rt_rtNode = np.array([values[key][rtNode] for key in values])
+        rtCurves[rtNode] = rt_rtNode
+        if len(getRtNodes(mod(model, False))) > 1 \
+                and plotIndividual:
+            plt.plot(rt_times, rt_rtNode, label=rtNode)
+        rt += rt_rtNode
 
-            rtCurves[i]['Sum'] = rt
+    rtCurves['Sum'] = rt
 
-            print(f'Scaled: {scaled}, Auto: {auto}')
-            if doesIntersect(rt, 1):
-                idx_infs = find_nearest(infsScaled, 1)
-                xTimeInfs = t_span[idx_infs]
-                idx_rt = find_intersections(rt, 1)[0]
-                try:
-                    xTimeRt = rt_times[idx_rt]
-                except:
-                    xTimeRt = (rt_times[int(idx_rt)] +
-                               rt_times[int(idx_rt + 1)]) / 2
-                print(f'Rt = 1 at {xTimeRt:.3f}')
-                if doesIntersect(rt_ANA_v2, 1):
-                    idx_rt_ANA_v2 = find_intersections(rt_ANA_v2, 1)[0]
-                    try:
-                        xTimeRt_ANA_v2 = t_span[idx_rt_ANA_v2]
-                    except:
-                        xTimeRt_ANA_v2 = (t_span[int(idx_rt_ANA_v2)] +
-                                          t_span[int(idx_rt_ANA_v2 + 1)]) / 2
-                    print(f'Rt_ANA_v2 = 1 at {xTimeRt_ANA_v2:.3f}')
+    if doesIntersect(rt, 1):
+        idx_infs = find_nearest(infsScaled, 1)
+        xTimeInfs = t_span[idx_infs]
+        idx_rt = find_intersections(rt, 1)[0]
+        try:
+            xTimeRt = rt_times[idx_rt]
+        except:
+            xTimeRt = (rt_times[int(idx_rt)] +
+                       rt_times[int(idx_rt + 1)]) / 2
+        print(f'Infected = 1 at {xTimeInfs:.3f}')
+        print(f'Rt = 1 at {xTimeRt:.3f}')
 
-                print(f'Lower bound respected? ' +
-                      ('Yes' if xTimeRt_ANA_v2 < xTimeRt else 'No'))
+        print(f'Time difference: {np.abs(xTimeInfs - xTimeRt)}')
+        if not plotedInfsLine:
+            plt.axvline(x=xTimeInfs, linestyle=':', color='grey',
+                        linewidth=2.5 * WIDTH, dashes=DOTS)
+            plotedInfsLine = True
+        plt.axvline(x=xTimeRt, linestyle='--', color='grey',
+                    linewidth=WIDTH, dashes=DASH)
 
-                idxs_after_rt_eq_1 = np.where(t_span >= xTimeRt)[0]
-                times_after_rt_eq_1 = t_span[idxs_after_rt_eq_1]
+        # print(f'rt time: {xTimeRt}, inf time: {xTimeInfs}')
+        # print(f'rt intersections: {find_intersections(rt, 1)}')
+    else:
+        print('Time difference is not relevant, '
+              + 'no intersection between rt and 1.')
 
-                # CHECK BOUND !!
-                diff_at_moment = np.sum(
-                    solution[idxs_after_rt_eq_1[0] - 1, susceptibles]) - np.sum(
-                    solution[idxs_after_rt_eq_1[0] - 1, infected])
-                susceptibles_after = np.sum(
-                    solution[idxs_after_rt_eq_1][:, susceptibles], axis=1)
-                idx_problems = np.where(susceptibles_after < diff_at_moment)[0]
+    ls = ['-', '--', '-.', ':'][0 % 4]
+    plt.plot(rt_times, rt, label='SIM',
+             linestyle=ls)
 
-                prob_times = times_after_rt_eq_1[idx_problems]
-                print(f'No. of moments where susceptibles < difference (i.e. problems): '
-                      + f'{len(prob_times)} / {len(susceptibles_after)}')
-
-                print(
-                    f'Difference (S - I) at time of importance: {diff_at_moment:.3f}')
-                if len(idx_problems) > 0:
-                    print(f'Susceptibles at problem time:             ' +
-                          f'{susceptibles_after[idx_problems[0]]:.3f}')
-                    print(f'Susceptibles just before:                 ' +
-                          f'{susceptibles_after[idx_problems[0] - 1]:.3f}')
-
-                print(f'Time difference: {np.abs(xTimeInfs - xTimeRt)}')
-                if not plotedInfsLine:
-                    plt.axvline(x=xTimeInfs, linestyle=':', color='grey',
-                                linewidth=2.5 * WIDTH, dashes=DOTS)
-                    plotedInfsLine = True
-                plt.axvline(x=xTimeRt, linestyle='--', color='grey',
-                            linewidth=WIDTH, dashes=DASH)
-
-                # print(f'rt time: {xTimeRt}, inf time: {xTimeInfs}')
-                # print(f'rt intersections: {find_intersections(rt, 1)}')
-            else:
-                print('Time difference is not relevant, '
-                      + 'no intersection between rt and 1.')
-
-            ls = ['-', '--', '-.', ':'][i % 4]
-            plt.plot(rt_times, rt, label='SIM' +
-                     (' w/ auto' if auto else ' no auto') +
-                     (', scaled' if scaled else ', raw'),
-                     linestyle=ls)
-
-            i += 1
     plt.title(modelName)
 
     # plt.ylim(bottom=.1)
@@ -1504,8 +1623,7 @@ def writeModel(newModel: dict, overWrite: bool = False, printText: bool = True) 
     """Write model to file. This is useful to save modified models."""
     modelName = newModel['name']
     newFileName = modelName + '.json'
-    if printText:
-        print(f'Writing model to file models/{newFileName}.')
+    print(f'Writing model to file models/{newFileName}.')
     if not os.path.isfile(f'models/{newFileName}'):
         # File doesn't exist
         try:
@@ -1522,6 +1640,7 @@ def writeModel(newModel: dict, overWrite: bool = False, printText: bool = True) 
             print('File name already exists.')
         if overWrite:
             print('Overwriting file.')
+            os.remove(f'models/{newFileName}')
             try:
                 with open(f'models/{newFileName}', 'w') as file:
                     json.dump(newModel, file, indent=4)

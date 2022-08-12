@@ -1,27 +1,27 @@
 {
-    "name": "SIR_deaths",
+    "name": "SIR_deaths_mod",
     "compartments": {
-        "S": {
+        "S^1": {
             "susceptibility": 1,
             "contagiousness": 1,
             "initial_condition": 9999999
         },
-        "I": {
+        "I^1": {
             "susceptibility": 1,
             "contagiousness": 1,
             "initial_condition": 1
         },
-        "R": {
+        "R^1": {
             "susceptibility": 1,
             "contagiousness": 1,
             "initial_condition": 0
         },
-        "Null_n": {
+        "I^0": {
             "susceptibility": 1,
             "contagiousness": 1,
             "initial_condition": 0
         },
-        "Null_m": {
+        "Rt(S,I)": {
             "susceptibility": 1,
             "contagiousness": 1,
             "initial_condition": 0
@@ -30,53 +30,74 @@
     "flows": {
         "contacts": [
             {
-                "from": "S",
-                "to": "I",
-                "rate": "S",
-                "contact": "I",
+                "from": "S^1",
+                "to": "I^1",
+                "rate": "S^1",
+                "contact": "I^0+I^1",
+                "parameter": "0.4"
+            },
+            {
+                "from": "Null_n",
+                "to": "Rt(S,I)",
+                "rate": "S^1",
+                "contact": "I^0",
                 "parameter": "0.4"
             }
         ],
         "rates": [
             {
-                "from": "I",
-                "to": "R",
-                "rate": "I",
+                "from": "I^1",
+                "to": "R^1",
+                "rate": "I^1",
+                "contact": "Null_m",
+                "parameter": "0.1"
+            },
+            {
+                "from": "I^0",
+                "to": "R^1",
+                "rate": "I^0",
                 "contact": "Null_m",
                 "parameter": "0.1"
             },
             {
                 "from": "Null_n",
-                "to": "S",
-                "rate": "S",
+                "to": "S^1",
+                "rate": "S^1",
                 "contact": "Null_m",
                 "parameter": ".1"
             },
             {
                 "from": "Null_n",
-                "to": "I",
-                "rate": "I",
+                "to": "I^1",
+                "rate": "I^0+I^1",
                 "contact": "Null_m",
                 "parameter": ".1"
             },
             {
-                "from": "S",
+                "from": "S^1",
                 "to": "Null_m",
-                "rate": "S",
+                "rate": "S^1",
                 "contact": "Null_m",
                 "parameter": "0.00001"
             },
             {
-                "from": "I",
+                "from": "I^1",
                 "to": "Null_m",
-                "rate": "I",
+                "rate": "I^1",
                 "contact": "Null_m",
                 "parameter": "0.0002"
             },
             {
-                "from": "R",
+                "from": "I^0",
                 "to": "Null_m",
-                "rate": "R",
+                "rate": "I^0",
+                "contact": "Null_m",
+                "parameter": "0.0002"
+            },
+            {
+                "from": "R^1",
+                "to": "Null_m",
+                "rate": "R^1",
                 "contact": "Null_m",
                 "parameter": "0.00001"
             }
