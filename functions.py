@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.integrate import odeint, quad
+from scipy.integrate import odeint
 from dataclasses import dataclass
 from typing import Tuple
 from math import *
@@ -29,6 +29,16 @@ functions = {}
 
 
 def storeFunctions(model: dict):
+    """
+    Stores all functions from model into dictionary.
+
+    Inputs:
+        model: dictionary
+            Model for which we store the functions.
+
+    Outputs:
+        None.
+    """
     global functions
     modelName = model['name']
     functions[modelName] = {}
@@ -36,22 +46,51 @@ def storeFunctions(model: dict):
     flows = model['flows']
     for flowType_index, flowType in enumerate(flows):
         for flow_index, flow in enumerate(flows[flowType]):
-            functions[modelName][f"{flowType_index, flow_index}"] = eval(
-                'lambda t: ' + flow['parameter'])
+            functions[modelName][f"{flowType_index, flow_index}"] \
+                = eval('lambda t: ' + flow['parameter'])
 
 
 def removeDuplicates(liste: list) -> list:
-    """Retourne la liste sans répétitions."""
-    return list(dict.fromkeys(liste))
+    """
+    Removes duplicates from list.
+
+    Inputs:
+        liste: list
+            List to modify.
+
+    Outputs:
+        newList: list
+            List without duplicates.
+    """
+    newList = list(dict.fromkeys(liste))
+    return newList
 
 
 def rreplace(s, old, new, n):
-    """Taken from stack exchange, replaces last n occurences."""
+    """
+    Replaces last n occurences in string.
+
+    Inputs:
+        s: string
+            Original string to modify.
+        old: string
+            What to replace in string.
+        new: string
+            What to replace with.
+        n: int
+            Number of instances to replace.
+
+    Outputs:
+        newString: string
+            Modified string.
+    """
     li = s.rsplit(old, n)
-    return new.join(li)
+    newString = new.join(li)
+    return newString
 
 
-def plotCurves(xPoints: np.ndarray or list, curves, toPlot: list, labels: list,
+def plotCurves(xPoints: np.ndarray or list, curves: np.ndarray or list,
+               toPlot: list, labels: list,
                title: str = 'Infection curves', style: list = None,
                xlabel: str = 'Time', ylabel: str = 'Number of people',
                scales: list = ['linear', 'linear'],
@@ -61,8 +100,41 @@ def plotCurves(xPoints: np.ndarray or list, curves, toPlot: list, labels: list,
     Plots given curves. If xPoints are the same for all curves, give only np.ndarray.
     Otherwise, a list of np.ndarrays works, in which case it has to be given for every curve.
     Other options (title, labels, scales, etc.) are the same as for matplotlib.pyplot.plot function.
+    Need to use 
+
+    Inputs:
+        xPoints: np.ndarray or list
+            Points to use for x axis.
+        curves: np.ndarray or list
+            Points to use for y axis.
+        toPlot: list
+            Curves to plot in given curves.
+        labels: list
+            Labels to use for given curves.
+        title: string
+            Title for graph.
+        style: list
+            Styles to use for each curve.
+        xLabel: str
+            Label of x axis.
+        yLabel: str
+            Label of y axis.
+        scales: list
+            Scales to use for each axis.
+        fig: figure or axes
+            Where to draw the curves.
+        legendLoc: str
+            Where to place legend.
+        colors: list
+            Colors to use for each curve.
+        ycolor: str
+            Color to use for y axis.
+
+    Ouputs:
+        None.
     """
 
+    # Create missing lists if given None.
     liste = list(range(max(toPlot) + 1))
     if style == None:
         style = ['-' for _ in liste]
@@ -70,10 +142,14 @@ def plotCurves(xPoints: np.ndarray or list, curves, toPlot: list, labels: list,
         colors = [None for _ in liste]
 
     k = 0
+    # TODO rewrite using try except
     if type(xPoints) is np.ndarray:  # Only one set of x coordinates
         for curve in toPlot:
             if labels == None:
-                fig.plot(xPoints, curves[curve], style[curve], c=colors[curve])
+                fig.plot(xPoints,
+                         curves[curve],
+                         style[curve],
+                         c=colors[curve])
                 k += 1
             else:
                 fig.plot(xPoints,
@@ -85,12 +161,17 @@ def plotCurves(xPoints: np.ndarray or list, curves, toPlot: list, labels: list,
     else:  # Different time scales
         for curve in toPlot:
             if labels == None:
-                fig.plot(xPoints[curve], curves[curve],
-                         style[curve], c=colors[curve])
+                fig.plot(xPoints[curve],
+                         curves[curve],
+                         style[curve],
+                         c=colors[curve])
                 k += 1
             else:
-                fig.plot(xPoints[curve], curves[curve],
-                         style[curve], label=labels[curve], c=colors[curve])
+                fig.plot(xPoints[curve],
+                         curves[curve],
+                         style[curve],
+                         label=labels[curve],
+                         c=colors[curve])
                 k += 1
 
     if labels != None:
@@ -110,40 +191,35 @@ def plotCurves(xPoints: np.ndarray or list, curves, toPlot: list, labels: list,
         fig.set_yscale(scales[1])
 
 
-def verifyModel(model: dict, printText: bool = True) -> None:
-    """Verifies if model has the right properties. Might not be complete."""
+def verifyModel(model: dict, modelName: str, printText: bool = True) -> None:
+    """
+    Verifies if model has the right properties. Might not be complete.
+
+    Inputs:
+        model: dict
+            Model to verify.
+        modelFile: str
+            Name to compare model with.
+        printText: bool
+            Whether or not to print debug text.
+
+    Ouputs:
+        None.
+    """
+
     if "Null_n" not in model['compartments'] or "Null_m" not in model['compartments']:
         raise Exception('Model doesn\'t have both Null nodes.')
 
-    # TODO try to get name of file to confirm that the "name" parameter fits!
+    if model['name'] != modelName:
+        raise Exception(f"Model doesn\'t have right name in file. "
+                        + f"Name in file: {model['name']}. Wanted name: {modelName}.")
 
     missing = []
     flows = model['flows']
     compartments = getCompartments(model)
     for flowType_index, flowType in enumerate(flows):
         for flow_index, flow in enumerate(flows[flowType]):
-            # TODO check that flows don't have v_r and v_c that contain nulls but aren't nulls!
-            # if 'rate' in flow:
-            #     v_r = flow['rate'].split('+')
-            #     for x in v_r:
-            #         if x not in compartments:
-            #             raise Exception(
-            #                 f'Compartment {x} found in rates, not in compartment list.')
-            #         if x.startswith('Null'):
-            #             if len(v_r) > 1:
-            #                 raise Exception(
-            #                     f'Some flow has a rate which is a sum containing {x}.')
-            # if 'contact' in flow:
-            #     v_c = flow['contact'].split('+')
-            #     for x in v_c:
-            #         if x not in compartments:
-            #             raise Exception(
-            #                 f'Compartment {x} found in contacts, not in compartment list.')
-            #         if x.startswith('Null'):
-            #             if len(v_c) > 1:
-            #                 raise Exception(
-            #                     f'Some flow has a contact which is a sum containing {x}.')
-
+            # Check for missing keys in flows
             keys = list(flow.keys())
             for p in ['from', 'to', 'rate', 'contact', 'parameter']:
                 if p not in keys and p not in missing:
@@ -158,11 +234,21 @@ def verifyModel(model: dict, printText: bool = True) -> None:
         print('Model verified.')
 
 
-def loadModel(name: str, overWrite=False, printText: bool = True) -> dict:
+def loadModel(name: str, overWrite=True, printText: bool = True) -> dict:
     """
-    Envoie un dictionaire contenant le fichier json "name.json".
-    Seulement besoin d'appeler sur le nom du modèle.
-    Par exemple, loadModel('SIR') fonctionne.
+    Loads model from file.
+
+    Inputs:
+        name: str
+            Name of model to load. Function will load model [name].json.
+        overWrite: bool
+            Whether or not to overwrite file after loading model.
+        printText: bool
+            Whether or not to print debug text.
+
+    Outputs:
+        model: dict
+            Model loaded.
     """
     with open(f'models/{name}.json') as file:
         model = json.load(file)
@@ -189,51 +275,83 @@ def loadModel(name: str, overWrite=False, printText: bool = True) -> dict:
             "initial_condition": 0
         }
 
-        for flowType_index, flowType in enumerate(flows):
-            for flow_index, flow in enumerate(flows[flowType]):
+        for _, flowType in enumerate(flows):
+            for _, flow in enumerate(flows[flowType]):
                 for i, arg in enumerate(flow):
                     if flow[arg] == 'Null':
                         # i even: change null to null_n
+                        # i odd: change null to null_m
                         flow[arg] = 'Null' + ('_n' if not i % 2 else '_m')
 
+        # We don't need Null anymore
         if 'Null' in model['compartments']:
             del model['compartments']['Null']
 
         print('Model should be fixed...')
 
     # Verify
-    verifyModel(model, printText=printText)
+    verifyModel(model, name, printText=printText)
+    # Write to file
     writeModel(model, overWrite=overWrite, printText=printText)
     # Store functions in dictionary
     storeFunctions(model)
     return model
 
 
-def initialize(model: dict, y0: dict, t: float, t0: float, scaled=False, originalModel:
+def initialize(model: dict, y0: dict, t: float, scaled=False, originalModel:
                dict = None, printText: bool = True,
                whereToAdd: str = 'to') -> None:
-    """This modifies "model", but doesn't modify the file it comes from."""
+    """
+    This modifies "model", but doesn't modify the file it comes from.
+
+    Inputs:
+        model: dict
+            Model which needs to be modified.
+        y0: dict
+            New values to initialize with.
+        t: float
+            Time at which we are initializing.
+        scaled: bool
+            Whether or not to rescale infected when initializing.
+        originalModel: dict
+            Dictionary to use as template for modified model. None if no modified model.
+        printText: bool
+            Whether or not to print debug text.
+        whereToAdd: str
+            Where to add new infections.
+
+    Outputs:
+        None.
+    """
 
     if originalModel != None:
+        # If we are initializing using another model
         if printText:
             print(f'Initializing with values {roundDict(y0, 2)}.')
         weWant = getCompartments(originalModel)
         if sorted(list(y0.keys())) != sorted(weWant):
             raise Exception("Initialization vector doesn't have right entries.\n"
-                            + f"Entries wanted:   {weWant}.\n"
-                            + f"Entries obtained: {list(y0.keys())}.")
+                            + f"    Entries wanted:   {weWant}.\n"
+                            + f"    Entries obtained: {list(y0.keys())}.")
 
-        # TODO add test to see if need normalized or not!!!
         if scaled:
-            scaledInfs = infsScaled(originalModel, y0, t, t0, whereToAdd)
+            scaledInfs = infsScaled(originalModel, y0, t, whereToAdd)
         else:
-            scaledInfs = infs(originalModel, y0, t, t0, whereToAdd)
+            scaledInfs = infs(originalModel, y0, t, whereToAdd)
 
+        # ! this will not work with new modification...
         for compartment in y0:
             model['compartments'][addI(
                 compartment, 0)]["initial_condition"] = scaledInfs[compartment]
             model['compartments'][addI(
                 compartment, 1)]["initial_condition"] = y0[compartment] - scaledInfs[compartment]
+
+        if printText:
+            print(f'NewDelta: {[round(scaledInfs[x], 2) for x in scaledInfs]}')
+            print(f"Init done. Values for layer 0: " +
+                  f"{[round(model['compartments'][addI(x, 0)]['initial_condition'], 2) for x in weWant if not x.startswith('Null')]}")
+            print(f"           Values for layer 1: " +
+                  f"{[round(model['compartments'][addI(x, 1)]['initial_condition'], 2) for x in weWant if not x.startswith('Null')]}")
 
     else:
         # No need for any ajustments. Simply write the values.
@@ -241,24 +359,34 @@ def initialize(model: dict, y0: dict, t: float, t0: float, scaled=False, origina
             model['compartments'][compartment]["initial_condition"] \
                 = y0[compartment]
 
-    if printText:
-        print(f'NewDelta: {[round(scaledInfs[x], 2) for x in scaledInfs]}')
-        print(f"Init done. Values for layer 0: " +
-              f"{[round(model['compartments'][addI(x, 0)]['initial_condition'], 2) for x in weWant if x[:4] != 'Null']}")
-        print(f"           Values for layer 1: " +
-              f"{[round(model['compartments'][addI(x, 1)]['initial_condition'], 2) for x in weWant if x[:4] != 'Null']}")
-
 
 def getCompartments(model: dict) -> list:
-    """List of compartments in model file."""
-    return list(model['compartments'].keys())
+    """
+    List of compartments in model file.
+
+    Inputs:
+        model: dict
+            Model of interest.
+
+    Ouputs:
+        compartments: list
+            List of compartments in model.
+    """
+    compartments = list(model['compartments'].keys())
+    return compartments
 
 
 def getFlowsByCompartments(model: dict) -> list:
     """
-    Ceci nous permet d'appeler sur un modèle et directement obtenir tous les flots.
-    Aucun besoin de répéter cette structure sur tous nos modèles,
-    comme c'était fait avec les définitions de modèles.
+    Get all inflows and outflows for model.
+
+    Inputs:
+        model: dict
+            Model of interest.
+
+    Ouputs:
+        FBC: list
+            Flows by compartments.
     """
     compartments = getCompartments(model)
     flows = model['flows']
@@ -280,47 +408,98 @@ def getFlowsByCompartments(model: dict) -> list:
             term = Flux((flowType_index, flow_index), rate_i, contact_i)
 
             try:
+                # Inflow
                 FBC[to_i][0].append(term)
             except:
                 pass
             try:
+                # Outflow
                 FBC[from_i][1].append(term)
             except:
                 pass
 
+    # Create delta (list of flows) with each flux
     FBC = [[Delta(*[[f for f in flows if isinstance(f, T)] for T in types])
-            for flows in compartmentflows] for compartmentflows in FBC]
+            for flows in compartment] for compartment in FBC]
 
     return FBC
 
 
 def getPopNodes(model: dict) -> list:
-    """Return compartments that are in the population only."""
+    """
+    Return compartments that are in the population only.
+
+    Inputs:
+        model: dict
+            Model of interest.
+
+    Outputs:
+        weWant: list
+            List of compartments in population.
+    """
     compartments = getCompartments(model)
     weWant = [x for x in compartments if not x.startswith(('Rt', 'Null'))]
     return weWant
 
 
 def getOtherNodes(model: dict) -> list:
-    """Return compartments that are not in the population."""
+    """
+    Return compartments that are not in the population.
+
+    Inputs:
+        model: dict
+            Model of interest.
+
+    Outputs:
+        weWant: list
+            List of compartments not in population.
+    """
     compartments = getCompartments(model)
     weWant = [x for x in compartments if x.startswith(('Rt', 'Null'))]
     return weWant
 
 
 def getRtNodes(model: dict) -> list:
-    return [x for x in getOtherNodes(model) if x[:4] != 'Null']
+    """
+    Return compartments that are used for computing Rt's.
+
+    Inputs:
+        model: dict
+            Model of interest.
+
+    Outputs:
+        weWant: list
+            List of compartments for Rt's.
+    """
+    weWant = [x for x in getOtherNodes(model) if x[:4] != 'Null']
+    return weWant
 
 
 def getNodeValues(model: dict, state: np.ndarray or list, weWant: list) -> dict:
-    """Get every value for nodes in weWant as dictionary."""
+    """
+    Get every value for nodes in weWant, as dictionary.
+
+    Inputs:
+        model: dict
+            Model of interest.
+        state: np.ndarray or list
+            Value of each node in the model.
+        weWant: list
+            List of compartments of interest.
+
+    Ouputs:
+        dictNb: dict
+            Value of each node in weWant.
+    """
     if len(state.shape) != 1:
+        # Prevent complete solutions from being given as input.
+        # This is to be used on a single state.
         raise Exception('2nd argument should be a vector, not matrix.')
 
     dictNb = {}
     compartments = getCompartments(model)
 
-    indexes = list(map(lambda x: compartments.index(x), weWant))
+    indexes = list(map(compartments.index, weWant))
     for i in indexes:
         dictNb[compartments[i]] = state[i]
     dictNb['Sum'] = sum(state[i] for i in indexes)
@@ -329,96 +508,154 @@ def getNodeValues(model: dict, state: np.ndarray or list, weWant: list) -> dict:
 
 
 def getPopulation(model: dict, state: np.ndarray or list) -> dict:
-    """Get every value for nodes in population as dictionary."""
-    return getNodeValues(model, state, getPopNodes(model))
+    """
+    Get every value for nodes in population as dictionary.
+
+    Inputs:
+        model: dict
+            Model of interest.
+        state: np.ndarray or list
+            Value of each node in the model.
+
+    Ouputs:
+        dictNb: dict
+            Value of each node in population.
+    """
+    dictNb = getNodeValues(model, state, getPopNodes(model))
+    return dictNb
 
 
 def getPopChange(model: dict, solution: np.ndarray) -> float:
-    """Get change in population from start to finish."""
-    return getPopulation(model, solution[-1])['Sum'] - getPopulation(model, solution[0])['Sum']
+    """
+    Get change in population from start to finish.
+
+    Inputs:
+        model: dict
+            Model of interest.
+        solution: np.ndarray
+            Solution given by solve function.
+
+    Outputs:
+        popChange: float
+            Change in population over solution given.
+    """
+    popChange = getPopulation(
+        model, solution[-1])['Sum'] - getPopulation(model, solution[0])['Sum']
+    return popChange
 
 
 def getOthers(model: dict, state: np.ndarray or list) -> dict:
-    """Get every value for nodes NOT in population as dictionary."""
-    return getNodeValues(model, state, getOtherNodes(model))
+    """
+    Get every value for nodes not in population as dictionary.
+
+    Inputs:
+        model: dict
+            Model of interest.
+        state: np.ndarray or list
+            Value of each node in the model.
+
+    Ouputs:
+        dictNb: dict
+            Value of each node not in population.
+    """
+    dictNb = getNodeValues(model, state, getOtherNodes(model))
+    return dictNb
 
 
 def getOtherChange(model: dict, solution: np.ndarray) -> float:
-    """Get change in other nodes from start to finish."""
-    return getOthers(model, solution[-1])['Sum'] - getOthers(model, solution[0])['Sum']
+    """
+    Get change in other nodes from start to finish.
+
+    Inputs:
+        model: dict
+            Model of interest.
+        solution: np.ndarray
+            Solution given by solve function.
+
+    Outputs:
+        otherChange: float
+            Change in other nodes over solution given.
+    """
+    otherChange = getOthers(
+        model, solution[-1])['Sum'] - getOthers(model, solution[0])['Sum']
+    return otherChange
 
 
-def getCoefForFlux(model: dict, flux: Flux, t: float, t0: float) -> float:
+def getCoefForFlux(model: dict, flux: Flux, t: float) -> float:
     """
     Gets the coefficient for flux from the config file.
-    """
-    flows = model['flows']
-    flowTypes = list(model['flows'].keys())
-    flowType = flowTypes[flux.coef_indices[0]]
-    flowJson = flows[flowType][flux.coef_indices[1]]
 
+    Inputs:
+        model: dict
+            Model of interest.
+        flux: Flux
+            Flux for which we need coefficient.
+        t: float
+            Time at which we compute coefficient.
+
+    Outputs:
+        value: float
+            Value of coefficient at given time.
+    """
+    # Information read from stored functions.
     coef = functions[model['name']
                      ][f"{flux.coef_indices[0], flux.coef_indices[1]}"]
-    return coef(t)
+    value = coef(t)
+    return value
 
 
-def getCoefForFlow(flow: dict, t: float, t0: float) -> float:
+def getCoefForFlow(flow: dict, t: float) -> float:
     """
-    Gets the coefficient for flow from the config file.
-    """
+    Gets the coefficient for flow given from the config file.
 
+    Inputs:
+        flow: dict
+            Flow for which we need coefficient.
+        t: float
+            Time at which we compute coefficient.
+
+    Outputs:
+        value: float
+            Value of coefficient at given time.
+    """
+    # Information read directly from flow dictionary.
     string = flow['parameter']
-
     fonc = eval('lambda t: ' + string)
     value = fonc(t)
-
-    # t0Dict = {
-    #     't': t0
-    # }
-
-    # if 'copied' in flow:
-    #     if flow['copied']:
-    #         # Ce flot crée un cas index et il faut juste l'ajouter
-    #         # au Rt si on sait qu'il existe !
-    #         value = value if eval(
-    #             string, globals(), t0Dict) != 0 else 0
-    #     else:
-    #         # Ce flot est là pour la dynamique seulement !
-    #         value = value if eval(
-    #             string, globals(), t0Dict) == 0 else 0
 
     return value
 
 
 def evalDelta(model: dict, delta: Delta, state: np.ndarray or list,
-              t: float, t0: float) -> float:
+              t: float) -> float:
     """
-    Computes the actual derivative for a delta (delta is the dataclass defined earlier).
+    Computes the actual derivative for a delta (dataclass defined earlier).
+
+    Inputs:
+        model: dict
+            Model of interest
+        delta: Delta
+            List of Flows.
+        state: np.ndarray or list
+            Value of each node in the model.
+        t: float
+            Time at which we compute the derivative.
+
+    Outputs:
+        somme: float
+            Sum of all flux in delta.
     """
 
-    # Times final: [ 3. 26. 12. 11. 13. 35.]
-
-    ### 0 ###
-    # 2% of time
     compartments = getCompartments(model)
 
-    ### 1 ###
-    # 18% of time
     N = sum(state[i] for i, comp in enumerate(compartments)
             if not comp.startswith(('Null', 'Rt')))
-    # 29% of time
-    # N = getPopulation(model, state)['Sum']
 
-    ### 2 ###
-    # A bit useless for the moment...
-    # 9% of time
     susceptibility = [model['compartments'][comp]
                       ['susceptibility'] for comp in compartments]
     contagiousness = [model['compartments'][comp]
                       ['contagiousness'] for comp in compartments]
 
-    ### 3 ###
-    # 8% of time, very good
     rateInfluence = [sum(state[x] for x in flux.rate_index)
                      if len(flux.rate_index) > 1
                      else (state[flux.rate_index[0]]
@@ -432,24 +669,27 @@ def evalDelta(model: dict, delta: Delta, state: np.ndarray or list,
                               else 1)
                         for flux in delta.flux]
 
-    ### 4 ###
-    coefsInfluence = [getCoefForFlux(model, flux, t, t0)
+    coefsInfluence = [getCoefForFlux(model, flux, t)
                       for flux in delta.flux]
 
-    ### 5 ###
-    # 25 % of time, 20 secs
     somme = np.einsum('i,i,i', rateInfluence, contactInfluence, coefsInfluence)
-    # 33 % of time, 22 secs
-    # somme = np.sum(np.array(rateInfluence) *
-    #                np.array(contactInfluence) *
-    #                np.array(coefsInfluence))
 
     return somme
 
 
-def derivativeFor(model: dict, compartment: str, t0: float):
+def derivativeFor(model: dict, compartment: str):
     """
-    Get the derivative for a compartment as a function.
+    Get the derivative for a compartment as a function of state and time.
+
+    Inputs:
+        model: dict
+            Model of interest.
+        compartments: str
+            Compartment for which we want to get the derivative.
+
+    Outputs:
+        derivativeForThis: function
+            Function for derivative according to state and time.
     """
 
     compartments = getCompartments(model)
@@ -457,23 +697,30 @@ def derivativeFor(model: dict, compartment: str, t0: float):
 
     FBC = getFlowsByCompartments(model)
 
-    def derivativeForThis(x, t):
-        inflows = evalDelta(model, FBC[i][0], x, t, t0)
-        outflows = evalDelta(model, FBC[i][1], x, t, t0)
+    def derivativeForThis(state, t):
+        # evalDelta takes care of getting the right coefficient for the derivative
+        inflows = evalDelta(model, FBC[i][0], state, t)
+        outflows = evalDelta(model, FBC[i][1], state, t)
         return inflows - outflows
     return derivativeForThis
 
 
-def model_derivative(state: np.ndarray or list, t: float,
-                     model: dict, derivatives) -> list:
+def model_derivative(state: np.ndarray or list, t: float, derivatives: list) -> list:
     """
     Gets the derivative functions for every compartments evaluated at given state.
+
+    Inputs:
+        state: np.ndarray or list
+            Value of each node in the model.
+        t: float
+            Time at which we are evaluating.
+        derivatives: list
+            List of functions containing the derivative of each compartment.
+
+    Outputs:
+        dstate_dt: float
+            Evaluation of the derivative of each compartment.
     """
-
-    global timesTotal
-
-    # I think this stays the same for all nodes...
-
     # state = [x if x > 0 else 0 for x in state]
     dstate_dt = [derivatives[i](state, t) for i in range(len(state))]
     return dstate_dt
@@ -481,9 +728,23 @@ def model_derivative(state: np.ndarray or list, t: float,
 
 def solve(model: dict, tRange: tuple, refine: int, printText=False) -> tuple:
     """
-    Model solver. Eventually, we would want the first element of range to be used\n
-    in order to determine if we need to consider timed elements in the compuation\n
-    of R0 (e.g. we don't know whether a new variant will appear or not).
+    Model solver, uses odeint from scipy.integrate.
+
+    Inputs:
+        model: dict
+            Model of interest.
+        tRange: tuple
+            Time range considered.
+        refine: int
+            Precision used for integration.
+        printText: bool
+            Whether or not to print debug text.
+
+    Outputs:
+        solution: np.ndarray
+            Solver solution for each compartment.
+        t_span: np.ndarray
+            All time values for the generated solution.
     """
     ti = time.time()
 
@@ -491,12 +752,12 @@ def solve(model: dict, tRange: tuple, refine: int, printText=False) -> tuple:
     steps = (tRange[1] - tRange[0]) * refine + 1
     t_span = np.linspace(tRange[0], tRange[1], num=ceil(steps))
 
-    derivatives = [derivativeFor(model, c, tRange[0])
+    derivatives = [derivativeFor(model, c)
                    for c in compartments]
 
     solution = odeint(model_derivative, [
         model['compartments'][comp]['initial_condition'] for comp in compartments
-    ], t_span, args=(model, derivatives))
+    ], t_span, args=(derivatives,))
 
     if printText:
         print(f'Model took {time.time() - ti:.1e} seconds to solve.')
@@ -505,7 +766,17 @@ def solve(model: dict, tRange: tuple, refine: int, printText=False) -> tuple:
 
 
 def getFlowType(flow: dict) -> str:
-    """batches, rates, contacts or u-contacts"""
+    """
+    Returns the type of a given flow.
+
+    Inputs:
+        flow: dict
+            Flow for which we want the type.
+
+    Outputs:
+        type: str
+            Type of the flow.
+    """
     if flow['rate'].startswith('Null'):
         if flow['contact'].startswith('Null'):
             return 'batch'
@@ -519,14 +790,38 @@ def getFlowType(flow: dict) -> str:
 
 
 def addI(node: str, i: int) -> str:
-    """Pour ne pas ajouter des indices à Null ou R0."""
-    newNode = (node + f'^{i}') if not (node[:4]
-                                       == 'Null' or node[:2] == 'Rt') else (node)
+    """
+    Adds layer number to a given node.
+    
+    Inputs:
+        node: str
+            Node name to modify.
+        i: int
+            Number to add.
+    
+    Outputs:
+        newNode: str
+            Modified node name.
+    """
+    if node.startswith(('Null', 'Rt')):
+        newNode = node
+    else:
+        newNode = (node + f'^{i}')
     return newNode
 
 
 def removeI(node: str) -> str:
-    """Pour retrouver un noeud initial."""
+    """
+    Get base node for a numbered one.
+
+    Inputs:
+        node: str
+            Node of interest.
+
+    Outputs:
+        newNode: str
+            Base node name.
+    """
     if len(node) > 1:
         newNode = node[:-2] if node[-2] == '^' else node
     else:
@@ -535,7 +830,17 @@ def removeI(node: str) -> str:
 
 
 def getI(node: str) -> str:
-    """Pour retrouver un noeud initial."""
+    """
+    Get layer number for node.
+
+    Inputs:
+        node: str
+            Node of interest.
+
+    Outputs:
+        i: int
+            Layer containing node.
+    """
     remove = len(removeI(node))
 
     if remove == len(node):
@@ -545,6 +850,17 @@ def getI(node: str) -> str:
 
 
 def joinNodeSum(nodes: list) -> str:
+    """
+    Joins a node list with a sum.
+
+    Inputs:
+        nodes: list
+            List of nodes to join.
+
+    Outputs:
+        sum: string
+            Sum of nodes as a string.
+    """
     return '+'.join(removeDuplicates(nodes))
 
 
@@ -647,14 +963,14 @@ def mod(model: dict, printWarnings: bool = True,
                 # Si une batch crée des infections, il faudra s'assurer qu'au
                 # moins une infection est créée dans la couche 0. Il faut donc
                 # jouer un peu sur ces paramètres...
-                splitBatch = False
-                for _, flowName2 in enumerate(flows):
-                    for flow2 in flows[flowName2]:
-                        if flow2['to'] == v and getFlowType(flow2) == 'contact':
-                            splitBatch = True
-                            if printWarnings:
-                                print(f'Warning: had to double a batch '
-                                      + f'from {u} to {v}.')
+                # splitBatch = False
+                # for _, flowName2 in enumerate(flows):
+                #     for flow2 in flows[flowName2]:
+                #         if flow2['to'] == v and getFlowType(flow2) == 'contact':
+                #             splitBatch = True
+                #             if printWarnings:
+                #                 print(f'Warning: had to double a batch '
+                #                       + f'from {u} to {v}.')
 
                 uPrime = addI(u, 1)
                 vPrime = addI(v, 1)
@@ -740,7 +1056,8 @@ def mod(model: dict, printWarnings: bool = True,
     if printText:
         print(f'New model created in {time.time() - ti:.1e} seconds.\n')
 
-    writeModel(newModel, overWrite, printText)
+    if write:
+        writeModel(newModel, overWrite, printText)
     storeFunctions(newModel)
     return newModel
 
@@ -805,8 +1122,10 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
               printText=True, printInit=False, printWarnings=True,
               r0=False, scaleMethod: str = 'Total',
               printR0: bool = False) -> tuple:
-    """This is an important part. Returns a dictionary with Rt values,
-    as well as models and solutions."""
+    """
+    Returns a dictionary with Rt values,
+    as well as models and solutions.
+    """
 
     if printText:
         if r0:
@@ -821,12 +1140,12 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
             print('Warning: rt precision too high.')
 
     modelOld = loadModel(modelName, printText=printText)
-    solutionOld, t_spanOld = solve(modelOld, t_span_rt, sub_sim)
+    solutionOld, t_spanOld = solve(modelOld, (0, t_span_rt[1]), sub_sim)
     oldCompartments = getCompartments(modelOld)
 
     newModel = mod(modelOld, printWarnings, printText, autoInfections=autoInfections,
                    write=write, overWrite=overWrite)
-    solution, t_span = solve(newModel, t_span_rt, sub_sim)
+    solution, _ = solve(newModel, (0, t_span_rt[1]), sub_sim)
     compartments = getCompartments(newModel)
 
     # Vérification!
@@ -872,16 +1191,15 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
         pointTime = t_spanOld[pointIndex]
         init = {key: solutionOld[pointIndex, i]
                 for i, key in enumerate(oldCompartments)}
-        initialize(newModel, init, pointIndex, pointIndex, scaledInfs, modelOld,
-                   printText=printInit and t == t_span_rt[0], whereToAdd=whereToAdd)  # and t == t_span_rt[0]
+        initialize(newModel, init, pointIndex, scaledInfs, modelOld,
+                   printText=printInit and t == t_span_rt[0], whereToAdd=whereToAdd)
 
-        solutionTemp, t_spanTemp = solve(newModel, t_span_sim, sub_sim)
+        solutionTemp, _ = solve(newModel, t_span_sim, sub_sim)
 
         initialCond = solutionOld[pointIndex]
         initialCond = {comp: initialCond[i]
                        for i, comp in enumerate(getCompartments(modelOld))}
-        initialCond = infs(modelOld, initialCond, t,
-                           pointIndex, whereToAdd='to')
+        initialCond = infs(modelOld, initialCond, t, whereToAdd='to')
         initialCond = {comp: initialCond[comp]
                        for comp in initialCond if initialCond[comp] > 0}
 
@@ -908,26 +1226,13 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
                 else:
                     denom = initialCond[compartment] if compartment in initialCond else 0
 
-            # foundBatch = False
-            # for flowType in flows:
-            #     for flow in flows[flowType]:
-            #         if 'copied' in flow and flow['to'] == addI(compartment, 0):
-            #             foundBatch = True
-            #             print(integrate, flow, pointIndex, t_span_rt)
-            #             denom += integrate(flow['parameter'],
-            #                                (pointTime, t_span_rt[1]))
-
-            # if foundBatch:
-            #     print(f'Found batch for {compartment}, '
-            #           + f'denominator is {denom}.')
-
             value = solutionTemp[-1, getCompartments(newModel).index(x)]
             newValue = value / (denom if denom != 0 else 1)
 
             if printR0:
                 if t == t_span_rt[0]:
-                    print(
-                        f"{x + ', ':<{length + 2}}{value:5.2f}, {denom:6.2f}, {newValue:5.2f}")
+                    print(f"{x + ', ':<{length + 2}}{value:5.2f}, "
+                          + f"{denom:6.2f}, {newValue:5.2f}")
             values[t][x] = newValue
         # print(f'{sum(values[t_spanOld[i]]):.2f} ', end='')
 
@@ -937,7 +1242,9 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
         else:
             print('Rt computation done\n')
 
-    return modelOld, newModel, solutionOld, t_spanOld, values
+    toKeep = np.where(np.logical_and(t_span_rt[0] <= t_spanOld,
+                                     t_spanOld <= t_span_rt[1]))[0]
+    return modelOld, newModel, solutionOld[toKeep], t_spanOld[toKeep], values
 
 
 def computeR0(modelName: str, t_span_sim: tuple = (0, 100),
@@ -1117,7 +1424,7 @@ def compare(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
     return rt_times, rtCurves, infsNotScaled
 
 
-def infs(model: dict, y0: dict, t: float, t0: float, whereToAdd: str = 'to') -> dict:
+def infs(model: dict, y0: dict, t: float, whereToAdd: str = 'to') -> dict:
     """Returns incidences."""
 
     weWant = getCompartments(model)
@@ -1140,7 +1447,7 @@ def infs(model: dict, y0: dict, t: float, t0: float, whereToAdd: str = 'to') -> 
                 contactImpact = sum(y0[x]
                                     for x in v_c if not x.startswith('Null'))
                 # Normally v_r and v_c should not be null. We can use both directly.
-                param = getCoefForFlow(flow, t, t0)
+                param = getCoefForFlow(flow, t)
                 contactsFlow = param * rateImpact * contactImpact / N
                 node = flow[whereToAdd]
                 if node.startswith('Null'):
@@ -1150,10 +1457,10 @@ def infs(model: dict, y0: dict, t: float, t0: float, whereToAdd: str = 'to') -> 
     return newInfections
 
 
-def infsScaled(model: dict, y0: dict, t: float, t0: float, whereToAdd: str = 'to') -> dict:
+def infsScaled(model: dict, y0: dict, t: float, whereToAdd: str = 'to') -> dict:
     """Returns scaled incidences, sums to 1."""
 
-    infections = infs(model, y0, t, t0, whereToAdd)
+    infections = infs(model, y0, t, whereToAdd)
     weWant = getCompartments(model)
 
     sumInfections = sum(infections[node] for node in weWant)
@@ -1164,7 +1471,7 @@ def infsScaled(model: dict, y0: dict, t: float, t0: float, whereToAdd: str = 'to
     return scaledInfs
 
 
-def totInfs(model: dict, state: np.ndarray, t: float, t0: float) -> np.ndarray:
+def totInfs(model: dict, state: np.ndarray, t: float) -> np.ndarray:
     """Returns total infected for a state."""
 
     if len(state.shape) > 1:
@@ -1172,7 +1479,7 @@ def totInfs(model: dict, state: np.ndarray, t: float, t0: float) -> np.ndarray:
             f'Function can only be used on single state, not solution.')
     weWant = getCompartments(model)
     y0 = {comp: state[i] for i, comp in enumerate(weWant)}
-    infections = infs(model, y0, t, t0, whereToAdd='to')
+    infections = infs(model, y0, t, whereToAdd='to')
 
     return sum(infections[comp] for comp in weWant)
 
@@ -1180,7 +1487,7 @@ def totInfs(model: dict, state: np.ndarray, t: float, t0: float) -> np.ndarray:
 def infCurve(model: dict, solution: np.ndarray, t_span: np.ndarray) -> np.ndarray:
     """Returns curve of total infected."""
 
-    curve = np.array([totInfs(model, x, t_span[i], t_span[i])
+    curve = np.array([totInfs(model, x, t_span[i])
                      for i, x in enumerate(solution)])
     return curve
 
