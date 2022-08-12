@@ -766,7 +766,17 @@ def solve(model: dict, tRange: tuple, refine: int, printText=False) -> tuple:
 
 
 def getFlowType(flow: dict) -> str:
-    """batches, rates, contacts or u-contacts"""
+    """
+    Returns the type of a given flow.
+
+    Inputs:
+        flow: dict
+            Flow for which we want the type.
+
+    Outputs:
+        type: str
+            Type of the flow.
+    """
     if flow['rate'].startswith('Null'):
         if flow['contact'].startswith('Null'):
             return 'batch'
@@ -780,14 +790,38 @@ def getFlowType(flow: dict) -> str:
 
 
 def addI(node: str, i: int) -> str:
-    """Pour ne pas ajouter des indices à Null ou R0."""
-    newNode = (node + f'^{i}') if not (node[:4]
-                                       == 'Null' or node[:2] == 'Rt') else (node)
+    """
+    Adds layer number to a given node.
+    
+    Inputs:
+        node: str
+            Node name to modify.
+        i: int
+            Number to add.
+    
+    Outputs:
+        newNode: str
+            Modified node name.
+    """
+    if node.startswith(('Null', 'Rt')):
+        newNode = node
+    else:
+        newNode = (node + f'^{i}')
     return newNode
 
 
 def removeI(node: str) -> str:
-    """Pour retrouver un noeud initial."""
+    """
+    Get base node for a numbered one.
+
+    Inputs:
+        node: str
+            Node of interest.
+
+    Outputs:
+        newNode: str
+            Base node name.
+    """
     if len(node) > 1:
         newNode = node[:-2] if node[-2] == '^' else node
     else:
@@ -796,7 +830,17 @@ def removeI(node: str) -> str:
 
 
 def getI(node: str) -> str:
-    """Pour retrouver un noeud initial."""
+    """
+    Get layer number for node.
+
+    Inputs:
+        node: str
+            Node of interest.
+
+    Outputs:
+        i: int
+            Layer containing node.
+    """
     remove = len(removeI(node))
 
     if remove == len(node):
@@ -806,6 +850,17 @@ def getI(node: str) -> str:
 
 
 def joinNodeSum(nodes: list) -> str:
+    """
+    Joins a node list with a sum.
+
+    Inputs:
+        nodes: list
+            List of nodes to join.
+
+    Outputs:
+        sum: string
+            Sum of nodes as a string.
+    """
     return '+'.join(removeDuplicates(nodes))
 
 
@@ -1001,7 +1056,8 @@ def mod(model: dict, printWarnings: bool = True,
     if printText:
         print(f'New model created in {time.time() - ti:.1e} seconds.\n')
 
-    writeModel(newModel, overWrite, printText)
+    if write:
+        writeModel(newModel, overWrite, printText)
     storeFunctions(newModel)
     return newModel
 
