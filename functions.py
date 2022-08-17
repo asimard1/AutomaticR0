@@ -251,8 +251,13 @@ def loadModel(name: str, overWrite=True, printText: bool = True) -> dict:
         model: dict
             Model loaded.
     """
-    with open(f'models/{name}.json') as file:
-        model = json.load(file)
+    try:
+        with open(f'models/{name}.json', 'r') as file:
+            model = json.load(file)
+    except:
+        time.sleep(1)
+        with open(f'models/{name}.json', 'r') as file:
+            model = json.load(file)
 
     # Try fixing the model if there are problems with nulls.
     missingNulln = False
@@ -303,7 +308,7 @@ def initialize(model: dict, y0: dict, t: float, scaled=False, originalModel:
                dict = None, printText: bool = True,
                whereToAdd: str = 'to') -> None:
     """
-    This modifies "model", but doesn't modify the file it comes from.
+    This modifies model variable, but doesn't modify the file it comes from.
 
     Inputs:
         model: dict
@@ -1141,7 +1146,7 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
               overWrite: bool = False, whereToAdd: str = 'to',
               printText=True, printInit=False, printWarnings=True,
               r0=False, scaleMethod: str = 'Total',
-              printR0: bool = False) -> tuple:
+              printR0: bool = False, useTqdm: bool = True) -> tuple:
     """
     Returns a dictionary with Rt values, as well as models and solutions.
 
@@ -1178,6 +1183,8 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
             Total: scale all rt values together, PerVariant: variant-wise.
         printR0: bool
             Whether or not to print R0 values.
+        useTqdm: bool
+            Whether or not to show progress bar on rt computation.
 
     Outputs:
         modelOld: dict
@@ -1249,7 +1256,8 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
     iterations = np.arange(t_span_rt[0],
                            t_span_rt[1] + .5 / sub_rt,
                            1 / sub_rt)
-    iterator = tqdm(iterations) if len(iterations) > 1 else iterations
+    iterator = tqdm(iterations) if len(iterations) > 1 \
+        and useTqdm else iterations
     for t in iterator:
 
         values[t] = {}
@@ -1375,7 +1383,33 @@ def computeR0(modelName: str, t_span_sim: tuple = (0, 100),
     return modelOld, newModel, initialConds, values[0]
 
 
-def compare(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
+def evaluateCurve(curve: np.ndarray, idx: int or float) -> any:
+    """
+    Evaluates curve at index or pair of index (average of both indices).
+
+    Inputs:
+        curve: np.ndarray
+            Curve to evaluate.
+        idx: int or float
+            Index to evaluate at.
+
+    Outputs:
+        output: any
+            Output of array.
+    """
+
+    try:
+        output = curve[idx]
+    except:
+        p = idx - int(idx)
+        output = (1 - p) * curve[int(idx)] \
+            + p * curve[int(idx + 1)]
+
+    return output
+
+
+def compare(modelName: str,
+            t_span_rt: tuple, sub_rt: float = 1,
             R0: float = 0,
             t_span_sim: tuple = (0, 100), sub_sim: float = 100,
             verification: bool = True, write: bool = True,
@@ -1389,7 +1423,9 @@ def compare(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
             plotIndividual: bool = False,
             plotBound: bool = True,
             printR0: bool = False,
-            scaledInfectedPlot=True) -> None:
+            scaledInfectedPlot=True,
+            supressGraph: bool = False,
+            useTqdm: bool = True) -> None:
     """
     Runs through all steps and produces a graph (call plt.plot() after).
 
@@ -1436,6 +1472,10 @@ def compare(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
             Whether or not to print R0 values.
         scaledInfectedPlot: bool
             Whether or not to plot incident cases scaled (better visualization).
+        supressGraph: bool
+            Whether or not to suppress graph at the end of loop.
+        useTqdm: bool
+            Whether or not to show progress bar on rt computation.
 
     Outputs:
         rt_times: np.ndarray
@@ -1467,32 +1507,34 @@ def compare(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
         scaledInfs=False, write=write, overWrite=overWrite,
         printText=printText, printInit=printInit,
         printWarnings=True, scaleMethod=scaleMethod,
-        printR0=printR0)
+        printR0=printR0, useTqdm=useTqdm)
 
-    if True:
-        susceptiblesDivPop = np.sum(solution[:, susceptibles], axis=1) / \
-            np.array([getPopulation(model, x)['Sum']
-                      for x in solution])
-        infectedDivPop = np.sum(solution[:, infected], axis=1) / \
-            np.array([getPopulation(model, x)['Sum']
-                      for x in solution])
-        rt_ANA = R0 * susceptiblesDivPop
-        if plotANA:
-            plt.plot(t_span, rt_ANA, label='ANA')
-        rt_ANA_v2 = R0 * (susceptiblesDivPop - infectedDivPop)
-        if plotANA_v2:
-            plt.plot(t_span, rt_ANA_v2, label='ANA_v2')
-        bound = rt_ANA * (1 - R0 * infectedDivPop)
-        if plotBound:
-            plt.plot(t_span, bound, label='Bound')
+    infsScaled = infCurveScaled(model, solution, t_span)
+    infsNotScaled = infCurve(model, solution, t_span)
+    plt.plot(
+        t_span, infsScaled if scaledInfectedPlot else infsNotScaled,
+        label='Inci (scaled)' if scaledInfectedPlot else 'Inci')
+    idx_infs = find_nearest(infsScaled, 1)
+    xTimeInfs = t_span[idx_infs]
+    maxIncident = infsNotScaled[idx_infs]
+    if printText:
+        print(f'Max incidents: {maxIncident}')
 
-        infsScaled = infCurveScaled(model, solution, t_span)
-        infsNotScaled = infCurve(model, solution, t_span)
-        plt.plot(
-            t_span, infsScaled if scaledInfectedPlot else infsNotScaled,
-            label='Inci (scaled)' if scaledInfectedPlot else 'Inci')
+    N = np.array([getPopulation(model, x)['Sum']
+                  for x in solution])
+    susceptiblesDivPop = np.sum(solution[:, susceptibles], axis=1) / N
+    infectedDivPop = np.sum(solution[:, infected], axis=1) / N
+    rt_ANA = R0 * susceptiblesDivPop
+    if plotANA:
+        plt.plot(t_span, rt_ANA, label='ANA')
+    rt_ANA_v2 = R0 * (susceptiblesDivPop - infectedDivPop)
+    if plotANA_v2:
+        plt.plot(t_span, rt_ANA_v2, label='ANA_v2')
+    bound = rt_ANA * (1 - R0 * infectedDivPop)
+    if plotBound:
+        plt.plot(t_span, bound, label='Bound')
 
-        rt_times = np.array([key for key in values])
+    rt_times = np.array([key for key in values])
 
     rt = np.zeros_like(rt_times, dtype='float64')
     for rtNode in getRtNodes(mod(model, False)):
@@ -1506,18 +1548,37 @@ def compare(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
     rtCurves['Sum'] = rt
 
     if doesIntersect(rt, 1):
-        idx_infs = find_nearest(infsScaled, 1)
-        xTimeInfs = t_span[idx_infs]
+        # Rt simulated
         idx_rt = find_intersections(rt, 1)[0]
-        try:
-            xTimeRt = rt_times[idx_rt]
-        except:
-            xTimeRt = (rt_times[int(idx_rt)] +
-                       rt_times[int(idx_rt + 1)]) / 2
-        print(f'Infected = 1 at {xTimeInfs:.3f}')
-        print(f'Rt = 1 at {xTimeRt:.3f}')
+        xTimeRt = evaluateCurve(rt_times, idx_rt)
+        # Rt analytical
+        idx_rt = find_intersections(rt_ANA, 1)[0]
+        xTimeRt_ANA = evaluateCurve(t_span, idx_rt)
+        # Rt analytical v2
+        idx_rt = find_intersections(rt_ANA_v2, 1)[0]
+        xTimeRt_ANA_v2 = evaluateCurve(t_span, idx_rt)
+        # Rt lower bound
+        idx_rt = find_intersections(bound, 1)[0]
+        xTimeRt_bound = evaluateCurve(t_span, idx_rt)
 
-        print(f'Time difference: {np.abs(xTimeInfs - xTimeRt)}')
+        # print(xTimeRt_bound, xTimeRt, xTimeRt_ANA_v2, xTimeRt_ANA)
+
+        if not (xTimeRt_bound <= xTimeRt <= xTimeRt_ANA and
+                xTimeRt_bound <= xTimeRt_ANA_v2 <= xTimeRt_ANA):
+            beta = model['flows']['flows'][0]['parameter']
+            gamma = model['flows']['flows'][1]['parameter']
+            print(f"Found a problem with beta = "
+                  + f"{beta} "
+                  + f"and gamma = "
+                  + f"{gamma}.")
+            with open('problems.txt', 'a') as f:
+                f.write(f'beta: {beta}, gamma: {gamma}\n')
+
+        if printText:
+            print(f'Infected = 1 at {xTimeInfs:.3f}')
+            print(f'Rt = 1 at {xTimeRt:.3f}')
+            print(f'Time difference: {np.abs(xTimeInfs - xTimeRt)}')
+
         if not plotedInfsLine:
             plt.axvline(x=xTimeInfs, linestyle=':', color='grey',
                         linewidth=2.5 * WIDTH, dashes=DOTS)
@@ -1525,7 +1586,7 @@ def compare(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
         plt.axvline(x=xTimeRt, linestyle='--', color='grey',
                     linewidth=WIDTH, dashes=DASH)
 
-    else:
+    elif printText:
         print('Time difference is not relevant, '
               + 'no intersection between rt and 1.')
 
@@ -1537,6 +1598,9 @@ def compare(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
 
     # plt.ylim(bottom=.1)
     plt.legend(loc='best')
+
+    if supressGraph:
+        plt.close()
 
     return rt_times, rtCurves, infsNotScaled
 
@@ -1708,7 +1772,8 @@ def writeModel(model: dict, overWrite: bool = True, printText: bool = True) -> N
     """
     modelName = model['name']
     newFileName = modelName + '.json'
-    print(f'Writing model to file models/{newFileName}.')
+    if printText:
+        print(f'Writing model to file models/{newFileName}.')
     if not os.path.isfile(f'models/{newFileName}'):
         # File doesn't exist
         try:
@@ -1724,8 +1789,9 @@ def writeModel(model: dict, overWrite: bool = True, printText: bool = True) -> N
         if printText:
             print('File name already exists.')
         if overWrite:
-            print('Overwriting file.')
-            os.remove(f'models/{newFileName}')
+            if printText:
+                print('Overwriting file.')
+            # os.remove(f'models/{newFileName}')
             try:
                 with open(f'models/{newFileName}', 'w') as file:
                     json.dump(model, file, indent=4)
@@ -1781,7 +1847,12 @@ def find_intersections(array: np.ndarray, value: float, eps=10**-5) -> list:
         product = newCurveEps[i] * newCurveEps[i + 1]
 
         if product < 0:
-            newWhere.append((where[i] + where[i + 1]) / 2)
+            if where[i + 1] - where[i] > 1:
+                newWhere.append((where[i] + where[i + 1]) / 2)
+            else:
+                num = value - array[where[i]]
+                denom = array[where[i + 1]] - array[where[i]]
+                newWhere.append(num / denom + where[i])
 
     return newWhere
 
@@ -1789,7 +1860,7 @@ def find_intersections(array: np.ndarray, value: float, eps=10**-5) -> list:
 def doesIntersect(curve: np.ndarray, value: int, eps=10**-5):
     """
     Checks if curve intersects y = value.
-    
+
     Inputs:
         curve: np.ndarray
             Array of interest.
@@ -1809,9 +1880,13 @@ def doesIntersect(curve: np.ndarray, value: int, eps=10**-5):
 def createLaTeX(model: dict, layerDistance: str = ".8cm",
                 nodeDistance: str = "2cm", varDistance: str = ".1cm",
                 nullDistance: str = "1cm", baseAngle: int = 10,
-                contactPositions: tuple = ("2/5", "3/5")) -> str:
+                contactPositions: tuple = ("2/5", "3/5")) -> None:
     """
-    Produces tikzfigure for a model. Needs some definitions in preamble:
+    Produces tikzfigure for a model. Places automatically in file.
+
+    Needs some definitions in preamble:
+
+    ```latex
     usepackage[usenames,dvipsnames]{xcolor}
     usepackage{tikz}
     usetikzlibrary{calc, positioning, arrows.meta, shapes.geometric}
@@ -1823,6 +1898,26 @@ def createLaTeX(model: dict, layerDistance: str = ".8cm",
     tikzset{Arrow/.style={-Latex, line width=1pt}}
     tikzset{Dashed/.style={Latex-, dashed, line width=1pt}}
     tikzset{Dotted/.style={Latex-, dotted, line width=1pt}}
+    ```
+
+    Inputs:
+        model: dict
+            Model of interest.
+        layerDistance: str (e.g. ".8cm")
+            Vertical distance for modified model layer.
+        nodeDistance: str
+            Horizontal distance for nodes.
+        varDistance: str
+            Vertical distance for variant nodes.
+        nullDistance: str
+            Diagonal distance for births and deaths.
+        baseAngle: float
+            Base angle for all arrows.
+        contactPositions: tuple
+            Position for rate and contact liaison on arrow.
+        
+    Outputs:
+        None.
     """
     # variables préliminaires
     tab = ' ' * 4
