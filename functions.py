@@ -1877,9 +1877,9 @@ def doesIntersect(curve: np.ndarray, value: int, eps=10**-5):
     return doesInter
 
 
-def createLaTeX(model: dict, layerDistance: str = ".8cm",
-                nodeDistance: str = "2cm", varDistance: str = ".1cm",
-                nullDistance: str = "1cm", baseAngle: int = 10,
+def createLaTeX(model: dict, layerDistance: float = .8,
+                nodeDistance: float = 2, varDistance: float = .1,
+                nullDistance: float = 1, baseAngle: int = 10,
                 contactPositions: tuple = ("2/5", "3/5")) -> None:
     """
     Produces tikzfigure for a model. Places automatically in file.
@@ -1903,14 +1903,14 @@ def createLaTeX(model: dict, layerDistance: str = ".8cm",
     Inputs:
         model: dict
             Model of interest.
-        layerDistance: str (e.g. ".8cm")
-            Vertical distance for modified model layer.
-        nodeDistance: str
-            Horizontal distance for nodes.
-        varDistance: str
-            Vertical distance for variant nodes.
-        nullDistance: str
-            Diagonal distance for births and deaths.
+        layerDistance: float
+            Vertical distance (in cm) for modified model layer.
+        nodeDistance: float
+            Horizontal distance (in cm) for nodes.
+        varDistance: float
+            Vertical distance (in cm) for variant nodes.
+        nullDistance: float
+            Diagonal distance (in cm) for births and deaths.
         baseAngle: float
             Base angle for all arrows.
         contactPositions: tuple
@@ -1929,17 +1929,17 @@ def createLaTeX(model: dict, layerDistance: str = ".8cm",
     colors = {
         'rate': 'Green',
         'contact': 'Plum',
-        'batch': 'Cyan',
+        'batch': 'Cyan'
     }
 
     for x in compartments:
-        # On veut savoir si le modèle est modifié ou non pour savoir
-        # combien de couches il faut faire
+        # Is the model to graph a modified version?
         if x.endswith(('^0, ^1')) or x.startswith(('Rt')):
             modified = True
+            break
 
     for x in compartments:
-        # Ici on veut regrouper les variants ensemble pour les mettre proche
+        # Join all variant informations together
         if '_' in x and not x.startswith(('Null', 'Rt')):
             if modified:
                 i = int(x.split('^')[1])
@@ -1954,11 +1954,7 @@ def createLaTeX(model: dict, layerDistance: str = ".8cm",
                     x for x in compartments if x.startswith(compBase + '_')] \
                     + [compBase]
 
-            if len(joint[x]) > 3:
-                # Il faudra trouver comment gérer le code tikz si on a beaucoup de variants...
-                print("This code doesn't work for 3 variants or more yet.")
-
-    # Création du string qui va contenir le code LaTeX
+    # String containing LaTeX code
     LaTeX = f"\\begin{{figure}}[H]\n{tab}\\centering\n{tab}\\begin{{tikzpicture}}\n"
 
     # Book-keeping
@@ -1968,81 +1964,79 @@ def createLaTeX(model: dict, layerDistance: str = ".8cm",
     bases0 = []
     bases1 = []
     for x in compartments:
-        # On créé ici E' (l'ensemble des arrêtes)
-        if (x.endswith('^0') or (not modified and
+        # Create edges
+        if (x.endswith('^1') or (not modified and
                                  not x.startswith(('Null', 'Rt')))) \
-                and x not in layer0:
+                and x not in layer1:
             # Layer 0 (or normal layer in non-modified)
-            if len(layer0) != 0:
+            if len(layer1) != 0:
                 # Où placer le noeud par rapport à ceux qui existent
-                if layer0[-1] not in joint:
-                    where = f"[right={nodeDistance} of {layer0[-1]}]"
+                if layer1[-1] not in joint:
+                    where = f"[right={nodeDistance}cm of {layer1[-1]}] "
                 else:
-                    where = f"[right={nodeDistance} of {bases0[-1]}]"
+                    where = f"[right={nodeDistance}cm of {bases1[-1]}] "
             else:
-                where = ""
+                where = " "
 
             if x not in joint:
                 # Si pas un variant, on le place simplement
                 LaTeX += f"{tab * 2}\\node [Square] ({x}) " \
-                    + f"{where} " \
-                    + f"{{${x}$}};\n"
+                    + where + f"{{${x}$}};\n"
 
-                layer0.append(x)
+                layer1.append(x)
             else:
                 # Si on a variant, il faut placer noeud du centre
                 # et mettre les variants autour
-                base = joint[x][2]
-                above = joint[x][0]
-                below = joint[x][1]
+                base = joint[x][-1]
+                toPlace = joint[x][:-1]
+                positions = [2 * i - (len(toPlace) - 1) for i, _ in enumerate(toPlace)]
 
                 LaTeX += f"{tab * 2}\\node [Empty] ({base}) " \
-                    + f"{where} " \
-                    + f"{{}};\n"
+                    + where + f"{{}};\n"
 
-                # Placer les noeuds de variants
-                LaTeX += f"{tab * 2}\\node [Square] ({above}) " \
-                    + f"[above={varDistance} of {base}] " + f"{{${above}$}};\n"
-                LaTeX += f"{tab * 2}\\node [Square] ({below}) " \
-                    + f"[below={varDistance} of {base}] " + f"{{${below}$}};\n"
+                for i, node in enumerate(toPlace):
+                    if positions[i] < 0:
+                        where2 = f"[above={- positions[i]*varDistance}cm of {base}] "
+                    elif positions[i] > 0:
+                        where2 = f"[below={positions[i]*varDistance}cm of {base}] "
+                    else:
+                        where2 = f"[right={positions[i]*varDistance}cm of {base}] "
+                    LaTeX += f"{tab * 2}\\node [Square] ({node}) " \
+                        + where2 + f"{{${node}$}};\n"
 
-                layer0.append(above)
-                layer0.append(below)
-                bases0.append(base)
-        elif x.endswith('^1') and x not in layer1:
-            # on est dans layer 1
-            if len(layer1) != 0:
-                # On regarde si on a point de référence ou pas dans layer 1
-                where = f"[right={nodeDistance} of {layer1[-1]}]"
-            else:
-                # Sinon, on utiliser layer 0 pour construire
-                equivalent0 = addI(removeI(x), 0)
-                where = f"[below={layerDistance} of {equivalent0}]"
+                    layer1.append(node)
+                bases1.append(base)
+        elif x.endswith('^0') and x not in layer0:
+            # Layer 0, this should only be for a few compartments
+            # On utilise layer 1 pour construire
+            equivalent1 = addI(removeI(x), 1)
+            where = f"[above={layerDistance}cm of {equivalent1}] "
 
             if x not in joint:
-                equivalent0 = addI(removeI(x), 0)
                 LaTeX += f"{tab * 2}\\node [Square] ({x}) " + \
-                    f"{where} " + \
-                    f"{{${x}$}};\n"
-                layer1.append(x)
+                    where + f"{{${x}$}};\n"
+
+                layer0.append(x)
             else:
-                base = joint[x][2]
-                above = joint[x][0]
-                below = joint[x][1]
+                base = joint[x][-1]
+                toPlace = joint[x][:-1]
+                positions = [2 * i - (len(toPlace) - 1) for i, _ in enumerate(toPlace)]
 
                 LaTeX += f"{tab * 2}\\node [Empty] ({base}) " \
-                    + f"{where} " + f"{{}};\n"
+                    + where + f"{{}};\n"
 
-                LaTeX += f"{tab * 2}\\node [Square] ({above}) " \
-                    + (f"[above={varDistance} of {base}] " if len(layer0) != 0 else '') \
-                    + f"{{${above}$}};\n"
-                LaTeX += f"{tab * 2}\\node [Square] ({below}) " \
-                    + (f"[below={varDistance} of {base}] " if len(layer0) != 0 else '') \
-                    + f"{{${below}$}};\n"
+                for i, node in enumerate(toPlace):
+                    if positions[i] < 0:
+                        where2 = f"[above={- positions[i]*varDistance}cm of {base}] "
+                    elif positions[i] > 0:
+                        where2 = f"[below={positions[i]*varDistance}cm of {base}] "
+                    else:
+                        where2 = f"[right={positions[i]*varDistance}cm of {base}] "
+                    LaTeX += f"{tab * 2}\\node [Square] ({node}) " \
+                        + where2 + f"{{${node}$}};\n"
 
-                layer1.append(above)
-                layer1.append(below)
-                bases1.append(base)
+                    layer0.append(node)
+                bases0.append(base)
 
         elif x not in layer0 and x not in layer1 and not x.startswith('Null'):
             # Ceux qui ne sont pas dans une layer, donc Rt
@@ -2057,15 +2051,17 @@ def createLaTeX(model: dict, layerDistance: str = ".8cm",
             else:
                 textNoProblem = x
 
-            # On place à gauche de layer 1 ou vers le haut (causera problème pour
-            # trop de Rts différents à calculer)
+            # Place to the left of layer 1
             if len(others) == 0:
-                reference = layer1[0]
+                if layer1[0] not in joint:
+                    reference = layer1[0]
+                else:
+                    reference = bases1[0]
                 pos = 'left'
                 dist = nodeDistance
             else:
-                reference = layer0[0]
-                pos = 'left'
+                reference = others[0]
+                pos = 'above'
                 dist = nodeDistance
             LaTeX += f"{tab * 2}\\node [Square] ({nameNoProblem}) " \
                 + f"[{pos}={dist} of {reference}] " + \
@@ -2118,11 +2114,13 @@ def createLaTeX(model: dict, layerDistance: str = ".8cm",
             bendBase = 'left'
             angle = baseAngle
             try:
+                # If both nodes in layer 0 and far away
                 if abs(layer0.index(u) - layer0.index(v)) > 1 and \
                         u not in joint and v not in joint:
                     angle = 30
             except:
                 try:
+                    # If both nodes in layer 1 and far away
                     if abs(layer1.index(u) - layer1.index(v)) > 1 and \
                             u not in joint and v not in joint:
                         angle = 30
@@ -2151,24 +2149,12 @@ def createLaTeX(model: dict, layerDistance: str = ".8cm",
             # Créer arrêtes pointillées
             for r in v_r.split('+'):
                 bend = 'right'
+                angle = 30
                 if v.startswith('Null') or u.startswith('Null'):
                     bend = 'left'
+                    if r == v or r == u:
+                        angle = 45
 
-                if u.startswith('Null') and r != v:
-                    # On a un rate de naissances qui vient d'ailleurs
-                    angle = 20
-                else:
-                    # Dans les autres cas
-                    angle = 30
-
-                if getFlowType(flow) == 'contact' and getI(r) == 0 \
-                        and not v.startswith('Rt'):
-                    # On a un contact (dans layer 1) créé par contact avec
-                    # compartiment de layer 0, mais sans considérer les Rt
-                    angle = 10
-                    # on inverse le bend de la flèche
-                    bend = 'right' if bend == 'left' else (
-                        'left' if bend == 'right' else bend)
                 # Ajouter l'arrête
                 if r != 'Null_n':
                     Dotted.append(
@@ -2176,22 +2162,13 @@ def createLaTeX(model: dict, layerDistance: str = ".8cm",
 
             # Créer arrêtes segmentées
             for c in v_c.split('+'):
-                bend = 'right'
-                if v.startswith('Null') or u.startswith('Null'):
-                    bend = 'left'
-
-                if c == u:
-                    angle = 45
-                elif v.startswith('Null') and c != u:
+                bend = 'left'
+                angle = 30
+                if getI(c) == getI(v) and modified:
+                    bend = 'right'
+                if v.startswith('Rt'):
                     angle = 20
-                else:
-                    angle = 30
-                bend = 'right' if c == u else 'left'
-                if getFlowType(flow) == 'contact' and getI(c) == 0 \
-                        and not v.startswith('Rt'):
-                    angle = 10
-                    bend = 'right' if bend == 'left' else (
-                        'left' if bend == 'right' else bend)
+
                 if c != 'Null_m':
                     Dashed.append(
                         f"({u}-{v}-c) edge [bend {bend}={angle}] ({c})")
@@ -2204,7 +2181,9 @@ def createLaTeX(model: dict, layerDistance: str = ".8cm",
                 LaTeX += '\n' + tab * 3 + arrow
             LaTeX += ';\n'
 
-    LaTeX += f"{tab}\\end{{tikzpicture}}\n\\end{{figure}}"
+    label = "\\label{" + modelName + "_Tikz}"
+    print(label)
+    LaTeX += f"{tab}\\end{{tikzpicture}}\n{tab + label}\n\\end{{figure}}"
 
     if not os.path.isdir('LaTeX'):
         os.mkdir('LaTeX')

@@ -1,5 +1,5 @@
 {
-    "name": "SIS_vacc_mod",
+    "name": "SIS_deaths_2_mod",
     "compartments": {
         "S^1": {
             "susceptibility": 1,
@@ -10,11 +10,6 @@
             "susceptibility": 1,
             "contagiousness": 1,
             "initial_condition": 1
-        },
-        "R^1": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 0
         },
         "I^0": {
             "susceptibility": 1,
@@ -58,28 +53,49 @@
                 "to": "S^1",
                 "rate": "I^1",
                 "contact": "Null_m",
-                "parameter": ".1"
+                "parameter": "0.05"
             },
             {
                 "from": "I^0",
                 "to": "S^1",
                 "rate": "I^0",
                 "contact": "Null_m",
-                "parameter": ".1"
+                "parameter": "0.05"
+            },
+            {
+                "from": "Null_n",
+                "to": "S^1",
+                "rate": "S^1",
+                "contact": "Null_m",
+                "parameter": "0.05"
+            },
+            {
+                "from": "Null_n",
+                "to": "I^1",
+                "rate": "I^0+I^1",
+                "contact": "Null_m",
+                "parameter": "0.05"
             },
             {
                 "from": "S^1",
-                "to": "R^1",
-                "rate": "Null_n",
+                "to": "Null_m",
+                "rate": "S^1",
                 "contact": "Null_m",
-                "parameter": "10"
+                "parameter": "0.05"
             },
             {
-                "from": "R^1",
-                "to": "S^1",
-                "rate": "R^1",
+                "from": "I^1",
+                "to": "Null_m",
+                "rate": "I^1",
                 "contact": "Null_m",
-                "parameter": ".01"
+                "parameter": "0.05"
+            },
+            {
+                "from": "I^0",
+                "to": "Null_m",
+                "rate": "I^0",
+                "contact": "Null_m",
+                "parameter": "0.05"
             }
         ]
     }

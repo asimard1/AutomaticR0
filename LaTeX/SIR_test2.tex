@@ -3,9 +3,8 @@
     \begin{tikzpicture}
         \node [Square] (S)  {$S$};
         \node [Empty] (I) [right=2cm of S] {};
-        \node [Square] (I_1) [above=1.0cm of I] {$I_1$};
-        \node [Square] (I_2) [right=0.0cm of I] {$I_2$};
-        \node [Square] (I_3) [below=1.0cm of I] {$I_3$};
+        \node [Square] (I_1) [above=0.25cm of I] {$I_1$};
+        \node [Square] (I_2) [below=0.25cm of I] {$I_2$};
         \node [Square] (R) [right=2cm of I] {$R$};
 
         \node [Empty] (Nulln_S) [above left=0.8 of S] {};
@@ -14,30 +13,24 @@
         \node [Empty] (Nullm_I_1) [below right=0.8 of I_1] {};
         \node [Empty] (Nulln_I_2) [above left=0.8 of I_2] {};
         \node [Empty] (Nullm_I_2) [below right=0.8 of I_2] {};
-        \node [Empty] (Nulln_I_3) [above left=0.8 of I_3] {};
-        \node [Empty] (Nullm_I_3) [below right=0.8 of I_3] {};
         \node [Empty] (Nulln_R) [above left=0.8 of R] {};
         \node [Empty] (Nullm_R) [below right=0.8 of R] {};
 
         \path [Arrow]
             (S) edge [bend left=10, Plum] node [Empty, pos=2/5] (S-I_1-r) {} node [Empty, pos=3/5] (S-I_1-c) {} (I_1)
-            (S) edge [bend left=10, Plum] node [Empty, pos=2/5] (S-I_1-r) {} node [Empty, pos=3/5] (S-I_1-c) {} (I_1)
-            (S) edge [bend left=10, Plum] node [Empty, pos=2/5] (S-I_1-r) {} node [Empty, pos=3/5] (S-I_1-c) {} (I_1)
+            (S) edge [bend left=10, Plum] node [Empty, pos=2/5] (S-I_2-r) {} node [Empty, pos=3/5] (S-I_2-c) {} (I_2)
             (I_1) edge [bend left=10, Red] node [Empty, pos=2/5] (I_1-I_2-r) {} node [Empty, pos=3/5] (I_1-I_2-c) {} (I_2)
-            (I_2) edge [bend left=10, Red] node [Empty, pos=2/5] (I_2-I_3-r) {} node [Empty, pos=3/5] (I_2-I_3-c) {} (I_3)
-            (I_3) edge [bend left=10, Red] node [Empty, pos=2/5] (I_3-R-r) {} node [Empty, pos=3/5] (I_3-R-c) {} (R);
+            (I_2) edge [bend left=10, Red] node [Empty, pos=2/5] (I_2-R-r) {} node [Empty, pos=3/5] (I_2-R-c) {} (R);
 
         \path [Dotted]
             (S-I_1-r) edge [bend right=30] (S)
-            (S-I_1-r) edge [bend right=30] (S)
-            (S-I_1-r) edge [bend right=30] (S)
+            (S-I_2-r) edge [bend right=30] (S)
             (I_1-I_2-r) edge [bend right=30] (I_1)
-            (I_2-I_3-r) edge [bend right=30] (I_2)
-            (I_3-R-r) edge [bend right=30] (I_3);
+            (I_2-R-r) edge [bend right=30] (I_2);
 
         \path [Dashed]
             (S-I_1-c) edge [bend left=30] (I_1)
-            (S-I_1-c) edge [bend left=30] (I_2)
-            (S-I_1-c) edge [bend left=30] (I_3);
+            (S-I_2-c) edge [bend left=30] (I_2);
     \end{tikzpicture}
+    \label{SIR_test2_Tikz}
 \end{figure}

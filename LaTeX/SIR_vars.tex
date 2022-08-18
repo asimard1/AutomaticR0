@@ -3,43 +3,44 @@
     \begin{tikzpicture}
         \node [Square] (S)  {$S$};
         \node [Empty] (I) [right=2cm of S] {};
-        \node [Square] (I_A) [above=.2cm of I] {$I_A$};
-        \node [Square] (I_B) [below=.2cm of I] {$I_B$};
+        \node [Square] (I_A) [above=0.25cm of I] {$I_A$};
+        \node [Square] (I_B) [below=0.25cm of I] {$I_B$};
         \node [Square] (R) [right=2cm of I] {$R$};
 
-        \node [Empty] (Nulln_S) [above left=.8cm of S] {};
-        \node [Empty] (Nullm_S) [below right=.8cm of S] {};
-        \node [Empty] (Nulln_I_A) [above left=.8cm of I_A] {};
-        \node [Empty] (Nullm_I_A) [below right=.8cm of I_A] {};
-        \node [Empty] (Nulln_I_B) [above left=.8cm of I_B] {};
-        \node [Empty] (Nullm_I_B) [below right=.8cm of I_B] {};
-        \node [Empty] (Nulln_R) [above left=.8cm of R] {};
-        \node [Empty] (Nullm_R) [below right=.8cm of R] {};
+        \node [Empty] (Nulln_S) [above left=0.8 of S] {};
+        \node [Empty] (Nullm_S) [below right=0.8 of S] {};
+        \node [Empty] (Nulln_I_A) [above left=0.8 of I_A] {};
+        \node [Empty] (Nullm_I_A) [below right=0.8 of I_A] {};
+        \node [Empty] (Nulln_I_B) [above left=0.8 of I_B] {};
+        \node [Empty] (Nullm_I_B) [below right=0.8 of I_B] {};
+        \node [Empty] (Nulln_R) [above left=0.8 of R] {};
+        \node [Empty] (Nullm_R) [below right=0.8 of R] {};
 
         \path [Arrow]
-            (S) edge [bend left=0, Blue] node [Empty, pos=1/4] (S-I_A-r) {} node [Empty, pos=3/4] (S-I_A-c) {} (I_A)
-            (S) edge [bend left=0, Blue] node [Empty, pos=1/4] (S-I_B-r) {} node [Empty, pos=3/4] (S-I_B-c) {} (I_B)
-            (I_A) edge [bend left=0, Red] node [Empty, pos=2/5] (I_A-R-r) {} node [Empty, pos=3/5] (I_A-R-c) {} (R)
-            (I_B) edge [bend left=0, Red] node [Empty, pos=2/5] (I_B-R-r) {} node [Empty, pos=3/5] (I_B-R-c) {} (R)
-            (Nulln_S) edge [bend left=0, Orange] node [Empty, pos=2/5] (Nulln_S-S-r) {} node [Empty, pos=3/5] (Nulln_S-S-c) {} (S)
-            (S) edge [bend left=0, Red] node [Empty, pos=2/5] (S-Nullm_S-r) {} node [Empty, pos=3/5] (S-Nullm_S-c) {} (Nullm_S)
-            (I_A) edge [bend left=0, Red] node [Empty, pos=2/5] (I_A-Nullm_I_A-r) {} node [Empty, pos=3/5] (I_A-Nullm_I_A-c) {} (Nullm_I_A)
-            (I_B) edge [bend left=0, Red] node [Empty, pos=2/5] (I_B-Nullm_I_B-r) {} node [Empty, pos=3/5] (I_B-Nullm_I_B-c) {} (Nullm_I_B)
-            (R) edge [bend left=0, Red] node [Empty, pos=2/5] (R-Nullm_R-r) {} node [Empty, pos=3/5] (R-Nullm_R-c) {} (Nullm_R)
-            (Nulln_I_B) edge [bend left=0, Orange] node [Empty, pos=2/5] (Nulln_I_B-I_B-r) {} node [Empty, pos=3/5] (Nulln_I_B-I_B-c) {} (I_B);
+            (S) edge [bend left=10, Plum] node [Empty, pos=2/5] (S-I_A-r) {} node [Empty, pos=3/5] (S-I_A-c) {} (I_A)
+            (S) edge [bend left=10, Plum] node [Empty, pos=2/5] (S-I_B-r) {} node [Empty, pos=3/5] (S-I_B-c) {} (I_B)
+            (I_A) edge [bend left=10, Red] node [Empty, pos=2/5] (I_A-R-r) {} node [Empty, pos=3/5] (I_A-R-c) {} (R)
+            (I_B) edge [bend left=10, Red] node [Empty, pos=2/5] (I_B-R-r) {} node [Empty, pos=3/5] (I_B-R-c) {} (R)
+            (Nulln_S) edge [bend left=10, Cyan] node [Empty, pos=2/5] (Nulln_S-S-r) {} node [Empty, pos=3/5] (Nulln_S-S-c) {} (S)
+            (S) edge [bend left=10, Red] node [Empty, pos=2/5] (S-Nullm_S-r) {} node [Empty, pos=3/5] (S-Nullm_S-c) {} (Nullm_S)
+            (I_A) edge [bend left=10, Red] node [Empty, pos=2/5] (I_A-Nullm_I_A-r) {} node [Empty, pos=3/5] (I_A-Nullm_I_A-c) {} (Nullm_I_A)
+            (I_B) edge [bend left=10, Red] node [Empty, pos=2/5] (I_B-Nullm_I_B-r) {} node [Empty, pos=3/5] (I_B-Nullm_I_B-c) {} (Nullm_I_B)
+            (R) edge [bend left=10, Red] node [Empty, pos=2/5] (R-Nullm_R-r) {} node [Empty, pos=3/5] (R-Nullm_R-c) {} (Nullm_R)
+            (Nulln_I_B) edge [bend left=10, Cyan] node [Empty, pos=2/5] (Nulln_I_B-I_B-r) {} node [Empty, pos=3/5] (Nulln_I_B-I_B-c) {} (I_B);
 
         \path [Dotted]
             (S-I_A-r) edge [bend right=30] (S)
             (S-I_B-r) edge [bend right=30] (S)
             (I_A-R-r) edge [bend right=30] (I_A)
             (I_B-R-r) edge [bend right=30] (I_B)
-            (S-Nullm_S-r) edge [bend left=30] (S)
-            (I_A-Nullm_I_A-r) edge [bend left=30] (I_A)
-            (I_B-Nullm_I_B-r) edge [bend left=30] (I_B)
-            (R-Nullm_R-r) edge [bend left=30] (R);
+            (S-Nullm_S-r) edge [bend left=45] (S)
+            (I_A-Nullm_I_A-r) edge [bend left=45] (I_A)
+            (I_B-Nullm_I_B-r) edge [bend left=45] (I_B)
+            (R-Nullm_R-r) edge [bend left=45] (R);
 
         \path [Dashed]
             (S-I_A-c) edge [bend left=30] (I_A)
             (S-I_B-c) edge [bend left=30] (I_B);
     \end{tikzpicture}
+    \label{SIR_vars_Tikz}
 \end{figure}

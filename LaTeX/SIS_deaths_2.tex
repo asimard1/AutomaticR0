@@ -3,28 +3,30 @@
     \begin{tikzpicture}
         \node [Square] (S)  {$S$};
         \node [Square] (I) [right=2cm of S] {$I$};
-        \node [Square] (R) [right=2cm of I] {$R$};
 
         \node [Empty] (Nulln_S) [above left=0.8 of S] {};
         \node [Empty] (Nullm_S) [below right=0.8 of S] {};
         \node [Empty] (Nulln_I) [above left=0.8 of I] {};
         \node [Empty] (Nullm_I) [below right=0.8 of I] {};
-        \node [Empty] (Nulln_R) [above left=0.8 of R] {};
-        \node [Empty] (Nullm_R) [below right=0.8 of R] {};
 
         \path [Arrow]
             (S) edge [bend left=10, Plum] node [Empty, pos=2/5] (S-I-r) {} node [Empty, pos=3/5] (S-I-c) {} (I)
             (I) edge [bend left=10, Red] node [Empty, pos=2/5] (I-S-r) {} node [Empty, pos=3/5] (I-S-c) {} (S)
-            (S) edge [bend left=30, Cyan] node [Empty, pos=2/5] (S-R-r) {} node [Empty, pos=3/5] (S-R-c) {} (R)
-            (R) edge [bend left=30, Red] node [Empty, pos=2/5] (R-S-r) {} node [Empty, pos=3/5] (R-S-c) {} (S);
+            (Nulln_S) edge [bend left=10, Green] node [Empty, pos=2/5] (Nulln_S-S-r) {} node [Empty, pos=3/5] (Nulln_S-S-c) {} (S)
+            (Nulln_I) edge [bend left=10, Green] node [Empty, pos=2/5] (Nulln_I-I-r) {} node [Empty, pos=3/5] (Nulln_I-I-c) {} (I)
+            (S) edge [bend left=10, Red] node [Empty, pos=2/5] (S-Nullm_S-r) {} node [Empty, pos=3/5] (S-Nullm_S-c) {} (Nullm_S)
+            (I) edge [bend left=10, Red] node [Empty, pos=2/5] (I-Nullm_I-r) {} node [Empty, pos=3/5] (I-Nullm_I-c) {} (Nullm_I);
 
         \path [Dotted]
             (S-I-r) edge [bend right=30] (S)
             (I-S-r) edge [bend right=30] (I)
-            (R-S-r) edge [bend right=30] (R);
+            (Nulln_S-S-r) edge [bend left=45] (S)
+            (Nulln_I-I-r) edge [bend left=45] (I)
+            (S-Nullm_S-r) edge [bend left=45] (S)
+            (I-Nullm_I-r) edge [bend left=45] (I);
 
         \path [Dashed]
             (S-I-c) edge [bend left=30] (I);
     \end{tikzpicture}
-    \label{SIS_vacc_Tikz}
+    \label{SIS_deaths_2_Tikz}
 \end{figure}
