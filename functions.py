@@ -890,7 +890,7 @@ def splitVrVc(nodes, newCompartments) -> str:
     return newVrVc
 
 
-def subGraphVc(model, u:str, vc: list):
+def subGraphVc(model, u: str, vc: list):
     """
     Gets all edges in graph as a dictionary.
 
@@ -1090,7 +1090,7 @@ def mod(model: dict,
 
     for node in toDuplicate:
         newModel["compartments"][addI(node, 0)] \
-                    = model["compartments"][node].copy()
+            = model["compartments"][node].copy()
         newModel["compartments"][addI(node, 0)]['initial_condition'] = 0
 
     newCompartments = getCompartments(newModel)
@@ -1645,6 +1645,8 @@ def compare(modelName: str,
         printWarnings=True, scaleMethod=scaleMethod,
         printR0=printR0, useTqdm=useTqdm)
 
+    S = np.sum(solution[:, susceptibles], axis=1)
+    I = np.sum(solution[:, susceptibles], axis=1)
     N = np.array([getPopulation(model, x)['Sum']
                   for x in solution])
 
@@ -1661,65 +1663,92 @@ def compare(modelName: str,
     else:
         ax2.plot(t_span, infsNotScaled, label='Inci', ls='--')
 
-    if model['name'] == 'SIR':
-        from scipy.interpolate import InterpolatedUnivariateSpline
+    # if model['name'] == 'SIR':
+    #     from scipy.interpolate import InterpolatedUnivariateSpline
 
-        print(t_span_rt[1] - t_span_rt[0])
-        sim_sub = min(100, 100 / (t_span_rt[1] - t_span_rt[0]))
-        print(f'Simulation subdivisions per unit of time: {sim_sub}')
-        solutionOG, t_spanOG = solve(
-            model, (0, t_span_rt[1] + 200), sim_sub, False)
-        toKeep = np.where(
-            np.logical_and(t_span_rt[0] <= t_spanOG,
-                           t_spanOG <= t_span_rt[1]))[0]
+    #     print(t_span_rt[1] - t_span_rt[0])
+    #     sim_sub = min(100, 100 / (t_span_rt[1] - t_span_rt[0]))
+    #     print(f'Simulation subdivisions per unit of time: {sim_sub}')
+    #     solutionOG, t_spanOG = solve(
+    #         model, (0, t_span_rt[1] + 200), sim_sub, False)
+    #     toKeep = np.where(
+    #         np.logical_and(t_span_rt[0] <= t_spanOG,
+    #                        t_spanOG <= t_span_rt[1]))[0]
 
-        beta = float(model['flows']['flows'][0]['parameter'])
-        gamma = float(model['flows']['flows'][1]['parameter'])
-        S_OG = np.sum(solutionOG[:, susceptibles], axis=1)
-        I_OG = np.sum(solutionOG[:, infected], axis=1)
-        N_OG = np.array([getPopulation(model, x)['Sum']
-                         for x in solutionOG])
-        nu = beta * S_OG * I_OG / N_OG
-        Jt = None
-        for t in tqdm(t_spanOG[toKeep]):
-            i = np.where(t_spanOG == t)[0][0]
-            t_spanIntegral = t_spanOG[i:]
-            exponential = np.exp(-gamma * (t_spanIntegral - t))
-            valuesIntegral = nu[i:] * exponential
+    #     beta = float(model['flows']['flows'][0]['parameter'])
+    #     gamma = float(model['flows']['flows'][1]['parameter'])
+    #     S_OG = np.sum(solutionOG[:, susceptibles], axis=1)
+    #     I_OG = np.sum(solutionOG[:, infected], axis=1)
+    #     N_OG = np.array([getPopulation(model, x)['Sum']
+    #                      for x in solutionOG])
+    #     nu = beta * S_OG * I_OG / N_OG
+    #     Jt = None
+    #     for t in tqdm(t_spanOG[toKeep]):
+    #         i = np.where(t_spanOG == t)[0][0]
+    #         t_spanIntegral = t_spanOG[i:]
+    #         exponential = np.exp(-gamma * (t_spanIntegral - t))
+    #         valuesIntegral = nu[i:] * exponential
 
-            f = InterpolatedUnivariateSpline(
-                t_spanIntegral, valuesIntegral, k=1)
-            if type(Jt) == type(None):
-                Jt = np.array(
-                    [f.integral(t_spanIntegral[0], t_spanIntegral[-1])])
-            else:
-                Jt = np.append(Jt, f.integral(
-                    t_spanIntegral[0], t_spanIntegral[-1]))
+    #         f = InterpolatedUnivariateSpline(
+    #             t_spanIntegral, valuesIntegral, k=1)
+    #         if type(Jt) == type(None):
+    #             Jt = np.array(
+    #                 [f.integral(t_spanIntegral[0], t_spanIntegral[-1])])
+    #         else:
+    #             Jt = np.append(Jt, f.integral(
+    #                 t_spanIntegral[0], t_spanIntegral[-1]))
 
-        ax2.plot(t_spanOG[toKeep], Jt,
-                 label='J(t)', ls='--')
-        ax2.plot(t_spanOG[toKeep], I_OG[toKeep],
-                 label='Infected', ls='--')
-        crossTime = evaluateCurve(
-            t_spanOG[toKeep],
-            find_intersections_curves(
-                Jt, I_OG[toKeep])[0])
-        print(f'Time between t0 and t1: '
-              + f'{np.abs(crossTime - xTimeInfs)}')
-        ax1.axvline(x=crossTime, linestyle='--', color='grey',
-                    linewidth=WIDTH, dashes=DASH)
-        # print(xTimeInfs - t_spanOG[toKeep][np.argmax(Jt)])
+    #     ax2.plot(t_spanOG[toKeep], Jt,
+    #              label='J(t)', ls='--')
+    #     ax2.plot(t_spanOG[toKeep], I_OG[toKeep],
+    #              label='Infected', ls='--')
+    #     crossTime = evaluateCurve(
+    #         t_spanOG[toKeep],
+    #         find_intersections_curves(
+    #             Jt, I_OG[toKeep])[0])
+    #     print(f'Time between t0 and t1: '
+    #           + f'{np.abs(crossTime - xTimeInfs)}')
+    #     ax1.axvline(x=crossTime, linestyle='--', color='grey',
+    #                 linewidth=WIDTH, dashes=DASH)
 
     # POINT D'INFLECTION
-    dinf_dt = (infsScaled[1:] - infsScaled[:-1]) \
+    dinf_dt = (infsNotScaled[1:] - infsNotScaled[:-1]) \
         / (t_span[1:] - t_span[:-1])
     d2inf_dt2 = (dinf_dt[1:] - dinf_dt[:-1]) \
         / (t_span[2:] - t_span[:-2])
 
-    idx_infs = find_intersections(d2inf_dt2, 0)[0]
-    xTime_infs = evaluateCurve(t_span, idx_infs)
-    ax1.axvline(x=xTime_infs, linestyle='--', color='grey',
+    idx_infl = find_intersections(d2inf_dt2, 0)[0]
+    xTime_infl = evaluateCurve(t_span, idx_infl)
+    ax1.axvline(x=xTime_infl, linestyle='--', color='grey',
                 linewidth=WIDTH, dashes=DASH)
+
+    # if modelName == 'SIR':
+    #     pente = np.max(dinf_dt)
+    #     times = np.linspace(xTime_infl, xTimeInfs, 101)
+    #     exponential = np.exp(-gamma * (xTimeInfs - times))
+    #     nu = beta * S * I / N
+    #     nu_ti = evaluateCurve(nu, idx_infl)
+    #     nu_t0 = evaluateCurve(nu, idx_infs)
+
+    #     term1 = (nu_ti - xTime_infl * pente) / gamma * (1 - exponential)
+    #     term2 = pente / gamma * (times - xTimeInfs *
+    #                              exponential + 1 / gamma * (1 - exponential))
+    #     term3 = nu_t0 * exponential
+    #     sumOfTerms = term1 + term2 + term3
+    #     ax2.plot(times, sumOfTerms, label='Bound J(t)', ls='--')
+
+    #     S_times = np.array([evaluateCurve(S, find_intersections(t_span, x)[0])
+    #                         for x in times])
+    #     I_times = np.array([evaluateCurve(I, find_intersections(t_span, x)[0])
+    #                         for x in times])
+    #     N_times = np.array([evaluateCurve(N, find_intersections(t_span, x)[0])
+    #                         for x in times])
+    #     Rt_bound = beta * S_times / gamma / N_times \
+    #         - beta * sumOfTerms / gamma / N_times
+    #     ax1.plot(times, Rt_bound, label='Rt induced')
+    #     ax2.plot(times, S_times, label='S')
+
+    #     ax1.axhline(y=beta * S_times[-1] / gamma / N_times[-1] * (1 - beta * I_times[-1] / gamma / N_times[-1]))
 
     susceptiblesDivPop = np.sum(solution[:, susceptibles], axis=1) / N
     infectedDivPop = np.sum(solution[:, infected], axis=1) / N
