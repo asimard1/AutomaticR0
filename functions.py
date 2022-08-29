@@ -1,9 +1,8 @@
-from inspect import getcomments
+from re import L
 import numpy as np
 from scipy.integrate import odeint
 from dataclasses import dataclass
-from typing import Tuple
-from math import *
+import math
 import matplotlib.pyplot as plt
 import time
 import json
@@ -18,7 +17,7 @@ class Delta:
 
 @dataclass
 class Flux:
-    coef_indices: Tuple[int, int]
+    coef_indices: tuple([int, int])
     rate_index: list
     contact_index: list
 
@@ -752,7 +751,7 @@ def solve(model: dict, tRange: tuple, refine: int, printText=False) -> tuple:
 
     compartments = getCompartments(model)
     steps = (tRange[1] - tRange[0]) * refine + 1
-    t_span = np.linspace(tRange[0], tRange[1], num=ceil(steps))
+    t_span = np.linspace(tRange[0], tRange[1], num=math.ceil(steps))
 
     derivatives = [derivativeFor(model, c)
                    for c in compartments]
@@ -891,6 +890,131 @@ def splitVrVc(nodes, newCompartments) -> str:
     return newVrVc
 
 
+def subGraphVc(model, u:str, vc: list):
+    """
+    Gets all edges in graph as a dictionary.
+
+    Inputs:
+        model: dict
+            Model of interest.
+        u: str
+            Start point for search.
+        vc: list
+            List of destinations for search
+
+    Outputs:
+        edges: dict
+            All edges in model.
+    """
+
+    allNodes = []
+    for d in vc:
+        for node in subGraph(model, u, d):
+            if node not in allNodes:
+                allNodes.append(node)
+
+    return allNodes
+
+
+def subGraph(model, u: str, d: str):
+    """
+    Gets all edges in graph as a dictionary.
+
+    Inputs:
+        model: dict
+            Model of interest.
+        u: str
+            Start point for search.
+        d: str
+            Destination for search
+
+    Outputs:
+        edges: dict
+            All edges in model.
+    """
+    visited = {comp: False for comp in getCompartments(model)}
+    edges = getEdges(model, u)
+
+    allPaths = []
+
+    searchPaths(u, d, visited, edges, [], allPaths)
+
+    subGraph = []
+
+    for path in allPaths:
+        for comp in path:
+            if comp not in subGraph:
+                subGraph.append(comp)
+
+    return subGraph
+
+
+def searchPaths(u: str, d: str, visited: dict, edges: dict, path: list, allPaths: list):
+    """
+    Returns the subgraph in the model (unmodified) that lies between u and v (without loops).
+    See https://www.geeksforgeeks.org/find-paths-given-source-destination/.
+
+    Inputs:
+        u: str
+            Start point for search.
+        d: str
+            Destination point for search.
+        visited: dict
+            Dictionary containing information on searched vertices.
+
+    Outputs:
+        subgraph: list
+            List of nodes that are in the subgraph.
+    """
+
+    visited[u] = True
+    path.append(u)
+
+    if u == d:
+        allPaths.append(path.copy())
+    else:
+        for descendant in edges[u]:
+            if not visited[descendant]:
+                searchPaths(descendant,
+                            d,
+                            visited,
+                            edges,
+                            path,
+                            allPaths)
+
+    path.pop()
+    visited[u] = False
+
+
+def getEdges(model, u: str):
+    """
+    Gets all edges in graph as a dictionary.
+
+    Inputs:
+        model: dict
+            Model of interest.
+        u: str
+            Start point for search.
+
+    Outputs:
+        edges: dict
+            All edges in model.
+    """
+
+    flows = model['flows']
+    compartments = getCompartments(model)
+
+    edges = {comp: [] for comp in compartments}
+
+    for _, flowName in enumerate(flows):
+        for flow in flows[flowName]:
+            if not flow['to'] in edges[flow['from']] \
+                    and flow['to'] != u:
+                edges[flow['from']].append(flow['to'])
+
+    return edges
+
+
 def mod(model: dict,
         printText: bool = False,
         write=True, overWrite=True) -> dict:
@@ -943,6 +1067,7 @@ def mod(model: dict,
                 = model["compartments"][compartment].copy()
 
     # Add isolated layer
+    toDuplicate = []
     for _, flowName in enumerate(flows):
         for flow in flows[flowName]:
             newFlow = {
@@ -959,16 +1084,18 @@ def mod(model: dict,
             vc = flow['contact'].split('+')
 
             if getFlowType(flow) == 'contact':
-                newModel["compartments"][addI(v, 0)] \
-                    = model["compartments"][v].copy()
-                newModel["compartments"][addI(v, 0)]['initial_condition'] = 0
-                for contact_node in vc:
-                    newModel["compartments"][addI(contact_node, 0)] \
-                        = model["compartments"][contact_node].copy()
-                    newModel["compartments"][addI(
-                        contact_node, 0)]['initial_condition'] = 0
+                for node in subGraphVc(model, v, vc):
+                    if node not in toDuplicate:
+                        toDuplicate.append(node)
+
+    for node in toDuplicate:
+        newModel["compartments"][addI(node, 0)] \
+                    = model["compartments"][node].copy()
+        newModel["compartments"][addI(node, 0)]['initial_condition'] = 0
 
     newCompartments = getCompartments(newModel)
+    # print(newCompartments)
+    # print(toDuplicate)
 
     # Add edges and their informations
     for _, flowName in enumerate(flows):
@@ -1197,6 +1324,8 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
             Integration time points (only keep time values that fit with t_span_rt)
         values: dict
             Dictionary containing all rt values of interest.
+        toKeep: list
+            List of values to keep in solution.
     """
 
     if printText:
@@ -1241,6 +1370,11 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
             if not np.allclose(array1, array2) or not np.allclose(array2, array1):
                 allGood = False
                 problems.append(comp)
+
+                fig2 = plt.figure()
+                plt.plot(array1)
+                plt.plot(array2)
+                plt.show()
         if not allGood and printWarnings:
             print('Il semble que les modèles aient des résultats différents.')
             print('On continue l\'expérience quand même, à vérifier.')
@@ -1318,7 +1452,7 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
 
     toKeep = np.where(np.logical_and(t_span_rt[0] <= t_spanOld,
                                      t_spanOld <= t_span_rt[1]))[0]
-    return modelOld, newModel, solutionOld[toKeep], t_spanOld[toKeep], values
+    return modelOld, newModel, solutionOld[toKeep], t_spanOld[toKeep], values, toKeep
 
 
 def computeR0(modelName: str, t_span_sim: tuple = (0, 100),
@@ -1371,7 +1505,7 @@ def computeR0(modelName: str, t_span_sim: tuple = (0, 100),
             Dictionary containing all R0 values of interest.
     """
 
-    modelOld, newModel, solutionOld, _, values = \
+    modelOld, newModel, solutionOld, _, values, _ = \
         computeRt(modelName, (0, 0), 1, t_span_sim,
                   sub_sim, scaledInfs=scaledInfs, verification=verification,
                   write=write, overWrite=overWrite, whereToAdd=whereToAdd,
@@ -1423,7 +1557,7 @@ def compare(modelName: str,
             plotIndividual: bool = False,
             plotBound: bool = True,
             printR0: bool = False,
-            scaledInfectedPlot=True,
+            scaledInfectedPlot=False,
             supressGraph: bool = False,
             useTqdm: bool = True) -> None:
     """
@@ -1489,18 +1623,20 @@ def compare(modelName: str,
     DASH = (10, 10)
     DOTS = (1, 2)
 
-    fig = plt.figure()
+    fig, ax1 = plt.subplots()
+    ax2 = ax1.twinx()
     # plt.yscale('log')
 
-    plt.axhline(y=0, linestyle='--', color='grey',
+    ax1.axhline(y=0, linestyle='--', color='grey',
                 linewidth=WIDTH, dashes=DASH)
-    plt.axhline(y=1, linestyle='--', color='grey',
+    ax2.axhline(y=0, linestyle='--', color='grey',
+                linewidth=WIDTH, dashes=DASH)
+    ax1.axhline(y=1, linestyle='--', color='grey',
                 linewidth=WIDTH, dashes=DASH)
 
     rtCurves = {}
-    plotedInfsLine = False
 
-    model, newModel, solution, t_span, values = computeRt(
+    model, _, solution, t_span, values, _ = computeRt(
         modelName, t_span_rt, sub_rt,
         t_span_sim=t_span_sim, sub_sim=sub_sim,
         verification=verification, whereToAdd=whereToAdd,
@@ -1509,30 +1645,93 @@ def compare(modelName: str,
         printWarnings=True, scaleMethod=scaleMethod,
         printR0=printR0, useTqdm=useTqdm)
 
+    N = np.array([getPopulation(model, x)['Sum']
+                  for x in solution])
+
     infsScaled = infCurveScaled(model, solution, t_span)
     infsNotScaled = infCurve(model, solution, t_span)
-    plt.plot(
-        t_span, infsScaled if scaledInfectedPlot else infsNotScaled,
-        label='Inci (scaled)' if scaledInfectedPlot else 'Inci')
     idx_infs = find_nearest(infsScaled, 1)
     xTimeInfs = t_span[idx_infs]
     maxIncident = infsNotScaled[idx_infs]
     if printText:
         print(f'Max incidents: {maxIncident}')
 
-    N = np.array([getPopulation(model, x)['Sum']
-                  for x in solution])
+    if scaledInfectedPlot:
+        ax1.plot(t_span, infsScaled, label='Inci (scaled)')
+    else:
+        ax2.plot(t_span, infsNotScaled, label='Inci', ls='--')
+
+    if model['name'] == 'SIR':
+        from scipy.interpolate import InterpolatedUnivariateSpline
+
+        print(t_span_rt[1] - t_span_rt[0])
+        sim_sub = min(100, 100 / (t_span_rt[1] - t_span_rt[0]))
+        print(f'Simulation subdivisions per unit of time: {sim_sub}')
+        solutionOG, t_spanOG = solve(
+            model, (0, t_span_rt[1] + 200), sim_sub, False)
+        toKeep = np.where(
+            np.logical_and(t_span_rt[0] <= t_spanOG,
+                           t_spanOG <= t_span_rt[1]))[0]
+
+        beta = float(model['flows']['flows'][0]['parameter'])
+        gamma = float(model['flows']['flows'][1]['parameter'])
+        S_OG = np.sum(solutionOG[:, susceptibles], axis=1)
+        I_OG = np.sum(solutionOG[:, infected], axis=1)
+        N_OG = np.array([getPopulation(model, x)['Sum']
+                         for x in solutionOG])
+        nu = beta * S_OG * I_OG / N_OG
+        Jt = None
+        for t in tqdm(t_spanOG[toKeep]):
+            i = np.where(t_spanOG == t)[0][0]
+            t_spanIntegral = t_spanOG[i:]
+            exponential = np.exp(-gamma * (t_spanIntegral - t))
+            valuesIntegral = nu[i:] * exponential
+
+            f = InterpolatedUnivariateSpline(
+                t_spanIntegral, valuesIntegral, k=1)
+            if type(Jt) == type(None):
+                Jt = np.array(
+                    [f.integral(t_spanIntegral[0], t_spanIntegral[-1])])
+            else:
+                Jt = np.append(Jt, f.integral(
+                    t_spanIntegral[0], t_spanIntegral[-1]))
+
+        ax2.plot(t_spanOG[toKeep], Jt,
+                 label='J(t)', ls='--')
+        ax2.plot(t_spanOG[toKeep], I_OG[toKeep],
+                 label='Infected', ls='--')
+        crossTime = evaluateCurve(
+            t_spanOG[toKeep],
+            find_intersections_curves(
+                Jt, I_OG[toKeep])[0])
+        print(f'Time between t0 and t1: '
+              + f'{np.abs(crossTime - xTimeInfs)}')
+        ax1.axvline(x=crossTime, linestyle='--', color='grey',
+                    linewidth=WIDTH, dashes=DASH)
+        # print(xTimeInfs - t_spanOG[toKeep][np.argmax(Jt)])
+
+    # POINT D'INFLECTION
+    dinf_dt = (infsScaled[1:] - infsScaled[:-1]) \
+        / (t_span[1:] - t_span[:-1])
+    d2inf_dt2 = (dinf_dt[1:] - dinf_dt[:-1]) \
+        / (t_span[2:] - t_span[:-2])
+
+    idx_infs = find_intersections(d2inf_dt2, 0)[0]
+    xTime_infs = evaluateCurve(t_span, idx_infs)
+    ax1.axvline(x=xTime_infs, linestyle='--', color='grey',
+                linewidth=WIDTH, dashes=DASH)
+
     susceptiblesDivPop = np.sum(solution[:, susceptibles], axis=1) / N
     infectedDivPop = np.sum(solution[:, infected], axis=1) / N
     rt_ANA = R0 * susceptiblesDivPop
     if plotANA:
-        plt.plot(t_span, rt_ANA, label='ANA')
+        ax1.plot(t_span, rt_ANA, label='ANA')
     rt_ANA_v2 = R0 * (susceptiblesDivPop - infectedDivPop)
     if plotANA_v2:
-        plt.plot(t_span, rt_ANA_v2, label='ANA_v2')
+        ax1.plot(t_span, rt_ANA_v2, label='ANA_v2')
     bound = rt_ANA * (1 - R0 * infectedDivPop)
     if plotBound:
-        plt.plot(t_span, bound, label='Bound')
+        ax1.plot(t_span, bound, label='Bound')
 
     rt_times = np.array([key for key in values])
 
@@ -1542,7 +1741,7 @@ def compare(modelName: str,
         rtCurves[rtNode] = rt_rtNode
         if len(getRtNodes(mod(model, False))) > 1 \
                 and plotIndividual:
-            plt.plot(rt_times, rt_rtNode, label=rtNode)
+            ax1.plot(rt_times, rt_rtNode, label=rtNode)
         rt += rt_rtNode
 
     rtCurves['Sum'] = rt
@@ -1579,25 +1778,25 @@ def compare(modelName: str,
             print(f'Rt = 1 at {xTimeRt:.3f}')
             print(f'Time difference: {np.abs(xTimeInfs - xTimeRt)}')
 
-        if not plotedInfsLine:
-            plt.axvline(x=xTimeInfs, linestyle=':', color='grey',
-                        linewidth=2.5 * WIDTH, dashes=DOTS)
-            plotedInfsLine = True
-        plt.axvline(x=xTimeRt, linestyle='--', color='grey',
+        ax1.axvline(x=xTimeInfs, linestyle=':', color='grey',
+                    linewidth=2.5 * WIDTH, dashes=DOTS)
+        ax1.axvline(x=xTimeRt, linestyle='--', color='grey',
                     linewidth=WIDTH, dashes=DASH)
 
     elif printText:
         print('Time difference is not relevant, '
               + 'no intersection between rt and 1.')
 
-    ls = ['-', '--', '-.', ':'][0 % 4]
-    plt.plot(rt_times, rt, label='SIM',
-             linestyle=ls)
+    ax1.plot(rt_times, rt, label='SIM',
+             linestyle='-')
 
-    plt.title(modelName)
+    ax1.set_title(modelName)
 
-    # plt.ylim(bottom=.1)
-    plt.legend(loc='best')
+    lines, labels = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+
+    ax1.legend(lines + lines2, labels + labels2, loc='upper right')
+    ax2.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
 
     if supressGraph:
         plt.close()
@@ -1833,7 +2032,7 @@ def find_intersections(array: np.ndarray, value: float, eps=10**-5) -> list:
 
     Outputs:
         newWhere: list
-            List of couple, intersection is between both values in couple.
+            List of floats.
     """
 
     newCurve = array - value
@@ -1852,6 +2051,44 @@ def find_intersections(array: np.ndarray, value: float, eps=10**-5) -> list:
             else:
                 num = value - array[where[i]]
                 denom = array[where[i + 1]] - array[where[i]]
+                newWhere.append(num / denom + where[i])
+
+    return newWhere
+
+
+def find_intersections_curves(curve1: np.ndarray, curve2: np.ndarray, eps=10**-5) -> list:
+    """
+    Finds all intersections between curve and value.
+
+    Inputs:
+        curve1: np.ndarray
+            First array to test.
+        curve2: np.ndarray
+            Second array to test.
+        eps: float
+            Permitted error.
+
+    Outputs:
+        newWhere: list
+            List of floats.
+    """
+
+    newCurve = curve1 - curve2
+    where = np.where(abs(newCurve) > eps)[0]
+
+    newWhere = []
+
+    newCurveEps = newCurve[where]
+
+    for i in range(len(newCurveEps) - 1):
+        product = newCurveEps[i] * newCurveEps[i + 1]
+
+        if product < 0:
+            if where[i + 1] - where[i] > 1:
+                newWhere.append((where[i] + where[i + 1]) / 2)
+            else:
+                num = - newCurve[where[i]]
+                denom = newCurve[where[i + 1]] - newCurve[where[i]]
                 newWhere.append(num / denom + where[i])
 
     return newWhere
@@ -1915,7 +2152,7 @@ def createLaTeX(model: dict, layerDistance: float = .8,
             Base angle for all arrows.
         contactPositions: tuple
             Position for rate and contact liaison on arrow.
-        
+
     Outputs:
         None.
     """
@@ -1989,7 +2226,8 @@ def createLaTeX(model: dict, layerDistance: float = .8,
                 # et mettre les variants autour
                 base = joint[x][-1]
                 toPlace = joint[x][:-1]
-                positions = [2 * i - (len(toPlace) - 1) for i, _ in enumerate(toPlace)]
+                positions = [2 * i - (len(toPlace) - 1)
+                             for i, _ in enumerate(toPlace)]
 
                 LaTeX += f"{tab * 2}\\node [Empty] ({base}) " \
                     + where + f"{{}};\n"
@@ -2020,7 +2258,8 @@ def createLaTeX(model: dict, layerDistance: float = .8,
             else:
                 base = joint[x][-1]
                 toPlace = joint[x][:-1]
-                positions = [2 * i - (len(toPlace) - 1) for i, _ in enumerate(toPlace)]
+                positions = [2 * i - (len(toPlace) - 1)
+                             for i, _ in enumerate(toPlace)]
 
                 LaTeX += f"{tab * 2}\\node [Empty] ({base}) " \
                     + where + f"{{}};\n"

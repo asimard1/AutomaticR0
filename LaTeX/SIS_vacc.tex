@@ -15,12 +15,13 @@
         \path [Arrow]
             (S) edge [bend left=10, Plum] node [Empty, pos=2/5] (S-I-r) {} node [Empty, pos=3/5] (S-I-c) {} (I)
             (I) edge [bend left=10, Red] node [Empty, pos=2/5] (I-S-r) {} node [Empty, pos=3/5] (I-S-c) {} (S)
-            (S) edge [bend left=30, Cyan] node [Empty, pos=2/5] (S-R-r) {} node [Empty, pos=3/5] (S-R-c) {} (R)
+            (S) edge [bend left=30, Red] node [Empty, pos=2/5] (S-R-r) {} node [Empty, pos=3/5] (S-R-c) {} (R)
             (R) edge [bend left=30, Red] node [Empty, pos=2/5] (R-S-r) {} node [Empty, pos=3/5] (R-S-c) {} (S);
 
         \path [Dotted]
             (S-I-r) edge [bend right=30] (S)
             (I-S-r) edge [bend right=30] (I)
+            (S-R-r) edge [bend right=30] (S)
             (R-S-r) edge [bend right=30] (R);
 
         \path [Dashed]

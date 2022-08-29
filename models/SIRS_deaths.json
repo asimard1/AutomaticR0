@@ -72,6 +72,13 @@
                 "rate": "R",
                 "contact": "Null_m",
                 "parameter": "0.0005"
+            },
+            {
+                "from": "S",
+                "to": "R",
+                "rate": "S",
+                "contact": "Null_m",
+                "parameter": "0.001"
             }
         ],
         "batches": [
@@ -81,13 +88,6 @@
                 "rate": "Null_n",
                 "contact": "Null_m",
                 "parameter": "2000"
-            },
-            {
-                "from": "S",
-                "to": "R",
-                "rate": "Null_n",
-                "contact": "Null_m",
-                "parameter": "100"
             }
         ]
     }

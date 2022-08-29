@@ -46,9 +46,9 @@
             {
                 "from": "S",
                 "to": "R",
-                "rate": "Null_n",
+                "rate": "S",
                 "contact": "Null_m",
-                "parameter": "10"
+                "parameter": ".001"
             },
             {
                 "from": "R",

@@ -1,10 +1,20 @@
 {
-    "name": "SIR",
+    "name": "SIR_test3",
     "compartments": {
         "S": {
             "susceptibility": 1,
             "contagiousness": 1,
             "initial_condition": 10000000.0
+        },
+        "E_1": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 0
+        },
+        "E_2": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 0
         },
         "I": {
             "susceptibility": 1,
@@ -28,20 +38,36 @@
         }
     },
     "flows": {
-        "flows": [
+        "contacts": [
             {
                 "from": "S",
-                "to": "I",
+                "to": "E_1",
                 "rate": "S",
                 "contact": "I",
-                "parameter": "5"
+                "parameter": "0.2"
+            }
+        ],
+        "rates": [
+            {
+                "from": "E_1",
+                "to": "E_2",
+                "rate": "E_1",
+                "contact": "Null_m",
+                "parameter": "0.5"
+            },
+            {
+                "from": "E_2",
+                "to": "I",
+                "rate": "E_2",
+                "contact": "Null_m",
+                "parameter": "0.5"
             },
             {
                 "from": "I",
                 "to": "R",
                 "rate": "I",
                 "contact": "Null_m",
-                "parameter": "1"
+                "parameter": "0.1"
             }
         ]
     }

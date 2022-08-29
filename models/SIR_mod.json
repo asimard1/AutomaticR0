@@ -44,28 +44,28 @@
                 "to": "I^1",
                 "rate": "S^1",
                 "contact": "I^0+I^1",
-                "parameter": "5.0"
+                "parameter": "5"
             },
             {
                 "from": "Null_n",
                 "to": "Rt(S,I)",
                 "rate": "S^1",
                 "contact": "I^0",
-                "parameter": "5.0"
+                "parameter": "5"
             },
             {
                 "from": "I^1",
                 "to": "R^1",
                 "rate": "I^1",
                 "contact": "Null_m",
-                "parameter": "1.0"
+                "parameter": "1"
             },
             {
                 "from": "I^0",
                 "to": "R^1",
                 "rate": "I^0",
                 "contact": "Null_m",
-                "parameter": "1.0"
+                "parameter": "1"
             }
         ]
     }

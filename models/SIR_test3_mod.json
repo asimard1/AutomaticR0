@@ -1,10 +1,20 @@
 {
-    "name": "SIRS_deaths_mod",
+    "name": "SIR_test3_mod",
     "compartments": {
         "S^1": {
             "susceptibility": 1,
             "contagiousness": 1,
-            "initial_condition": 9999999
+            "initial_condition": 10000000.0
+        },
+        "E_1^1": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 0
+        },
+        "E_2^1": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 0
         },
         "I^1": {
             "susceptibility": 1,
@@ -16,12 +26,22 @@
             "contagiousness": 1,
             "initial_condition": 0
         },
+        "E_1^0": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 0
+        },
+        "E_2^0": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 0
+        },
         "I^0": {
             "susceptibility": 1,
             "contagiousness": 1,
             "initial_condition": 1
         },
-        "Rt(S,I)": {
+        "Rt(S,E_1)": {
             "susceptibility": 1,
             "contagiousness": 1,
             "initial_condition": 0
@@ -41,21 +61,49 @@
         "contacts": [
             {
                 "from": "S^1",
-                "to": "I^1",
+                "to": "E_1^1",
                 "rate": "S^1",
                 "contact": "I^0+I^1",
-                "parameter": "0.4"
+                "parameter": "0.2"
             },
             {
                 "from": "Null_n",
-                "to": "Rt(S,I)",
+                "to": "Rt(S,E_1)",
                 "rate": "S^1",
                 "contact": "I^0",
-                "parameter": "0.4"
+                "parameter": "0.2"
             }
         ],
         "rates": [
             {
+                "from": "E_1^1",
+                "to": "E_2^1",
+                "rate": "E_1^1",
+                "contact": "Null_m",
+                "parameter": "0.5"
+            },
+            {
+                "from": "E_1^0",
+                "to": "E_2^0",
+                "rate": "E_1^0",
+                "contact": "Null_m",
+                "parameter": "0.5"
+            },
+            {
+                "from": "E_2^1",
+                "to": "I^1",
+                "rate": "E_2^1",
+                "contact": "Null_m",
+                "parameter": "0.5"
+            },
+            {
+                "from": "E_2^0",
+                "to": "I^0",
+                "rate": "E_2^0",
+                "contact": "Null_m",
+                "parameter": "0.5"
+            },
+            {
                 "from": "I^1",
                 "to": "R^1",
                 "rate": "I^1",
@@ -68,57 +116,6 @@
                 "rate": "I^0",
                 "contact": "Null_m",
                 "parameter": "0.1"
-            },
-            {
-                "from": "R^1",
-                "to": "S^1",
-                "rate": "R^1",
-                "contact": "Null_m",
-                "parameter": "0.01"
-            },
-            {
-                "from": "S^1",
-                "to": "Null_m",
-                "rate": "S^1",
-                "contact": "Null_m",
-                "parameter": "0.0005"
-            },
-            {
-                "from": "I^1",
-                "to": "Null_m",
-                "rate": "I^1",
-                "contact": "Null_m",
-                "parameter": "0.001"
-            },
-            {
-                "from": "I^0",
-                "to": "Null_m",
-                "rate": "I^0",
-                "contact": "Null_m",
-                "parameter": "0.001"
-            },
-            {
-                "from": "R^1",
-                "to": "Null_m",
-                "rate": "R^1",
-                "contact": "Null_m",
-                "parameter": "0.0005"
-            },
-            {
-                "from": "S^1",
-                "to": "R^1",
-                "rate": "S^1",
-                "contact": "Null_m",
-                "parameter": "0.001"
-            }
-        ],
-        "batches": [
-            {
-                "from": "Null_n",
-                "to": "S^1",
-                "rate": "Null_n",
-                "contact": "Null_m",
-                "parameter": "2000"
             }
         ]
     }

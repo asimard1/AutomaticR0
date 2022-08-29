@@ -28,8 +28,8 @@
             (I^1) edge [bend left=10, Red] node [Empty, pos=2/5] (I^1-Nullm_I^1-r) {} node [Empty, pos=3/5] (I^1-Nullm_I^1-c) {} (Nullm_I^1)
             (I^0) edge [bend left=10, Red] node [Empty, pos=2/5] (I^0-Nullm_I^0-r) {} node [Empty, pos=3/5] (I^0-Nullm_I^0-c) {} (Nullm_I^0)
             (R^1) edge [bend left=10, Red] node [Empty, pos=2/5] (R^1-Nullm_R^1-r) {} node [Empty, pos=3/5] (R^1-Nullm_R^1-c) {} (Nullm_R^1)
-            (Nulln_S^1) edge [bend left=10, Cyan] node [Empty, pos=2/5] (Nulln_S^1-S^1-r) {} node [Empty, pos=3/5] (Nulln_S^1-S^1-c) {} (S^1)
-            (S^1) edge [bend left=30, Cyan] node [Empty, pos=2/5] (S^1-R^1-r) {} node [Empty, pos=3/5] (S^1-R^1-c) {} (R^1);
+            (S^1) edge [bend left=30, Red] node [Empty, pos=2/5] (S^1-R^1-r) {} node [Empty, pos=3/5] (S^1-R^1-c) {} (R^1)
+            (Nulln_S^1) edge [bend left=10, Cyan] node [Empty, pos=2/5] (Nulln_S^1-S^1-r) {} node [Empty, pos=3/5] (Nulln_S^1-S^1-c) {} (S^1);
 
         \path [Dotted]
             (S^1-I^1-r) edge [bend right=30] (S^1)
@@ -40,7 +40,8 @@
             (S^1-Nullm_S^1-r) edge [bend left=45] (S^1)
             (I^1-Nullm_I^1-r) edge [bend left=45] (I^1)
             (I^0-Nullm_I^0-r) edge [bend left=45] (I^0)
-            (R^1-Nullm_R^1-r) edge [bend left=45] (R^1);
+            (R^1-Nullm_R^1-r) edge [bend left=45] (R^1)
+            (S^1-R^1-r) edge [bend right=30] (S^1);
 
         \path [Dashed]
             (S^1-I^1-c) edge [bend left=30] (I^0)

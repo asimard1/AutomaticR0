@@ -70,9 +70,9 @@
             {
                 "from": "S^1",
                 "to": "R^1",
-                "rate": "Null_n",
+                "rate": "S^1",
                 "contact": "Null_m",
-                "parameter": "10"
+                "parameter": ".001"
             },
             {
                 "from": "R^1",
