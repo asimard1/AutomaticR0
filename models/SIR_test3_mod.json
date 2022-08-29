@@ -39,9 +39,14 @@
         "I^0": {
             "susceptibility": 1,
             "contagiousness": 1,
-            "initial_condition": 1
+            "initial_condition": 0
         },
         "Rt(S,E_1)": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 0
+        },
+        "Rt(S,I)": {
             "susceptibility": 1,
             "contagiousness": 1,
             "initial_condition": 0
@@ -72,6 +77,20 @@
                 "rate": "S^1",
                 "contact": "I^0",
                 "parameter": "0.2"
+            },
+            {
+                "from": "S^1",
+                "to": "I^1",
+                "rate": "S^1",
+                "contact": "I^0+I^1",
+                "parameter": "0.1"
+            },
+            {
+                "from": "Null_n",
+                "to": "Rt(S,I)",
+                "rate": "S^1",
+                "contact": "I^0",
+                "parameter": "0.1"
             }
         ],
         "rates": [
@@ -80,28 +99,28 @@
                 "to": "E_2^1",
                 "rate": "E_1^1",
                 "contact": "Null_m",
-                "parameter": "0.5"
+                "parameter": ".5"
             },
             {
                 "from": "E_1^0",
                 "to": "E_2^0",
                 "rate": "E_1^0",
                 "contact": "Null_m",
-                "parameter": "0.5"
+                "parameter": ".5"
             },
             {
                 "from": "E_2^1",
                 "to": "I^1",
                 "rate": "E_2^1",
                 "contact": "Null_m",
-                "parameter": "0.5"
+                "parameter": "2"
             },
             {
                 "from": "E_2^0",
                 "to": "I^0",
                 "rate": "E_2^0",
                 "contact": "Null_m",
-                "parameter": "0.5"
+                "parameter": "2"
             },
             {
                 "from": "I^1",

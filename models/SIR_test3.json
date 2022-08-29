@@ -45,6 +45,13 @@
                 "rate": "S",
                 "contact": "I",
                 "parameter": "0.2"
+            },
+            {
+                "from": "S",
+                "to": "I",
+                "rate": "S",
+                "contact": "I",
+                "parameter": "0.1"
             }
         ],
         "rates": [
@@ -53,14 +60,14 @@
                 "to": "E_2",
                 "rate": "E_1",
                 "contact": "Null_m",
-                "parameter": "0.5"
+                "parameter": ".5"
             },
             {
                 "from": "E_2",
                 "to": "I",
                 "rate": "E_2",
                 "contact": "Null_m",
-                "parameter": "0.5"
+                "parameter": "2"
             },
             {
                 "from": "I",

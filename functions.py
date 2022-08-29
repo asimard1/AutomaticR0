@@ -1775,46 +1775,53 @@ def compare(modelName: str,
 
     rtCurves['Sum'] = rt
 
+    # Rt simulated
     if doesIntersect(rt, 1):
-        # Rt simulated
         idx_rt = find_intersections(rt, 1)[0]
         xTimeRt = evaluateCurve(rt_times, idx_rt)
-        # Rt analytical
-        idx_rt = find_intersections(rt_ANA, 1)[0]
-        xTimeRt_ANA = evaluateCurve(t_span, idx_rt)
-        # Rt analytical v2
-        idx_rt = find_intersections(rt_ANA_v2, 1)[0]
-        xTimeRt_ANA_v2 = evaluateCurve(t_span, idx_rt)
-        # Rt lower bound
-        idx_rt = find_intersections(bound, 1)[0]
-        xTimeRt_bound = evaluateCurve(t_span, idx_rt)
-
-        # print(xTimeRt_bound, xTimeRt, xTimeRt_ANA_v2, xTimeRt_ANA)
-
-        if not (xTimeRt_bound <= xTimeRt <= xTimeRt_ANA and
-                xTimeRt_bound <= xTimeRt_ANA_v2 <= xTimeRt_ANA):
-            beta = model['flows']['flows'][0]['parameter']
-            gamma = model['flows']['flows'][1]['parameter']
-            print(f"Found a problem with beta = "
-                  + f"{beta} "
-                  + f"and gamma = "
-                  + f"{gamma}.")
-            with open('problems.txt', 'a') as f:
-                f.write(f'beta: {beta}, gamma: {gamma}\n')
 
         if printText:
             print(f'Infected = 1 at {xTimeInfs:.3f}')
             print(f'Rt = 1 at {xTimeRt:.3f}')
             print(f'Time difference: {np.abs(xTimeInfs - xTimeRt)}')
-
-        ax1.axvline(x=xTimeInfs, linestyle=':', color='grey',
-                    linewidth=2.5 * WIDTH, dashes=DOTS)
-        ax1.axvline(x=xTimeRt, linestyle='--', color='grey',
-                    linewidth=WIDTH, dashes=DASH)
-
     elif printText:
         print('Time difference is not relevant, '
               + 'no intersection between rt and 1.')
+    # # Rt analytical
+    # if doesIntersect(rt_ANA, 1):
+    #     idx_rt = find_intersections(rt_ANA, 1)[0]
+    #     xTimeRt_ANA = evaluateCurve(t_span, idx_rt)
+    # # Rt analytical v2
+    # if doesIntersect(rt_ANA_v2, 1):
+    #     idx_rt = find_intersections(rt_ANA_v2, 1)[0]
+    #     xTimeRt_ANA_v2 = evaluateCurve(t_span, idx_rt)
+    # # Rt lower bound
+    # if doesIntersect(bound, 1):
+    #     idx_rt = find_intersections(bound, 1)[0]
+    #     xTimeRt_bound = evaluateCurve(t_span, idx_rt)
+
+    #     # print(xTimeRt_bound, xTimeRt, xTimeRt_ANA_v2, xTimeRt_ANA)
+
+    # if doesIntersect(rt, 1) and doesIntersect(rt_ANA, 1) \
+    #         and doesIntersect(rt_ANA_v2, 1) and doesIntersect(bound, 1):
+    #     if not (xTimeRt_bound <= xTimeRt <= xTimeRt_ANA and
+    #             xTimeRt_bound <= xTimeRt_ANA_v2 <= xTimeRt_ANA):
+    #         beta = model['flows']['flows'][0]['parameter']
+    #         gamma = model['flows']['flows'][1]['parameter']
+    #         print(f"Found a problem with beta = "
+    #               + f"{beta} "
+    #               + f"and gamma = "
+    #               + f"{gamma}.")
+    #         with open('problems.txt', 'a') as f:
+    #             f.write(f'Found problem at beta = {beta}, gamma = {gamma}\n')
+    # else:
+    #     with open('problems.txt', 'a') as f:
+    #             f.write(f"Could not check beta = {beta}, gamma = {gamma}\n")
+
+    ax1.axvline(x=xTimeInfs, linestyle=':', color='grey',
+                linewidth=2.5 * WIDTH, dashes=DOTS)
+    ax1.axvline(x=xTimeRt, linestyle='--', color='grey',
+                linewidth=WIDTH, dashes=DASH)
 
     ax1.plot(rt_times, rt, label='SIM',
              linestyle='-')
