@@ -1554,7 +1554,7 @@ def compare(modelName: str,
             plotANA_v2: bool = False,
             infected: list = [1],
             scaleMethod: str = 'Total',
-            plotIndividual: bool = False,
+            plotIndividual: bool = True,
             plotBound: bool = True,
             printR0: bool = False,
             scaledInfectedPlot=False,
@@ -1625,6 +1625,7 @@ def compare(modelName: str,
 
     fig, ax1 = plt.subplots()
     ax2 = ax1.twinx()
+    ax2.set_yscale('log')
     # plt.yscale('log')
 
     ax1.axhline(y=0, linestyle='--', color='grey',
@@ -1645,8 +1646,8 @@ def compare(modelName: str,
         printWarnings=True, scaleMethod=scaleMethod,
         printR0=printR0, useTqdm=useTqdm)
 
-    S = np.sum(solution[:, susceptibles], axis=1)
-    I = np.sum(solution[:, susceptibles], axis=1)
+    # S = np.sum(solution[:, susceptibles], axis=1)
+    # I = np.sum(solution[:, susceptibles], axis=1)
     N = np.array([getPopulation(model, x)['Sum']
                   for x in solution])
 
@@ -1659,9 +1660,10 @@ def compare(modelName: str,
         print(f'Max incidents: {maxIncident}')
 
     if scaledInfectedPlot:
-        ax1.plot(t_span, infsScaled, label='Inci (scaled)')
+        ax1.plot(t_span, infsScaled, label='New infs.')
     else:
-        ax2.plot(t_span, infsNotScaled, label='Inci', ls='--')
+        ax2.plot(t_span, infsNotScaled,
+                 label='New infs.', ls='--', c='#8E4585')
 
     # if model['name'] == 'SIR':
     #     from scipy.interpolate import InterpolatedUnivariateSpline
@@ -1711,16 +1713,16 @@ def compare(modelName: str,
     #     ax1.axvline(x=crossTime, linestyle='--', color='grey',
     #                 linewidth=WIDTH, dashes=DASH)
 
-    # POINT D'INFLECTION
-    dinf_dt = (infsNotScaled[1:] - infsNotScaled[:-1]) \
-        / (t_span[1:] - t_span[:-1])
-    d2inf_dt2 = (dinf_dt[1:] - dinf_dt[:-1]) \
-        / (t_span[2:] - t_span[:-2])
+    # # POINT D'INFLECTION
+    # dinf_dt = (infsNotScaled[1:] - infsNotScaled[:-1]) \
+    #     / (t_span[1:] - t_span[:-1])
+    # d2inf_dt2 = (dinf_dt[1:] - dinf_dt[:-1]) \
+    #     / (t_span[2:] - t_span[:-2])
 
-    idx_infl = find_intersections(d2inf_dt2, 0)[0]
-    xTime_infl = evaluateCurve(t_span, idx_infl)
-    ax1.axvline(x=xTime_infl, linestyle='--', color='grey',
-                linewidth=WIDTH, dashes=DASH)
+    # idx_infl = find_intersections(d2inf_dt2, 0)[0]
+    # xTime_infl = evaluateCurve(t_span, idx_infl)
+    # ax1.axvline(x=xTime_infl, linestyle='--', color='grey',
+    #             linewidth=WIDTH, dashes=DASH)
 
     # if modelName == 'SIR':
     #     pente = np.max(dinf_dt)
@@ -1770,8 +1772,11 @@ def compare(modelName: str,
         rtCurves[rtNode] = rt_rtNode
         if len(getRtNodes(mod(model, False))) > 1 \
                 and plotIndividual:
-            ax1.plot(rt_times, rt_rtNode, label=rtNode)
+            ax1.plot(rt_times, rt_rtNode, label=rtNode, ls=':')
         rt += rt_rtNode
+
+    ax1.plot(rt_times, rt, label='SIM',
+             linestyle='-')
 
     rtCurves['Sum'] = rt
 
@@ -1823,19 +1828,18 @@ def compare(modelName: str,
     ax1.axvline(x=xTimeRt, linestyle='--', color='grey',
                 linewidth=WIDTH, dashes=DASH)
 
-    ax1.plot(rt_times, rt, label='SIM',
-             linestyle='-')
-
     ax1.set_title(modelName)
 
     lines, labels = ax1.get_legend_handles_labels()
     lines2, labels2 = ax2.get_legend_handles_labels()
 
-    ax1.legend(lines + lines2, labels + labels2, loc='upper right')
-    ax2.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+    ax1.legend(lines + lines2, labels + labels2, loc='center left')
+    # ax2.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
 
     if supressGraph:
         plt.close()
+
+    fig.savefig(f'graphs/{modelName}.pdf', bbox_inches='tight')
 
     return rt_times, rtCurves, infsNotScaled
 
@@ -2153,7 +2157,7 @@ def doesIntersect(curve: np.ndarray, value: int, eps=10**-5):
 def createLaTeX(model: dict, layerDistance: float = .8,
                 nodeDistance: float = 2, varDistance: float = .1,
                 nullDistance: float = 1, baseAngle: int = 10,
-                contactPositions: tuple = ("2/5", "3/5")) -> None:
+                contactPositions: tuple = ("2/5", "3/5"), scale=1) -> None:
     """
     Produces tikzfigure for a model. Places automatically in file.
 
@@ -2188,6 +2192,8 @@ def createLaTeX(model: dict, layerDistance: float = .8,
             Base angle for all arrows.
         contactPositions: tuple
             Position for rate and contact liaison on arrow.
+        scale: float
+            Scale of the figure.
 
     Outputs:
         None.
@@ -2204,6 +2210,11 @@ def createLaTeX(model: dict, layerDistance: float = .8,
         'contact': 'Plum',
         'batch': 'Cyan'
     }
+
+    layerDistance = scale * layerDistance
+    nodeDistance = scale * nodeDistance
+    varDistance = scale * varDistance
+    nullDistance = scale * nullDistance
 
     for x in compartments:
         # Is the model to graph a modified version?
@@ -2228,7 +2239,9 @@ def createLaTeX(model: dict, layerDistance: float = .8,
                     + [compBase]
 
     # String containing LaTeX code
-    LaTeX = f"\\begin{{figure}}[H]\n{tab}\\centering\n{tab}\\begin{{tikzpicture}}\n"
+    LaTeX = f"\\begin{{figure}}[H]\n{tab}\\centering\n{tab}" \
+        + f"\\begin{{tikzpicture}}[scale={scale}, every node/.style=" + "{scale=" \
+        + f"{scale}" + "}]\n"
 
     # Book-keeping
     layer0 = []
@@ -2339,7 +2352,7 @@ def createLaTeX(model: dict, layerDistance: float = .8,
                 pos = 'above'
                 dist = nodeDistance
             LaTeX += f"{tab * 2}\\node [Square] ({nameNoProblem}) " \
-                + f"[{pos}={dist} of {reference}] " + \
+                + f"[{pos}={dist}cm of {reference}] " + \
                 f"{{${textNoProblem}$}};\n"
 
             others.append(nameNoProblem)
@@ -2353,9 +2366,9 @@ def createLaTeX(model: dict, layerDistance: float = .8,
         # On veut des noeuds vides pour considérer les entrées et sorties
         # Puisque les noeuds ne sont pas montrés on en crée pour chaque autre noeud
         LaTeX += f"{tab * 2}\\node [Empty] (Nulln_{x}) " \
-            + f"[above left={nullDistance} of {x}] {{}};\n"
+            + f"[above left={nullDistance}cm of {x}] {{}};\n"
         LaTeX += f"{tab * 2}\\node [Empty] (Nullm_{x}) " \
-            + f"[below right={nullDistance} of {x}] {{}};\n"
+            + f"[below right={nullDistance}cm of {x}] {{}};\n"
 
     # L'ensemble des flèches
     Arrow = []  # E(G)
@@ -2392,13 +2405,13 @@ def createLaTeX(model: dict, layerDistance: float = .8,
                 # If both nodes in layer 0 and far away
                 if abs(layer0.index(u) - layer0.index(v)) > 1 and \
                         u not in joint and v not in joint:
-                    angle = 30
+                    angle = 25
             except:
                 try:
                     # If both nodes in layer 1 and far away
                     if abs(layer1.index(u) - layer1.index(v)) > 1 and \
                             u not in joint and v not in joint:
-                        angle = 30
+                        angle = 25
                 except:
                     pass
 
@@ -2416,8 +2429,6 @@ def createLaTeX(model: dict, layerDistance: float = .8,
             # Définition des couleurs additionnelles
             if getFlowType(flow) == 'rate' and not u.startswith('Null'):
                 color = 'Red'
-            if getFlowType(flow) == 'contact' and v.startswith('Rt'):
-                color = 'Black'
             Arrow.append(f"({u}) edge [bend {bendBase}={angle}, {color}] node [Empty, pos={pos1}] ({u}-{v}-r) {{}} " +
                          f"node [Empty, pos={pos2}] ({u}-{v}-c) {{}} ({v})")
 
@@ -2432,8 +2443,9 @@ def createLaTeX(model: dict, layerDistance: float = .8,
 
                 # Ajouter l'arrête
                 if r != 'Null_n':
-                    Dotted.append(
-                        f"({u}-{v}-r) edge [bend {bend}={angle}] ({r})")
+                    if u.startswith('Null'):
+                        Dotted.append(
+                            f"({u}-{v}-r) edge [bend {bend}={angle}] ({r})")
 
             # Créer arrêtes segmentées
             for c in v_c.split('+'):
@@ -2451,7 +2463,7 @@ def createLaTeX(model: dict, layerDistance: float = .8,
     names = ['Arrow', 'Dotted', 'Dashed']
     for i, table in enumerate([Arrow, Dotted, Dashed]):
         if len(table) > 0:
-            LaTeX += f'\n{tab * 2}\\path [{names[i]}]'
+            LaTeX += f'\n{tab * 2}\\path [{names[i]}, line width={scale}pt]'
             for arrow in table:
                 LaTeX += '\n' + tab * 3 + arrow
             LaTeX += ';\n'

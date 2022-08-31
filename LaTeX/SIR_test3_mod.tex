@@ -1,0 +1,63 @@
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[scale=1, every node/.style={scale=1}]
+        \node [Square] (S^1)  {$S^1$};
+        \node [Empty] (E^1) [right=2cm of S^1] {};
+        \node [Square] (E_1^1) [above=0.25cm of E^1] {$E_1^1$};
+        \node [Square] (E_2^1) [below=0.25cm of E^1] {$E_2^1$};
+        \node [Square] (I^1) [right=2cm of E^1] {$I^1$};
+        \node [Square] (R^1) [right=2cm of I^1] {$R^1$};
+        \node [Empty] (E^0) [above=1cm of E_1^1] {};
+        \node [Square] (E_1^0) [above=0.25cm of E^0] {$E_1^0$};
+        \node [Square] (E_2^0) [below=0.25cm of E^0] {$E_2^0$};
+        \node [Square] (I^0) [above=1cm of I^1] {$I^0$};
+        \node [Square] (RtSE_1) [left=2cm of S^1] {$R_t$\\$(S,E_1)$};
+        \node [Square] (RtSI) [above=2cm of RtSE_1] {$R_t$\\$(S,I)$};
+
+        \node [Empty] (Nulln_E_1^0) [above left=0.8cm of E_1^0] {};
+        \node [Empty] (Nullm_E_1^0) [below right=0.8cm of E_1^0] {};
+        \node [Empty] (Nulln_E_2^0) [above left=0.8cm of E_2^0] {};
+        \node [Empty] (Nullm_E_2^0) [below right=0.8cm of E_2^0] {};
+        \node [Empty] (Nulln_I^0) [above left=0.8cm of I^0] {};
+        \node [Empty] (Nullm_I^0) [below right=0.8cm of I^0] {};
+        \node [Empty] (Nulln_S^1) [above left=0.8cm of S^1] {};
+        \node [Empty] (Nullm_S^1) [below right=0.8cm of S^1] {};
+        \node [Empty] (Nulln_E_1^1) [above left=0.8cm of E_1^1] {};
+        \node [Empty] (Nullm_E_1^1) [below right=0.8cm of E_1^1] {};
+        \node [Empty] (Nulln_E_2^1) [above left=0.8cm of E_2^1] {};
+        \node [Empty] (Nullm_E_2^1) [below right=0.8cm of E_2^1] {};
+        \node [Empty] (Nulln_I^1) [above left=0.8cm of I^1] {};
+        \node [Empty] (Nullm_I^1) [below right=0.8cm of I^1] {};
+        \node [Empty] (Nulln_R^1) [above left=0.8cm of R^1] {};
+        \node [Empty] (Nullm_R^1) [below right=0.8cm of R^1] {};
+        \node [Empty] (Nulln_RtSE_1) [above left=0.8cm of RtSE_1] {};
+        \node [Empty] (Nullm_RtSE_1) [below right=0.8cm of RtSE_1] {};
+        \node [Empty] (Nulln_RtSI) [above left=0.8cm of RtSI] {};
+        \node [Empty] (Nullm_RtSI) [below right=0.8cm of RtSI] {};
+
+        \path [Arrow, line width=1pt]
+            (S^1) edge [bend left=10, Plum] node [Empty, pos=2/5] (S^1-E_1^1-r) {} node [Empty, pos=3/5] (S^1-E_1^1-c) {} (E_1^1)
+            (Nulln_RtSE_1) edge [bend left=10, Plum] node [Empty, pos=3/5] (Nulln_RtSE_1-RtSE_1-r) {} node [Empty, pos=2/5] (Nulln_RtSE_1-RtSE_1-c) {} (RtSE_1)
+            (S^1) edge [bend left=25, Plum] node [Empty, pos=2/5] (S^1-I^1-r) {} node [Empty, pos=3/5] (S^1-I^1-c) {} (I^1)
+            (Nulln_RtSI) edge [bend left=10, Plum] node [Empty, pos=3/5] (Nulln_RtSI-RtSI-r) {} node [Empty, pos=2/5] (Nulln_RtSI-RtSI-c) {} (RtSI)
+            (E_1^1) edge [bend left=10, Red] node [Empty, pos=2/5] (E_1^1-E_2^1-r) {} node [Empty, pos=3/5] (E_1^1-E_2^1-c) {} (E_2^1)
+            (E_1^0) edge [bend left=10, Red] node [Empty, pos=2/5] (E_1^0-E_2^0-r) {} node [Empty, pos=3/5] (E_1^0-E_2^0-c) {} (E_2^0)
+            (E_2^1) edge [bend left=10, Red] node [Empty, pos=2/5] (E_2^1-I^1-r) {} node [Empty, pos=3/5] (E_2^1-I^1-c) {} (I^1)
+            (E_2^0) edge [bend left=10, Red] node [Empty, pos=2/5] (E_2^0-I^0-r) {} node [Empty, pos=3/5] (E_2^0-I^0-c) {} (I^0)
+            (I^1) edge [bend left=10, Red] node [Empty, pos=2/5] (I^1-R^1-r) {} node [Empty, pos=3/5] (I^1-R^1-c) {} (R^1)
+            (I^0) edge [bend left=10, Red] node [Empty, pos=2/5] (I^0-R^1-r) {} node [Empty, pos=3/5] (I^0-R^1-c) {} (R^1);
+
+        \path [Dotted, line width=1pt]
+            (Nulln_RtSE_1-RtSE_1-r) edge [bend left=30] (S^1)
+            (Nulln_RtSI-RtSI-r) edge [bend left=30] (S^1);
+
+        \path [Dashed, line width=1pt]
+            (S^1-E_1^1-c) edge [bend left=30] (I^0)
+            (S^1-E_1^1-c) edge [bend right=30] (I^1)
+            (Nulln_RtSE_1-RtSE_1-c) edge [bend left=20] (I^0)
+            (S^1-I^1-c) edge [bend left=30] (I^0)
+            (S^1-I^1-c) edge [bend right=30] (I^1)
+            (Nulln_RtSI-RtSI-c) edge [bend left=20] (I^0);
+    \end{tikzpicture}
+    \label{SIR_test3_mod_Tikz}
+\end{figure}
