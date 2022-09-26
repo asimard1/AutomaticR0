@@ -13,11 +13,16 @@
         \node [Empty] (Nullm_R) [below right=0.48cm of R] {};
 
         \path [Arrow, line width=0.6pt]
+            (Nulln_S) edge [bend left=10, Cyan] node [Empty, pos=2/5] (Nulln_S-S-r) {} node [Empty, pos=3/5] (Nulln_S-S-c) {} (S)
             (S) edge [bend left=10, Plum] node [Empty, pos=2/5] (S-I-r) {} node [Empty, pos=3/5] (S-I-c) {} (I)
-            (I) edge [bend left=10, Red] node [Empty, pos=2/5] (I-R-r) {} node [Empty, pos=3/5] (I-R-c) {} (R);
+            (S) edge [bend left=25, Red] node [Empty, pos=2/5] (S-R-r) {} node [Empty, pos=3/5] (S-R-c) {} (R)
+            (I) edge [bend left=10, Red] node [Empty, pos=2/5] (I-R-r) {} node [Empty, pos=3/5] (I-R-c) {} (R)
+            (S) edge [bend left=10, Red] node [Empty, pos=2/5] (S-Nullm_S-r) {} node [Empty, pos=3/5] (S-Nullm_S-c) {} (Nullm_S)
+            (I) edge [bend left=10, Red] node [Empty, pos=2/5] (I-Nullm_I-r) {} node [Empty, pos=3/5] (I-Nullm_I-c) {} (Nullm_I)
+            (R) edge [bend left=10, Red] node [Empty, pos=2/5] (R-Nullm_R-r) {} node [Empty, pos=3/5] (R-Nullm_R-c) {} (Nullm_R);
 
         \path [Dashed, line width=0.6pt]
             (S-I-c) edge [bend left=30] (I);
     \end{tikzpicture}
-    \label{SIR_Tikz}
+    \label{SIRS_vacc_morts_Tikz}
 \end{figure}

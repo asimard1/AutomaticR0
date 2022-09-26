@@ -1,41 +1,13 @@
 {
     "name": "SIR_test",
     "compartments": {
-        "S": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 10000000.0
-        },
-        "I_1": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 1
-        },
-        "I_2": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 0
-        },
-        "I_3": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 0
-        },
-        "R": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 0
-        },
-        "Null_n": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 0
-        },
-        "Null_m": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 0
-        }
+        "S": 10000000,
+        "I_1": 1,
+        "I_2": 0,
+        "I_3": 0,
+        "R": 0,
+        "Null_n": 0,
+        "Null_m": 0
     },
     "flows": {
         "contacts": [

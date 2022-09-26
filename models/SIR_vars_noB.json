@@ -1,36 +1,12 @@
 {
     "name": "SIR_vars_noB",
     "compartments": {
-        "S": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 9999999
-        },
-        "I_A": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 1
-        },
-        "I_B": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 0
-        },
-        "R": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 0
-        },
-        "Null_n": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 0
-        },
-        "Null_m": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 0
-        }
+        "S": 9999999,
+        "I_A": 1,
+        "I_B": 0,
+        "R": 0,
+        "Null_n": 0,
+        "Null_m": 0
     },
     "flows": {
         "infections": [
@@ -39,7 +15,7 @@
                 "to": "I_A",
                 "rate": "S",
                 "contact": "I_A",
-                "parameter": "0.4"
+                "parameter": "0.6"
             },
             {
                 "from": "S",

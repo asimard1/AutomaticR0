@@ -1,28 +1,28 @@
 \begin{figure}[H]
     \centering
-    \begin{tikzpicture}[scale=1, every node/.style={scale=1}]
+    \begin{tikzpicture}[scale=0.6, every node/.style={scale=0.6}]
         \node [Square] (S)  {$S$};
-        \node [Empty] (I) [right=2cm of S] {};
-        \node [Square] (I_1) [above=0.25cm of I] {$I_1$};
-        \node [Square] (I_2) [below=0.25cm of I] {$I_2$};
-        \node [Square] (R) [right=2cm of I] {$R$};
+        \node [Empty] (I) [right=1.2cm of S] {};
+        \node [Square] (I_1) [above=0.15cm of I] {$I_1$};
+        \node [Square] (I_2) [below=0.15cm of I] {$I_2$};
+        \node [Square] (R) [right=1.2cm of I] {$R$};
 
-        \node [Empty] (Nulln_S) [above left=0.8cm of S] {};
-        \node [Empty] (Nullm_S) [below right=0.8cm of S] {};
-        \node [Empty] (Nulln_I_1) [above left=0.8cm of I_1] {};
-        \node [Empty] (Nullm_I_1) [below right=0.8cm of I_1] {};
-        \node [Empty] (Nulln_I_2) [above left=0.8cm of I_2] {};
-        \node [Empty] (Nullm_I_2) [below right=0.8cm of I_2] {};
-        \node [Empty] (Nulln_R) [above left=0.8cm of R] {};
-        \node [Empty] (Nullm_R) [below right=0.8cm of R] {};
+        \node [Empty] (Nulln_S) [above left=0.48cm of S] {};
+        \node [Empty] (Nullm_S) [below right=0.48cm of S] {};
+        \node [Empty] (Nulln_I_1) [above left=0.48cm of I_1] {};
+        \node [Empty] (Nullm_I_1) [below right=0.48cm of I_1] {};
+        \node [Empty] (Nulln_I_2) [above left=0.48cm of I_2] {};
+        \node [Empty] (Nullm_I_2) [below right=0.48cm of I_2] {};
+        \node [Empty] (Nulln_R) [above left=0.48cm of R] {};
+        \node [Empty] (Nullm_R) [below right=0.48cm of R] {};
 
-        \path [Arrow, line width=1pt]
+        \path [Arrow, line width=0.6pt]
             (S) edge [bend left=10, Plum] node [Empty, pos=2/5] (S-I_1-r) {} node [Empty, pos=3/5] (S-I_1-c) {} (I_1)
             (S) edge [bend left=10, Plum] node [Empty, pos=2/5] (S-I_2-r) {} node [Empty, pos=3/5] (S-I_2-c) {} (I_2)
             (I_1) edge [bend left=10, Red] node [Empty, pos=2/5] (I_1-I_2-r) {} node [Empty, pos=3/5] (I_1-I_2-c) {} (I_2)
             (I_2) edge [bend left=10, Red] node [Empty, pos=2/5] (I_2-R-r) {} node [Empty, pos=3/5] (I_2-R-c) {} (R);
 
-        \path [Dashed, line width=1pt]
+        \path [Dashed, line width=0.6pt]
             (S-I_1-c) edge [bend left=30] (I_1)
             (S-I_2-c) edge [bend left=30] (I_2);
     \end{tikzpicture}

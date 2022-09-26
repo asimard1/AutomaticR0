@@ -1,0 +1,20 @@
+{
+    "name": "SI",
+    "compartments": {
+        "S": 1000000,
+        "I": 1,
+        "Null_n": 0,
+        "Null_m": 0
+    },
+    "flows": {
+        "infections": [
+            {
+                "from": "S",
+                "to": "I",
+                "rate": "S",
+                "contact": "I",
+                "parameter": ".4"
+            }
+        ]
+    }
+}

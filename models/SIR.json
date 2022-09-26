@@ -1,41 +1,23 @@
 {
     "name": "SIR",
     "compartments": {
-        "S": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 10000000.0
-        },
-        "I": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 1
-        },
-        "R": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 0
-        },
-        "Null_n": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 0
-        },
-        "Null_m": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 0
-        }
+        "S": 10000000.0,
+        "I": 1,
+        "R": 0,
+        "Null_n": 0,
+        "Null_m": 0
     },
     "flows": {
-        "flows": [
+        "infections": [
             {
                 "from": "S",
                 "to": "I",
                 "rate": "S",
                 "contact": "I",
                 "parameter": "1.5"
-            },
+            }
+        ],
+        "recoveries": [
             {
                 "from": "I",
                 "to": "R",

@@ -1,0 +1,29 @@
+{
+    "name": "SI_mod",
+    "compartments": {
+        "S^1": 1000000,
+        "I^1": 1,
+        "I^0": 0,
+        "Rt(S,I)": 0,
+        "Null_n": 0,
+        "Null_m": 0
+    },
+    "flows": {
+        "infections": [
+            {
+                "from": "S^1",
+                "to": "I^1",
+                "rate": "S^1",
+                "contact": "I^0+I^1",
+                "parameter": ".4"
+            },
+            {
+                "from": "Null_n",
+                "to": "Rt(S,I)",
+                "rate": "S^1",
+                "contact": "I^0",
+                "parameter": ".4"
+            }
+        ]
+    }
+}

@@ -1,6 +1,4 @@
-from re import L
 import numpy as np
-from scipy.integrate import odeint
 from dataclasses import dataclass
 import math
 import matplotlib.pyplot as plt
@@ -8,6 +6,15 @@ import time
 import json
 from tqdm.notebook import tqdm
 import os
+
+useTorch = False
+if useTorch:
+    from torchdiffeq import odeint
+    import torch
+    device = torch.device('cuda:' + str(0) if torch.cuda.is_available() else 'cpu')
+    print(f'Using device {device} with name {torch.cuda.get_device_name(device)}')
+else:
+    from scipy.integrate import odeint
 
 
 @dataclass
@@ -23,9 +30,8 @@ class Flux:
 
 
 types = [Flux]
-
-
 functions = {}
+derivatives = None
 
 
 def storeFunctions(model: dict):
@@ -269,16 +275,8 @@ def loadModel(name: str, overWrite=True, printText: bool = True) -> dict:
     if missingNulln or missingNullm or 'Null' in getCompartments(model):
         print('Fixing missing empty nodes.')
         flows = model['flows']
-        model['compartments']['Null_n'] = {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 0
-        }
-        model['compartments']['Null_m'] = {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 0
-        }
+        model['compartments']['Null_n'] = 0
+        model['compartments']['Null_m'] = 0
 
         for _, flowType in enumerate(flows):
             for _, flow in enumerate(flows[flowType]):
@@ -347,17 +345,17 @@ def initialize(model: dict, y0: dict, t: float, scaled=False, originalModel:
         for compartment in y0:
             try:
                 model['compartments'][addI(
-                    compartment, 0)]["initial_condition"] = infectious[compartment]
+                    compartment, 0)] = infectious[compartment]
                 model['compartments'][addI(
-                    compartment, 1)]["initial_condition"] = y0[compartment] \
+                    compartment, 1)] = y0[compartment] \
                     - infectious[compartment]
             except:
                 model['compartments'][addI(
-                    compartment, 1)]["initial_condition"] = y0[compartment]
+                    compartment, 1)] = y0[compartment]
     else:
         # No need for any ajustments. Simply write the values.
         for compartment in list(y0.keys()):
-            model['compartments'][compartment]["initial_condition"] \
+            model['compartments'][compartment] \
                 = y0[compartment]
 
 
@@ -652,10 +650,10 @@ def evalDelta(model: dict, delta: Delta, state: np.ndarray or list,
     N = sum(state[i] for i, comp in enumerate(compartments)
             if not comp.startswith(('Null', 'Rt')))
 
-    susceptibility = [model['compartments'][comp]
-                      ['susceptibility'] for comp in compartments]
-    contagiousness = [model['compartments'][comp]
-                      ['contagiousness'] for comp in compartments]
+    # susceptibility = [model['compartments'][comp]
+    #                   ['susceptibility'] for comp in compartments]
+    # contagiousness = [model['compartments'][comp]
+    #                   ['contagiousness'] for comp in compartments]
 
     rateInfluence = [sum(state[x] for x in flux.rate_index)
                      if len(flux.rate_index) > 1
@@ -706,12 +704,12 @@ def derivativeFor(model: dict, compartment: str):
     return derivativeForThis
 
 
-def model_derivative(state: np.ndarray or list, t: float, derivatives: list) -> list:
+def model_derivative(t: float, state: list or torch.Tensor or np.ndarray) -> list:
     """
     Gets the derivative functions for every compartments evaluated at given state.
 
     Inputs:
-        state: np.ndarray or list
+        state: list or torch.Tensor or np.ndarray
             Value of each node in the model.
         t: float
             Time at which we are evaluating.
@@ -723,7 +721,15 @@ def model_derivative(state: np.ndarray or list, t: float, derivatives: list) -> 
             Evaluation of the derivative of each compartment.
     """
     # state = [x if x > 0 else 0 for x in state]
-    dstate_dt = [derivatives[i](state, t) for i in range(len(state))]
+    global derivatives
+
+    if useTorch:
+        dstate_dt = torch.FloatTensor(
+            [derivatives[i](state, t) for i in range(len(state))])
+    else:
+        [t, state] = [state, t]
+        dstate_dt = np.array(
+            [derivatives[i](state, t) for i in range(len(state))])
     return dstate_dt
 
 
@@ -749,6 +755,8 @@ def solve(model: dict, tRange: tuple, refine: int, printText=False) -> tuple:
     """
     ti = time.time()
 
+    global derivatives
+
     compartments = getCompartments(model)
     steps = (tRange[1] - tRange[0]) * refine + 1
     t_span = np.linspace(tRange[0], tRange[1], num=math.ceil(steps))
@@ -756,9 +764,13 @@ def solve(model: dict, tRange: tuple, refine: int, printText=False) -> tuple:
     derivatives = [derivativeFor(model, c)
                    for c in compartments]
 
-    solution = odeint(model_derivative, [
-        model['compartments'][comp]['initial_condition'] for comp in compartments
-    ], t_span, args=(derivatives,))
+    y0 = np.array([model['compartments'][comp]
+          for comp in compartments])
+    if useTorch:
+        solution = odeint(model_derivative, torch.FloatTensor(y0),
+                        torch.FloatTensor(t_span))
+    else:
+        solution = odeint(model_derivative, y0, t_span)
 
     if printText:
         print(f'Model took {time.time() - ti:.1e} seconds to solve.')
@@ -1064,7 +1076,7 @@ def mod(model: dict,
     for compartment in compartments:
         if not compartment.startswith('Null'):
             newModel["compartments"][addI(compartment, 1)] \
-                = model["compartments"][compartment].copy()
+                = model["compartments"][compartment]
 
     # Add isolated layer
     toDuplicate = []
@@ -1090,8 +1102,8 @@ def mod(model: dict,
 
     for node in toDuplicate:
         newModel["compartments"][addI(node, 0)] \
-            = model["compartments"][node].copy()
-        newModel["compartments"][addI(node, 0)]['initial_condition'] = 0
+            = model["compartments"][node]
+        newModel["compartments"][addI(node, 0)] = 0
 
     newCompartments = getCompartments(newModel)
     # print(newCompartments)
@@ -1188,11 +1200,7 @@ def mod(model: dict,
 
                 # COMPUTE RT
                 compartName = f"Rt({flow['from']},{flow['to']})"
-                newModel["compartments"][compartName] = {
-                    "susceptibility": 1,
-                    "contagiousness": 1,
-                    "initial_condition": 0
-                }
+                newModel["compartments"][compartName] = 0
 
                 uPrime = 'Null_n'
                 vPrime = compartName
@@ -1219,7 +1227,7 @@ def mod(model: dict,
     for compartment in compartments:
         if compartment.startswith('Null'):
             newModel["compartments"][compartment] \
-                = model["compartments"][compartment].copy()
+                = model["compartments"][compartment]
 
     if printText:
         print(f'New model created in {time.time() - ti:.1e} seconds.\n')
@@ -1267,7 +1275,7 @@ def roundDict(dictionary: dict, i: int) -> dict:
 
 
 def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
-              t_span_sim: tuple = (0, 100), sub_sim: int = 100,
+              t_span_sim: tuple = (0, 100), sub_sim: int = 5,
               scaledInfs=False,
               verification: bool = True, write: bool = True,
               overWrite: bool = False, whereToAdd: str = 'to',
@@ -1336,15 +1344,15 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
 
     if printWarnings:
         if sub_rt > sub_sim:
-            print('Warning: rt precision too high.')
+            sub_sim = sub_rt
 
     modelOld = loadModel(modelName, printText=printText)
-    solutionOld, t_spanOld = solve(modelOld, (0, t_span_rt[1]), sub_sim)
+    solutionOld, t_spanOld = solve(modelOld, (0, t_span_rt[1]), 100)
     oldCompartments = getCompartments(modelOld)
 
     newModel = mod(modelOld, printText,
                    write=write, overWrite=overWrite)
-    solution, _ = solve(newModel, (0, t_span_rt[1]), sub_sim)
+    solution, _ = solve(newModel, (0, t_span_rt[1]), 100)
     compartments = getCompartments(newModel)
 
     # Vérification!
@@ -1355,26 +1363,40 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
             if comp[:4] != 'Null':
                 array1 = solutionOld[:, oldCompartments.index(comp)]
                 try:
-                    array2 = np.sum(np.array(
-                        [solution[:, compartments.index(addI(comp, i))]
-                         for i in range(2)]), axis=0)
+                    if useTorch:
+                        array2 = torch.sum(
+                            [solution[:, compartments.index(addI(comp, i))]
+                            for i in range(2)], axis=0)
+                    else:
+                        array2 = np.sum(
+                            [solution[:, compartments.index(addI(comp, i))]
+                            for i in range(2)], axis=0)
                 except:
                     array2 = solution[:, compartments.index(addI(comp, 1))]
             else:
                 array1 = solutionOld[:, oldCompartments.index(comp)]
-                array2 = np.sum(np.array(
+                if useTorch:
+                    array2 = torch.sum(
                     [solution[:, compartments.index(x)]
-                     for x in getOtherNodes(newModel)]), axis=0)
+                     for x in getOtherNodes(newModel)], axis=0)
+                else:
+                    array2 = np.sum(
+                    [solution[:, compartments.index(x)]
+                     for x in getOtherNodes(newModel)], axis=0)
 
             # print(f"{comp + ':':<{length}}", np.allclose(array1, array2))
-            if not np.allclose(array1, array2) or not np.allclose(array2, array1):
+            a1 = array1 + .1
+            a2 = array2 + .1
+            if useTorch:
+                condition = not torch.allclose(a1, a2, rtol=1, atol=1e-3) \
+                    or not torch.allclose(a1, a2, rtol=1, atol=1e-3)
+            else:
+                condition = not np.allclose(a1, a2, rtol=1, atol=1e-3) \
+                    or not np.allclose(a1, a2, rtol=1, atol=1e-3)
+            if condition:
                 allGood = False
                 problems.append(comp)
 
-                fig2 = plt.figure()
-                plt.plot(array1)
-                plt.plot(array2)
-                plt.show()
         if not allGood and printWarnings:
             print('Il semble que les modèles aient des résultats différents.')
             print('On continue l\'expérience quand même, à vérifier.')
@@ -1382,8 +1404,6 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
         else:
             if printText:
                 print('Véfication faite, les deux modèles sont identiques.')
-
-    flows = newModel['flows']
 
     values = {}
     # No need for progress bar if only computing R0
@@ -1559,7 +1579,8 @@ def compare(modelName: str,
             printR0: bool = False,
             scaledInfectedPlot=False,
             supressGraph: bool = False,
-            useTqdm: bool = True) -> None:
+            useTqdm: bool = True,
+            legendLoc: str = 'best') -> None:
     """
     Runs through all steps and produces a graph (call plt.plot() after).
 
@@ -1752,11 +1773,15 @@ def compare(modelName: str,
 
     #     ax1.axhline(y=beta * S_times[-1] / gamma / N_times[-1] * (1 - beta * I_times[-1] / gamma / N_times[-1]))
 
-    susceptiblesDivPop = np.sum(solution[:, susceptibles], axis=1) / N
-    infectedDivPop = np.sum(solution[:, infected], axis=1) / N
+    if useTorch:
+        susceptiblesDivPop = torch.sum(solution[:, susceptibles], axis=1) / N
+        infectedDivPop = torch.sum(solution[:, infected], axis=1) / N
+    else:
+        susceptiblesDivPop = np.sum(solution[:, susceptibles], axis=1) / N
+        infectedDivPop = np.sum(solution[:, infected], axis=1) / N
     rt_ANA = R0 * susceptiblesDivPop
     if plotANA:
-        ax1.plot(t_span, rt_ANA, label='ANA')
+        ax1.plot(t_span, rt_ANA, label='Usual')
     rt_ANA_v2 = R0 * (susceptiblesDivPop - infectedDivPop)
     if plotANA_v2:
         ax1.plot(t_span, rt_ANA_v2, label='ANA_v2')
@@ -1775,7 +1800,7 @@ def compare(modelName: str,
             ax1.plot(rt_times, rt_rtNode, label=rtNode, ls=':')
         rt += rt_rtNode
 
-    ax1.plot(rt_times, rt, label='SIM',
+    ax1.plot(rt_times, rt, label='Ours',
              linestyle='-')
 
     rtCurves['Sum'] = rt
@@ -1823,17 +1848,20 @@ def compare(modelName: str,
     #     with open('problems.txt', 'a') as f:
     #             f.write(f"Could not check beta = {beta}, gamma = {gamma}\n")
 
-    ax1.axvline(x=xTimeInfs, linestyle=':', color='grey',
-                linewidth=2.5 * WIDTH, dashes=DOTS)
-    ax1.axvline(x=xTimeRt, linestyle='--', color='grey',
-                linewidth=WIDTH, dashes=DASH)
+    try:
+        ax1.axvline(x=xTimeInfs, linestyle=':', color='grey',
+                    linewidth=2.5 * WIDTH, dashes=DOTS)
+        ax1.axvline(x=xTimeRt, linestyle='--', color='grey',
+                    linewidth=WIDTH, dashes=DASH)
+    except:
+        pass
 
     ax1.set_title(modelName)
 
     lines, labels = ax1.get_legend_handles_labels()
     lines2, labels2 = ax2.get_legend_handles_labels()
 
-    ax1.legend(lines + lines2, labels + labels2, loc='center left')
+    ax1.legend(lines + lines2, labels + labels2, loc=legendLoc)
     # ax2.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
 
     if supressGraph:
@@ -1967,8 +1995,12 @@ def infCurve(model: dict, solution: np.ndarray, t_span: np.ndarray) -> np.ndarra
             Curve of newly infected at each time.
     """
 
-    curve = np.array([totInfs(model, x, t_span[i])
-                     for i, x in enumerate(solution)])
+    if useTorch:
+        curve = torch.FloatTensor([totInfs(model, x, t_span[i])
+                                for i, x in enumerate(solution)])
+    else:
+        curve = np.array([totInfs(model, x, t_span[i])
+                                for i, x in enumerate(solution)])
     return curve
 
 
@@ -1990,7 +2022,10 @@ def infCurveScaled(model: dict, solution: np.ndarray, t_span: np.ndarray) -> np.
     """
 
     curve = infCurve(model, solution, t_span)
-    curve = curve / np.max(curve)
+    if useTorch:
+        curve = curve / torch.max(curve)
+    else:
+        curve = curve / np.max(curve)
     return curve
 
 
@@ -2053,8 +2088,12 @@ def find_nearest(array: np.ndarray, value: float) -> int:
         idx: int
             Position of closest element.
     """
-    array = np.asarray(array)
-    idx = (np.abs(array - value)).argmin()
+    if useTorch:
+        array = torch.FloatTensor(array)
+        idx = torch.argmin((torch.abs(array - value)))
+    else:
+        array = np.array(array)
+        idx = np.argmin((np.abs(array - value)))
     return idx
 
 

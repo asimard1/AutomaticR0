@@ -1,5 +1,5 @@
 {
-    "name": "SIS_deaths",
+    "name": "SIRS_vacc_morts",
     "compartments": {
         "S": {
             "susceptibility": 1,
@@ -10,6 +10,11 @@
             "susceptibility": 1,
             "contagiousness": 1,
             "initial_condition": 1
+        },
+        "R": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 0
         },
         "Null_n": {
             "susceptibility": 1,
@@ -23,48 +28,63 @@
         }
     },
     "flows": {
-        "flows": [
+        "naissances": [
+            {
+                "from": "Null_n",
+                "to": "S",
+                "rate": "Null_n",
+                "contact": "Null_m",
+                "parameter": "5000"
+            }
+        ],
+        "infections": [
             {
                 "from": "S",
                 "to": "I",
                 "rate": "S",
                 "contact": "I",
                 "parameter": "0.4"
-            },
+            }
+        ],
+        "vaccinations": [
             {
-                "from": "I",
-                "to": "S",
-                "rate": "I",
-                "contact": "Null_m",
-                "parameter": "0.05"
-            },
-            {
-                "from": "Null_n",
-                "to": "S",
-                "rate": "S+I",
-                "contact": "Null_m",
-                "parameter": "0.05"
-            },
-            {
-                "from": "Null_n",
-                "to": "I",
-                "rate": "I",
+                "from": "S",
+                "to": "R",
+                "rate": "S",
                 "contact": "Null_m",
                 "parameter": "0.01"
-            },
+            }
+        ],
+        "recoveries": [
+            {
+                "from": "I",
+                "to": "R",
+                "rate": "I",
+                "contact": "Null_m",
+                "parameter": ".1"
+            }
+        ],
+        "mortalites": [
             {
                 "from": "S",
                 "to": "Null_m",
                 "rate": "S",
                 "contact": "Null_m",
-                "parameter": "0.05"
+                "parameter": ".04"
             },
             {
                 "from": "I",
                 "to": "Null_m",
                 "rate": "I",
                 "contact": "Null_m",
-                "parameter": "0.07"
+                "parameter": ".05"
+            },
+            {
+                "from": "R",
+                "to": "Null_m",
+                "rate": "R",
+                "contact": "Null_m",
+                "parameter": ".04"
             }
         ]
     }

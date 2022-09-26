@@ -1,41 +1,13 @@
 {
     "name": "SIR_mod",
     "compartments": {
-        "S^1": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 10000000.0
-        },
-        "I^1": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 1
-        },
-        "R^1": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 0
-        },
-        "I^0": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 0
-        },
-        "Rt(S,I)": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 0
-        },
-        "Null_n": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 0
-        },
-        "Null_m": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 0
-        }
+        "S^1": 10000000,
+        "I^1": 1,
+        "R^1": 0,
+        "I^0": 0,
+        "Rt(S,I)": 0,
+        "Null_n": 0,
+        "Null_m": 0
     },
     "flows": {
         "flows": [

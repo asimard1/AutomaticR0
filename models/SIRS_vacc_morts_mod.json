@@ -1,5 +1,5 @@
 {
-    "name": "SIS_deaths_mod",
+    "name": "SIRS_vacc_morts_mod",
     "compartments": {
         "S^1": {
             "susceptibility": 1,
@@ -10,6 +10,11 @@
             "susceptibility": 1,
             "contagiousness": 1,
             "initial_condition": 1
+        },
+        "R^1": {
+            "susceptibility": 1,
+            "contagiousness": 1,
+            "initial_condition": 0
         },
         "I^0": {
             "susceptibility": 1,
@@ -33,7 +38,16 @@
         }
     },
     "flows": {
-        "flows": [
+        "naissances": [
+            {
+                "from": "Null_n",
+                "to": "S^1",
+                "rate": "Null_n",
+                "contact": "Null_m",
+                "parameter": "5000"
+            }
+        ],
+        "infections": [
             {
                 "from": "S^1",
                 "to": "I^1",
@@ -47,55 +61,61 @@
                 "rate": "S^1",
                 "contact": "I^0",
                 "parameter": "0.4"
-            },
+            }
+        ],
+        "vaccinations": [
+            {
+                "from": "S^1",
+                "to": "R^1",
+                "rate": "S^1",
+                "contact": "Null_m",
+                "parameter": "0.01"
+            }
+        ],
+        "recoveries": [
             {
                 "from": "I^1",
-                "to": "S^1",
+                "to": "R^1",
                 "rate": "I^1",
                 "contact": "Null_m",
-                "parameter": "0.05"
+                "parameter": ".1"
             },
             {
                 "from": "I^0",
-                "to": "S^1",
+                "to": "R^1",
                 "rate": "I^0",
                 "contact": "Null_m",
-                "parameter": "0.05"
-            },
-            {
-                "from": "Null_n",
-                "to": "S^1",
-                "rate": "S^1+I^0+I^1",
-                "contact": "Null_m",
-                "parameter": "0.05"
-            },
-            {
-                "from": "Null_n",
-                "to": "I^1",
-                "rate": "I^0+I^1",
-                "contact": "Null_m",
-                "parameter": "0.01"
-            },
+                "parameter": ".1"
+            }
+        ],
+        "mortalites": [
             {
                 "from": "S^1",
                 "to": "Null_m",
                 "rate": "S^1",
                 "contact": "Null_m",
-                "parameter": "0.05"
+                "parameter": ".04"
             },
             {
                 "from": "I^1",
                 "to": "Null_m",
                 "rate": "I^1",
                 "contact": "Null_m",
-                "parameter": "0.07"
+                "parameter": ".05"
             },
             {
                 "from": "I^0",
                 "to": "Null_m",
                 "rate": "I^0",
                 "contact": "Null_m",
-                "parameter": "0.07"
+                "parameter": ".05"
+            },
+            {
+                "from": "R^1",
+                "to": "Null_m",
+                "rate": "R^1",
+                "contact": "Null_m",
+                "parameter": ".04"
             }
         ]
     }

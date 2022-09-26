@@ -1,56 +1,16 @@
 {
     "name": "SIR_vars_mod",
     "compartments": {
-        "S^1": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 9999999
-        },
-        "I_A^1": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 1
-        },
-        "I_B^1": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 0
-        },
-        "R^1": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 0
-        },
-        "I_A^0": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 0
-        },
-        "I_B^0": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 0
-        },
-        "Rt(S,I_A)": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 0
-        },
-        "Rt(S,I_B)": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 0
-        },
-        "Null_n": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 0
-        },
-        "Null_m": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 0
-        }
+        "S^1": 9999999,
+        "I_A^1": 1,
+        "I_B^1": 0,
+        "R^1": 0,
+        "I_A^0": 0,
+        "I_B^0": 0,
+        "Rt(S,I_A)": 0,
+        "Rt(S,I_B)": 0,
+        "Null_n": 0,
+        "Null_m": 0
     },
     "flows": {
         "infections": [
