@@ -629,7 +629,7 @@ def getCoefForFlow(flow: dict, t: float) -> float:
 
 
 def evalDelta(model: dict, delta: Delta, state: np.ndarray or list,
-              t: float) -> float:
+              t: float, t0: float) -> float:
     """
     Computes the actual derivative for a delta (dataclass defined earlier).
 
@@ -653,11 +653,6 @@ def evalDelta(model: dict, delta: Delta, state: np.ndarray or list,
     N = sum(state[i] for i, comp in enumerate(compartments)
             if not comp.startswith(('Null', 'Rt')))
 
-    # susceptibility = [model['compartments'][comp]
-    #                   ['susceptibility'] for comp in compartments]
-    # contagiousness = [model['compartments'][comp]
-    #                   ['contagiousness'] for comp in compartments]
-
     rateInfluence = [sum(state[x] for x in flux.rate_index)
                      if len(flux.rate_index) > 1
                      else (state[flux.rate_index[0]]
@@ -671,7 +666,7 @@ def evalDelta(model: dict, delta: Delta, state: np.ndarray or list,
                               else 1)
                         for flux in delta.flux]
 
-    coefsInfluence = [getCoefForFlux(model, flux, t)
+    coefsInfluence = [getCoefForFlux(model, flux, t if t0 is None else t0)
                       for flux in delta.flux]
 
     somme = np.einsum('i,i,i', rateInfluence, contactInfluence, coefsInfluence)
@@ -699,15 +694,15 @@ def derivativeFor(model: dict, compartment: str):
 
     FBC = getFlowsByCompartments(model)
 
-    def derivativeForThis(state, t):
+    def derivativeForThis(state, t, t0):
         # evalDelta takes care of getting the right coefficient for the derivative
-        inflows = evalDelta(model, FBC[i][0], state, t)
-        outflows = evalDelta(model, FBC[i][1], state, t)
+        inflows = evalDelta(model, FBC[i][0], state, t, t0)
+        outflows = evalDelta(model, FBC[i][1], state, t, t0)
         return inflows - outflows
     return derivativeForThis
 
 
-def model_derivative(t: float, state: list or torch.Tensor or np.ndarray) -> list:
+def model_derivative(t: float, state: list or torch.Tensor or np.ndarray, t0: float) -> list:
     """
     Gets the derivative functions for every compartments evaluated at given state.
 
@@ -728,11 +723,11 @@ def model_derivative(t: float, state: list or torch.Tensor or np.ndarray) -> lis
 
     if useTorch:
         dstate_dt = torch.FloatTensor(
-            [derivatives[i](state, t) for i in range(len(state))])
+            [derivatives[i](state, t, t0) for i in range(len(state))])
     else:
         [t, state] = [state, t]
         dstate_dt = np.array(
-            [derivatives[i](state, t) for i in range(len(state))])
+            [derivatives[i](state, t, t0) for i in range(len(state))])
     return dstate_dt
 
 
@@ -771,9 +766,9 @@ def solve(model: dict, tRange: tuple, refine: int, printText=False, t0=None) -> 
                    for comp in compartments])
     if useTorch:
         solution = odeint(model_derivative, torch.FloatTensor(y0),
-                          torch.FloatTensor(t_span))
+                          torch.FloatTensor(t_span), args=(t0,))
     else:
-        solution = odeint(model_derivative, y0, t_span)
+        solution = odeint(model_derivative, y0, t_span, args=(t0,))
 
     if printText:
         print(f'Model took {time.time() - ti:.1e} seconds to solve.')
@@ -1422,14 +1417,9 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
         pointTime = t_spanOld[pointIndex]
         init = {key: solutionOld[pointIndex, i]
                 for i, key in enumerate(oldCompartments)}
-        # print(pointIndex, pointTime)
-        # if (t in [0, 20]):
-        #     print(t)
-        #     printText = True
-        #     print(modelOld)
+
         initialize(newModel, init, pointTime, scaledInfs, modelOld,
                    printText=printText, whereToAdd=whereToAdd)
-        # printText = False
 
         solutionTemp, _ = solve(newModel, t_span_sim, sub_sim, t0=t)
 
@@ -1452,7 +1442,7 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
             length = max(len(x) for x in RtNodes)
 
             if t == t_span_rt[0]:
-                print(f"{'Node':<{length + 3}}Value  Divide  Rt")
+                print(f"Time  {'Node':<{length + 6}}Value     Divide    Rt")
 
         for x in RtNodes:
 
@@ -1467,9 +1457,9 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
             newValue = value / (denom if denom != 0 else 1)
 
             if printR0:
-                if t == t_span_rt[0]:
-                    print(f"{x + ', ':<{length + 2}}{value:5.2f}, "
-                          + f"{denom:6.2f}, {newValue:5.2f}")
+                # if t == t_span_rt[0]:
+                    print(f"{t:4.0f}, {x + ', ':<{length + 2}}{value:9.1f}, "
+                          + f"{denom:9.1f}, {newValue:4.2f}")
             values[t][x] = newValue
         # print(f'{sum(values[t_spanOld[i]]):.2f} ', end='')
 
@@ -1743,7 +1733,8 @@ def compare(modelName: str,
         rtCurves[rtNode] = rt_rtNode
         if len(getRtNodes(mod(model, False))) > 1 \
                 and plotIndividual:
-            ax1.plot(rt_times, rt_rtNode, label=rtNode, ls=':')
+            nodeLegend = rtNode.replace('Rt', '\\mathcal{R}_t')
+            ax1.plot(rt_times, rt_rtNode, label=f"${nodeLegend}$", ls=':')
         rt += rt_rtNode
 
     ax1.plot(rt_times, rt, label='$\\mathcal{R}_{t}^{int}$' if legendRtCurve is None else legendRtCurve,
