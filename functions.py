@@ -333,7 +333,7 @@ def initialize(model: dict, y0: dict, t: float, scaled=False, originalModel:
     if originalModel != None:
         # If we are initializing using another model
         if printText:
-            print(f'Initializing with values {roundDict(y0, 2)} at time {t}.')
+            print(f'Initializing with values {roundDict(y0, 0)} at time {t}.')
         weWant = getCompartments(originalModel)
         if sorted(list(y0.keys())) != sorted(weWant):
             raise Exception("Initialization vector doesn't have right entries.\n"
@@ -736,7 +736,7 @@ def model_derivative(t: float, state: list or torch.Tensor or np.ndarray) -> lis
     return dstate_dt
 
 
-def solve(model: dict, tRange: tuple, refine: int, printText=False) -> tuple:
+def solve(model: dict, tRange: tuple, refine: int, printText=False, t0=None) -> tuple:
     """
     Model solver, uses odeint from scipy.integrate.
 
@@ -1423,10 +1423,15 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
         init = {key: solutionOld[pointIndex, i]
                 for i, key in enumerate(oldCompartments)}
         # print(pointIndex, pointTime)
+        # if (t in [0, 20]):
+        #     print(t)
+        #     printText = True
+        #     print(modelOld)
         initialize(newModel, init, pointTime, scaledInfs, modelOld,
                    printText=printText, whereToAdd=whereToAdd)
+        # printText = False
 
-        solutionTemp, _ = solve(newModel, t_span_sim, sub_sim)
+        solutionTemp, _ = solve(newModel, t_span_sim, sub_sim, t0=t)
 
         initialCond = solutionOld[pointIndex]
         initialCond = {comp: initialCond[i]
@@ -1707,7 +1712,7 @@ def compare(modelName: str,
             ax1.plot(t_span, infsScaled, label='New infs.')
         else:
             ax2.plot(t_span, infsNotScaled,
-                     label='New infs.',
+                     label='$\\nu(t)$',
                      ls='--' if plotStyle is None else plotStyle,
                      c='#8E4585')
 
@@ -1721,7 +1726,7 @@ def compare(modelName: str,
     # R0 needs to be table, tablewise multiplication
     rt_ANA = R0 * susceptiblesDivPop
     if plotANA:
-        ax1.plot(t_span, rt_ANA, label='Usual', ls=plotStyle,
+        ax1.plot(t_span, rt_ANA, label='$\\mathcal{R}_{t}^{ana}$', ls=plotStyle,
                  c='tab:blue' if forceColors else None)
     # rt_ANA_v2 = R0 * (susceptiblesDivPop - infectedDivPop)
     # if plotANA_v2:
@@ -1741,7 +1746,7 @@ def compare(modelName: str,
             ax1.plot(rt_times, rt_rtNode, label=rtNode, ls=':')
         rt += rt_rtNode
 
-    ax1.plot(rt_times, rt, label='Ours' if legendRtCurve is None else legendRtCurve,
+    ax1.plot(rt_times, rt, label='$\\mathcal{R}_{t}^{int}$' if legendRtCurve is None else legendRtCurve,
              linestyle=plotStyle, c='tab:orange' if forceColors else None)
 
     rtCurves['Sum'] = rt

@@ -1,9 +1,9 @@
 {
-    "name": "SIR2_mod",
+    "name": "SIR copy_mod",
     "compartments": {
-        "S^1": 10000000.0,
-        "I^1": 1,
-        "R^1": 0,
+        "S^1": 9788350,
+        "I^1": 158170,
+        "R^1": 53480,
         "I^0": 0,
         "Rt(S,I)": 0,
         "Null_n": 0,
@@ -16,14 +16,14 @@
                 "to": "I^1",
                 "rate": "S^1",
                 "contact": "I^0+I^1",
-                "parameter": "0.8"
+                "parameter": "0.4"
             },
             {
                 "from": "Null_n",
                 "to": "Rt(S,I)",
                 "rate": "S^1",
                 "contact": "I^0",
-                "parameter": "0.8"
+                "parameter": "0.4"
             }
         ],
         "recoveries": [
@@ -32,14 +32,14 @@
                 "to": "R^1",
                 "rate": "I^1",
                 "contact": "Null_m",
-                "parameter": ".2"
+                "parameter": "0.2"
             },
             {
                 "from": "I^0",
                 "to": "R^1",
                 "rate": "I^0",
                 "contact": "Null_m",
-                "parameter": ".2"
+                "parameter": "0.2"
             }
         ]
     }
