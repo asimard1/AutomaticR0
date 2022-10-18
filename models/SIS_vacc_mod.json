@@ -16,16 +16,8 @@
             "contagiousness": 1,
             "initial_condition": 0
         },
-        "I^0": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 0
-        },
-        "Rt(S,I)": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 0
-        },
+        "I^0": 0,
+        "Rt(S,I)": 0,
         "Null_n": {
             "susceptibility": 1,
             "contagiousness": 1,

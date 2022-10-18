@@ -1,5 +1,5 @@
 {
-    "name": "SIR",
+    "name": "SIR2",
     "compartments": {
         "S": 10000000.0,
         "I": 1,
@@ -14,7 +14,7 @@
                 "to": "I",
                 "rate": "S",
                 "contact": "I",
-                "parameter": "0.8"
+                "parameter": "0.4"
             }
         ],
         "recoveries": [
@@ -23,7 +23,7 @@
                 "to": "R",
                 "rate": "I",
                 "contact": "Null_m",
-                "parameter": "0.2"
+                "parameter": ".2"
             }
         ]
     }

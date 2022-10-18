@@ -1,5 +1,5 @@
 {
-    "name": "SIR_mod",
+    "name": "SIR3_mod",
     "compartments": {
         "S^1": 10000000.0,
         "I^1": 1,
@@ -16,14 +16,14 @@
                 "to": "I^1",
                 "rate": "S^1",
                 "contact": "I^0+I^1",
-                "parameter": "0.8"
+                "parameter": "0.2"
             },
             {
                 "from": "Null_n",
                 "to": "Rt(S,I)",
                 "rate": "S^1",
                 "contact": "I^0",
-                "parameter": "0.8"
+                "parameter": "0.2"
             }
         ],
         "recoveries": [
@@ -32,14 +32,14 @@
                 "to": "R^1",
                 "rate": "I^1",
                 "contact": "Null_m",
-                "parameter": "0.2"
+                "parameter": "1/15"
             },
             {
                 "from": "I^0",
                 "to": "R^1",
                 "rate": "I^0",
                 "contact": "Null_m",
-                "parameter": "0.2"
+                "parameter": "1/15"
             }
         ]
     }

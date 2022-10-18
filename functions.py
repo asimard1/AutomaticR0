@@ -11,8 +11,10 @@ useTorch = False
 if useTorch:
     from torchdiffeq import odeint
     import torch
-    device = torch.device('cuda:' + str(0) if torch.cuda.is_available() else 'cpu')
-    print(f'Using device {device} with name {torch.cuda.get_device_name(device)}')
+    device = torch.device(
+        'cuda:' + str(0) if torch.cuda.is_available() else 'cpu')
+    print(
+        f'Using device {device} with name {torch.cuda.get_device_name(device)}')
 else:
     from scipy.integrate import odeint
 
@@ -53,7 +55,7 @@ def storeFunctions(model: dict):
     for flowType_index, flowType in enumerate(flows):
         for flow_index, flow in enumerate(flows[flowType]):
             functions[modelName][f"{flowType_index, flow_index}"] \
-                = eval('lambda t: ' + flow['parameter'])
+                = eval('lambda t: ' + str(flow['parameter']))
 
 
 def removeDuplicates(liste: list) -> list:
@@ -100,13 +102,12 @@ def plotCurves(xPoints: np.ndarray or list, curves: np.ndarray or list,
                title: str = 'Infection curves', style: list = None,
                xlabel: str = 'Time', ylabel: str = 'Number of people',
                scales: list = ['linear', 'linear'],
-               fig=plt, legendLoc: str = 'best',
+               axes=plt, legendLoc: str = 'best',
                colors: list = None, ycolor: str = 'black') -> None:
     """
     Plots given curves. If xPoints are the same for all curves, give only np.ndarray.
     Otherwise, a list of np.ndarrays works, in which case it has to be given for every curve.
     Other options (title, labels, scales, etc.) are the same as for matplotlib.pyplot.plot function.
-    Need to use 
 
     Inputs:
         xPoints: np.ndarray or list
@@ -127,7 +128,7 @@ def plotCurves(xPoints: np.ndarray or list, curves: np.ndarray or list,
             Label of y axis.
         scales: list
             Scales to use for each axis.
-        fig: figure or axes
+        axes: figure or axes
             Where to draw the curves.
         legendLoc: str
             Where to place legend.
@@ -144,21 +145,23 @@ def plotCurves(xPoints: np.ndarray or list, curves: np.ndarray or list,
     liste = list(range(max(toPlot) + 1))
     if style == None:
         style = ['-' for _ in liste]
+    if type(style) == type(''):
+        style = [style for _ in liste]
     if colors == None:
-        colors = [None for _ in liste]
+        colors = [f'C{x}' for x in liste]
 
     k = 0
     # TODO rewrite using try except
     if type(xPoints) is np.ndarray:  # Only one set of x coordinates
         for curve in toPlot:
             if labels == None:
-                fig.plot(xPoints,
+                axes.plot(xPoints,
                          curves[curve],
                          style[curve],
                          c=colors[curve])
                 k += 1
             else:
-                fig.plot(xPoints,
+                axes.plot(xPoints,
                          curves[curve],
                          style[curve],
                          label=labels[curve],
@@ -167,13 +170,13 @@ def plotCurves(xPoints: np.ndarray or list, curves: np.ndarray or list,
     else:  # Different time scales
         for curve in toPlot:
             if labels == None:
-                fig.plot(xPoints[curve],
+                axes.plot(xPoints[curve],
                          curves[curve],
                          style[curve],
                          c=colors[curve])
                 k += 1
             else:
-                fig.plot(xPoints[curve],
+                axes.plot(xPoints[curve],
                          curves[curve],
                          style[curve],
                          label=labels[curve],
@@ -181,20 +184,20 @@ def plotCurves(xPoints: np.ndarray or list, curves: np.ndarray or list,
                 k += 1
 
     if labels != None:
-        fig.legend(loc=legendLoc)
+        axes.legend(loc=legendLoc)
 
     try:
-        fig.title(title)
-        fig.xlabel(xlabel)
-        fig.ylabel(ylabel, color=ycolor)
-        fig.xscale(scales[0])
-        fig.yscale(scales[1])
+        axes.title(title)
+        axes.xlabel(xlabel)
+        axes.ylabel(ylabel, color=ycolor)
+        axes.xscale(scales[0])
+        axes.yscale(scales[1])
     except:
-        fig.set_title(title)
-        fig.set_xlabel(xlabel)
-        fig.set_ylabel(ylabel, color=ycolor)
-        fig.set_xscale(scales[0])
-        fig.set_yscale(scales[1])
+        axes.set_title(title)
+        axes.set_xlabel(xlabel)
+        axes.set_ylabel(ylabel, color=ycolor)
+        axes.set_xscale(scales[0])
+        axes.set_yscale(scales[1])
 
 
 def verifyModel(model: dict, modelName: str, printText: bool = True) -> None:
@@ -330,7 +333,7 @@ def initialize(model: dict, y0: dict, t: float, scaled=False, originalModel:
     if originalModel != None:
         # If we are initializing using another model
         if printText:
-            print(f'Initializing with values {roundDict(y0, 2)}.')
+            print(f'Initializing with values {roundDict(y0, 2)} at time {t}.')
         weWant = getCompartments(originalModel)
         if sorted(list(y0.keys())) != sorted(weWant):
             raise Exception("Initialization vector doesn't have right entries.\n"
@@ -618,7 +621,7 @@ def getCoefForFlow(flow: dict, t: float) -> float:
             Value of coefficient at given time.
     """
     # Information read directly from flow dictionary.
-    string = flow['parameter']
+    string = str(flow['parameter'])
     fonc = eval('lambda t: ' + string)
     value = fonc(t)
 
@@ -765,10 +768,10 @@ def solve(model: dict, tRange: tuple, refine: int, printText=False) -> tuple:
                    for c in compartments]
 
     y0 = np.array([model['compartments'][comp]
-          for comp in compartments])
+                   for comp in compartments])
     if useTorch:
         solution = odeint(model_derivative, torch.FloatTensor(y0),
-                        torch.FloatTensor(t_span))
+                          torch.FloatTensor(t_span))
     else:
         solution = odeint(model_derivative, y0, t_span)
 
@@ -1366,33 +1369,33 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
                     if useTorch:
                         array2 = torch.sum(
                             [solution[:, compartments.index(addI(comp, i))]
-                            for i in range(2)], axis=0)
+                             for i in range(2)], axis=0)
                     else:
                         array2 = np.sum(
                             [solution[:, compartments.index(addI(comp, i))]
-                            for i in range(2)], axis=0)
+                             for i in range(2)], axis=0)
                 except:
                     array2 = solution[:, compartments.index(addI(comp, 1))]
             else:
                 array1 = solutionOld[:, oldCompartments.index(comp)]
                 if useTorch:
                     array2 = torch.sum(
-                    [solution[:, compartments.index(x)]
-                     for x in getOtherNodes(newModel)], axis=0)
+                        [solution[:, compartments.index(x)]
+                         for x in getOtherNodes(newModel)], axis=0)
                 else:
                     array2 = np.sum(
-                    [solution[:, compartments.index(x)]
-                     for x in getOtherNodes(newModel)], axis=0)
+                        [solution[:, compartments.index(x)]
+                         for x in getOtherNodes(newModel)], axis=0)
 
             # print(f"{comp + ':':<{length}}", np.allclose(array1, array2))
             a1 = array1 + .1
             a2 = array2 + .1
             if useTorch:
-                condition = not torch.allclose(a1, a2, rtol=1, atol=1e-3) \
-                    or not torch.allclose(a1, a2, rtol=1, atol=1e-3)
+                condition = not torch.allclose(a1, a2) \
+                    or not torch.allclose(a1, a2)
             else:
-                condition = not np.allclose(a1, a2, rtol=1, atol=1e-3) \
-                    or not np.allclose(a1, a2, rtol=1, atol=1e-3)
+                condition = not np.allclose(a1, a2) \
+                    or not np.allclose(a1, a2)
             if condition:
                 allGood = False
                 problems.append(comp)
@@ -1419,8 +1422,9 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
         pointTime = t_spanOld[pointIndex]
         init = {key: solutionOld[pointIndex, i]
                 for i, key in enumerate(oldCompartments)}
-        initialize(newModel, init, pointIndex, scaledInfs, modelOld,
-                   printText=printInit and t == t_span_rt[0], whereToAdd=whereToAdd)
+        # print(pointIndex, pointTime)
+        initialize(newModel, init, pointTime, scaledInfs, modelOld,
+                   printText=printText, whereToAdd=whereToAdd)
 
         solutionTemp, _ = solve(newModel, t_span_sim, sub_sim)
 
@@ -1571,18 +1575,27 @@ def compare(modelName: str,
             printText=False, printInit=False,
             plotANA: bool = True,
             susceptibles: list = [0],
-            plotANA_v2: bool = False,
             infected: list = [1],
+            plotANA_v2: bool = False,
+            plotBound: bool = False,
+            title: str = None,
             scaleMethod: str = 'Total',
             plotIndividual: bool = True,
-            plotBound: bool = True,
+            plotInfected: bool = True,
             printR0: bool = False,
             scaledInfectedPlot=False,
             supressGraph: bool = False,
             useTqdm: bool = True,
-            legendLoc: str = 'best') -> None:
+            legendLoc: str = 'best',
+            legendRtCurve: str = None,
+            whereToPlot: tuple = None,
+            useLog: bool = True,
+            plotStyle: str = None,
+            forceColors: bool = False,
+            drawVertical: bool = True,
+            saveGraph: bool = True) -> None:
     """
-    Runs through all steps and produces a graph (call plt.plot() after).
+    Runs through all steps and produces a graph (call plt.plot() to show after).
 
     Inputs:
         modelName: str
@@ -1644,17 +1657,28 @@ def compare(modelName: str,
     DASH = (10, 10)
     DOTS = (1, 2)
 
-    fig, ax1 = plt.subplots()
-    ax2 = ax1.twinx()
-    ax2.set_yscale('log')
-    # plt.yscale('log')
+    if whereToPlot is None:
+        fig, ax1 = plt.subplots(figsize=(4*1.1, 3*1.1))
+        # In article, scale is 1.1
+    else:
+        fig, ax1, _ = whereToPlot
+    if plotInfected and not scaledInfectedPlot:
+        if whereToPlot is None:
+            ax2 = ax1.twinx()
+        else:
+            _, _, ax2 = whereToPlot
+        if useLog:
+            ax2.set_yscale('log')
+        ax2.axhline(y=0, linestyle='--', color='grey',
+                    linewidth=WIDTH, dashes=DASH)
+        ax2.set_ylabel('Number of infected')
 
     ax1.axhline(y=0, linestyle='--', color='grey',
                 linewidth=WIDTH, dashes=DASH)
-    ax2.axhline(y=0, linestyle='--', color='grey',
-                linewidth=WIDTH, dashes=DASH)
     ax1.axhline(y=1, linestyle='--', color='grey',
                 linewidth=WIDTH, dashes=DASH)
+    ax1.set_ylabel('Reproduction number')
+    ax1.set_xlabel('Time')
 
     rtCurves = {}
 
@@ -1667,8 +1691,6 @@ def compare(modelName: str,
         printWarnings=True, scaleMethod=scaleMethod,
         printR0=printR0, useTqdm=useTqdm)
 
-    # S = np.sum(solution[:, susceptibles], axis=1)
-    # I = np.sum(solution[:, susceptibles], axis=1)
     N = np.array([getPopulation(model, x)['Sum']
                   for x in solution])
 
@@ -1680,114 +1702,33 @@ def compare(modelName: str,
     if printText:
         print(f'Max incidents: {maxIncident}')
 
-    if scaledInfectedPlot:
-        ax1.plot(t_span, infsScaled, label='New infs.')
-    else:
-        ax2.plot(t_span, infsNotScaled,
-                 label='New infs.', ls='--', c='#8E4585')
-
-    # if model['name'] == 'SIR':
-    #     from scipy.interpolate import InterpolatedUnivariateSpline
-
-    #     print(t_span_rt[1] - t_span_rt[0])
-    #     sim_sub = min(100, 100 / (t_span_rt[1] - t_span_rt[0]))
-    #     print(f'Simulation subdivisions per unit of time: {sim_sub}')
-    #     solutionOG, t_spanOG = solve(
-    #         model, (0, t_span_rt[1] + 200), sim_sub, False)
-    #     toKeep = np.where(
-    #         np.logical_and(t_span_rt[0] <= t_spanOG,
-    #                        t_spanOG <= t_span_rt[1]))[0]
-
-    #     beta = float(model['flows']['flows'][0]['parameter'])
-    #     gamma = float(model['flows']['flows'][1]['parameter'])
-    #     S_OG = np.sum(solutionOG[:, susceptibles], axis=1)
-    #     I_OG = np.sum(solutionOG[:, infected], axis=1)
-    #     N_OG = np.array([getPopulation(model, x)['Sum']
-    #                      for x in solutionOG])
-    #     nu = beta * S_OG * I_OG / N_OG
-    #     Jt = None
-    #     for t in tqdm(t_spanOG[toKeep]):
-    #         i = np.where(t_spanOG == t)[0][0]
-    #         t_spanIntegral = t_spanOG[i:]
-    #         exponential = np.exp(-gamma * (t_spanIntegral - t))
-    #         valuesIntegral = nu[i:] * exponential
-
-    #         f = InterpolatedUnivariateSpline(
-    #             t_spanIntegral, valuesIntegral, k=1)
-    #         if type(Jt) == type(None):
-    #             Jt = np.array(
-    #                 [f.integral(t_spanIntegral[0], t_spanIntegral[-1])])
-    #         else:
-    #             Jt = np.append(Jt, f.integral(
-    #                 t_spanIntegral[0], t_spanIntegral[-1]))
-
-    #     ax2.plot(t_spanOG[toKeep], Jt,
-    #              label='J(t)', ls='--')
-    #     ax2.plot(t_spanOG[toKeep], I_OG[toKeep],
-    #              label='Infected', ls='--')
-    #     crossTime = evaluateCurve(
-    #         t_spanOG[toKeep],
-    #         find_intersections_curves(
-    #             Jt, I_OG[toKeep])[0])
-    #     print(f'Time between t0 and t1: '
-    #           + f'{np.abs(crossTime - xTimeInfs)}')
-    #     ax1.axvline(x=crossTime, linestyle='--', color='grey',
-    #                 linewidth=WIDTH, dashes=DASH)
-
-    # # POINT D'INFLECTION
-    # dinf_dt = (infsNotScaled[1:] - infsNotScaled[:-1]) \
-    #     / (t_span[1:] - t_span[:-1])
-    # d2inf_dt2 = (dinf_dt[1:] - dinf_dt[:-1]) \
-    #     / (t_span[2:] - t_span[:-2])
-
-    # idx_infl = find_intersections(d2inf_dt2, 0)[0]
-    # xTime_infl = evaluateCurve(t_span, idx_infl)
-    # ax1.axvline(x=xTime_infl, linestyle='--', color='grey',
-    #             linewidth=WIDTH, dashes=DASH)
-
-    # if modelName == 'SIR':
-    #     pente = np.max(dinf_dt)
-    #     times = np.linspace(xTime_infl, xTimeInfs, 101)
-    #     exponential = np.exp(-gamma * (xTimeInfs - times))
-    #     nu = beta * S * I / N
-    #     nu_ti = evaluateCurve(nu, idx_infl)
-    #     nu_t0 = evaluateCurve(nu, idx_infs)
-
-    #     term1 = (nu_ti - xTime_infl * pente) / gamma * (1 - exponential)
-    #     term2 = pente / gamma * (times - xTimeInfs *
-    #                              exponential + 1 / gamma * (1 - exponential))
-    #     term3 = nu_t0 * exponential
-    #     sumOfTerms = term1 + term2 + term3
-    #     ax2.plot(times, sumOfTerms, label='Bound J(t)', ls='--')
-
-    #     S_times = np.array([evaluateCurve(S, find_intersections(t_span, x)[0])
-    #                         for x in times])
-    #     I_times = np.array([evaluateCurve(I, find_intersections(t_span, x)[0])
-    #                         for x in times])
-    #     N_times = np.array([evaluateCurve(N, find_intersections(t_span, x)[0])
-    #                         for x in times])
-    #     Rt_bound = beta * S_times / gamma / N_times \
-    #         - beta * sumOfTerms / gamma / N_times
-    #     ax1.plot(times, Rt_bound, label='Rt induced')
-    #     ax2.plot(times, S_times, label='S')
-
-    #     ax1.axhline(y=beta * S_times[-1] / gamma / N_times[-1] * (1 - beta * I_times[-1] / gamma / N_times[-1]))
+    if plotInfected:
+        if scaledInfectedPlot:
+            ax1.plot(t_span, infsScaled, label='New infs.')
+        else:
+            ax2.plot(t_span, infsNotScaled,
+                     label='New infs.',
+                     ls='--' if plotStyle is None else plotStyle,
+                     c='#8E4585')
 
     if useTorch:
         susceptiblesDivPop = torch.sum(solution[:, susceptibles], axis=1) / N
-        infectedDivPop = torch.sum(solution[:, infected], axis=1) / N
+        # infectedDivPop = torch.sum(solution[:, infected], axis=1) / N
     else:
         susceptiblesDivPop = np.sum(solution[:, susceptibles], axis=1) / N
-        infectedDivPop = np.sum(solution[:, infected], axis=1) / N
+        # infectedDivPop = np.sum(solution[:, infected], axis=1) / N
+
+    # R0 needs to be table, tablewise multiplication
     rt_ANA = R0 * susceptiblesDivPop
     if plotANA:
-        ax1.plot(t_span, rt_ANA, label='Usual')
-    rt_ANA_v2 = R0 * (susceptiblesDivPop - infectedDivPop)
-    if plotANA_v2:
-        ax1.plot(t_span, rt_ANA_v2, label='ANA_v2')
-    bound = rt_ANA * (1 - R0 * infectedDivPop)
-    if plotBound:
-        ax1.plot(t_span, bound, label='Bound')
+        ax1.plot(t_span, rt_ANA, label='Usual', ls=plotStyle,
+                 c='tab:blue' if forceColors else None)
+    # rt_ANA_v2 = R0 * (susceptiblesDivPop - infectedDivPop)
+    # if plotANA_v2:
+    #     ax1.plot(t_span, rt_ANA_v2, label='ANA_v2')
+    # bound = rt_ANA * (1 - R0 * infectedDivPop)
+    # if plotBound:
+    #     ax1.plot(t_span, bound, label='Bound')
 
     rt_times = np.array([key for key in values])
 
@@ -1800,8 +1741,8 @@ def compare(modelName: str,
             ax1.plot(rt_times, rt_rtNode, label=rtNode, ls=':')
         rt += rt_rtNode
 
-    ax1.plot(rt_times, rt, label='Ours',
-             linestyle='-')
+    ax1.plot(rt_times, rt, label='Ours' if legendRtCurve is None else legendRtCurve,
+             linestyle=plotStyle, c='tab:orange' if forceColors else None)
 
     rtCurves['Sum'] = rt
 
@@ -1817,57 +1758,36 @@ def compare(modelName: str,
     elif printText:
         print('Time difference is not relevant, '
               + 'no intersection between rt and 1.')
-    # # Rt analytical
-    # if doesIntersect(rt_ANA, 1):
-    #     idx_rt = find_intersections(rt_ANA, 1)[0]
-    #     xTimeRt_ANA = evaluateCurve(t_span, idx_rt)
-    # # Rt analytical v2
-    # if doesIntersect(rt_ANA_v2, 1):
-    #     idx_rt = find_intersections(rt_ANA_v2, 1)[0]
-    #     xTimeRt_ANA_v2 = evaluateCurve(t_span, idx_rt)
-    # # Rt lower bound
-    # if doesIntersect(bound, 1):
-    #     idx_rt = find_intersections(bound, 1)[0]
-    #     xTimeRt_bound = evaluateCurve(t_span, idx_rt)
 
-    #     # print(xTimeRt_bound, xTimeRt, xTimeRt_ANA_v2, xTimeRt_ANA)
+    if plotInfected and drawVertical:
+        try:
+            ax1.axvline(x=xTimeInfs, linestyle=':', color='grey',
+                        linewidth=2.5 * WIDTH, dashes=DOTS)
+            ax1.axvline(x=xTimeRt, linestyle='--', color='grey',
+                        linewidth=WIDTH, dashes=DASH)
+        except:
+            pass
 
-    # if doesIntersect(rt, 1) and doesIntersect(rt_ANA, 1) \
-    #         and doesIntersect(rt_ANA_v2, 1) and doesIntersect(bound, 1):
-    #     if not (xTimeRt_bound <= xTimeRt <= xTimeRt_ANA and
-    #             xTimeRt_bound <= xTimeRt_ANA_v2 <= xTimeRt_ANA):
-    #         beta = model['flows']['flows'][0]['parameter']
-    #         gamma = model['flows']['flows'][1]['parameter']
-    #         print(f"Found a problem with beta = "
-    #               + f"{beta} "
-    #               + f"and gamma = "
-    #               + f"{gamma}.")
-    #         with open('problems.txt', 'a') as f:
-    #             f.write(f'Found problem at beta = {beta}, gamma = {gamma}\n')
-    # else:
-    #     with open('problems.txt', 'a') as f:
-    #             f.write(f"Could not check beta = {beta}, gamma = {gamma}\n")
+    if title is None:
+        ax1.set_title(modelName)
+    else:
+        ax1.set_title(title)
 
-    try:
-        ax1.axvline(x=xTimeInfs, linestyle=':', color='grey',
-                    linewidth=2.5 * WIDTH, dashes=DOTS)
-        ax1.axvline(x=xTimeRt, linestyle='--', color='grey',
-                    linewidth=WIDTH, dashes=DASH)
-    except:
-        pass
+    if plotInfected and not scaledInfectedPlot:
+        lines, labels = ax1.get_legend_handles_labels()
+        lines2, labels2 = ax2.get_legend_handles_labels()
+        ax1.legend(lines + lines2, labels + labels2, loc=legendLoc)
 
-    ax1.set_title(modelName)
-
-    lines, labels = ax1.get_legend_handles_labels()
-    lines2, labels2 = ax2.get_legend_handles_labels()
-
-    ax1.legend(lines + lines2, labels + labels2, loc=legendLoc)
-    # ax2.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+        # ax1.set_ylim(bottom=0)
+        # ax2.set_ylim(bottom=1)
+        if ax2.get_yscale() == 'linear':
+            ax2.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
 
     if supressGraph:
         plt.close()
 
-    fig.savefig(f'graphs/{modelName}.pdf', bbox_inches='tight')
+    if saveGraph:
+        fig.savefig(f'graphs/{modelName}.pdf', bbox_inches='tight')
 
     return rt_times, rtCurves, infsNotScaled
 
@@ -1997,10 +1917,10 @@ def infCurve(model: dict, solution: np.ndarray, t_span: np.ndarray) -> np.ndarra
 
     if useTorch:
         curve = torch.FloatTensor([totInfs(model, x, t_span[i])
-                                for i, x in enumerate(solution)])
+                                   for i, x in enumerate(solution)])
     else:
         curve = np.array([totInfs(model, x, t_span[i])
-                                for i, x in enumerate(solution)])
+                          for i, x in enumerate(solution)])
     return curve
 
 
@@ -2507,11 +2427,12 @@ def createLaTeX(model: dict, layerDistance: float = .8,
                 LaTeX += '\n' + tab * 3 + arrow
             LaTeX += ';\n'
 
-    label = "\\label{" + modelName + "_Tikz}"
-    print(label)
+    label = "\\label{fig:" + modelName + "_Tikz}"
     LaTeX += f"{tab}\\end{{tikzpicture}}\n{tab + label}\n\\end{{figure}}"
 
     if not os.path.isdir('LaTeX'):
         os.mkdir('LaTeX')
     with open('LaTeX/' + modelName + '.tex', 'w') as file:
         file.write(LaTeX)
+
+    print(f'Tikz created for {modelName}')

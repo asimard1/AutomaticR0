@@ -21,26 +21,10 @@
             "contagiousness": 1,
             "initial_condition": 0
         },
-        "I_A^0": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 0
-        },
-        "I_B^0": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 0
-        },
-        "Rt(S,I_A)": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 0
-        },
-        "Rt(S,I_B)": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 0
-        },
+        "I_A^0": 0,
+        "I_B^0": 0,
+        "Rt(S,I_A)": 0,
+        "Rt(S,I_B)": 0,
         "Null_n": {
             "susceptibility": 1,
             "contagiousness": 1,

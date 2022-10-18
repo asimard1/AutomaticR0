@@ -1,5 +1,5 @@
 {
-    "name": "SIR",
+    "name": "SIR_betajump",
     "compartments": {
         "S": 10000000.0,
         "I": 1,
@@ -14,7 +14,7 @@
                 "to": "I",
                 "rate": "S",
                 "contact": "I",
-                "parameter": "0.8"
+                "parameter": ".8 if t <= 20 else .4"
             }
         ],
         "recoveries": [
