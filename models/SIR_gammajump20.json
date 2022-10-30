@@ -1,0 +1,30 @@
+{
+    "name": "SIR_gammajump20",
+    "compartments": {
+        "S": 10000000.0,
+        "I": 1,
+        "R": 0,
+        "Null_n": 0,
+        "Null_m": 0
+    },
+    "flows": {
+        "infections": [
+            {
+                "from": "S",
+                "to": "I",
+                "rate": "S",
+                "contact": "I",
+                "parameter": ".8"
+            }
+        ],
+        "recoveries": [
+            {
+                "from": "I",
+                "to": "R",
+                "rate": "I",
+                "contact": "Null_m",
+                "parameter": "0.2 if t < 20 else 8 / 30"
+            }
+        ]
+    }
+}

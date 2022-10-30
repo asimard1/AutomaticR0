@@ -1,5 +1,5 @@
 {
-    "name": "SIR_betajump_mod",
+    "name": "SIR_betajump20_mod",
     "compartments": {
         "S^1": 10000000.0,
         "I^1": 1,
@@ -16,14 +16,14 @@
                 "to": "I^1",
                 "rate": "S^1",
                 "contact": "I^0+I^1",
-                "parameter": ".8 if t < 20 else .4"
+                "parameter": ".8 if t < 20 else .6"
             },
             {
                 "from": "Null_n",
                 "to": "Rt(S,I)",
                 "rate": "S^1",
                 "contact": "I^0",
-                "parameter": ".8 if t < 20 else .4"
+                "parameter": ".8 if t < 20 else .6"
             }
         ],
         "recoveries": [

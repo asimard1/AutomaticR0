@@ -156,31 +156,31 @@ def plotCurves(xPoints: np.ndarray or list, curves: np.ndarray or list,
         for curve in toPlot:
             if labels == None:
                 axes.plot(xPoints,
-                         curves[curve],
-                         style[curve],
-                         c=colors[curve])
+                          curves[curve],
+                          style[curve],
+                          c=colors[curve])
                 k += 1
             else:
                 axes.plot(xPoints,
-                         curves[curve],
-                         style[curve],
-                         label=labels[curve],
-                         c=colors[curve])
+                          curves[curve],
+                          style[curve],
+                          label=labels[curve],
+                          c=colors[curve])
                 k += 1
     else:  # Different time scales
         for curve in toPlot:
             if labels == None:
                 axes.plot(xPoints[curve],
-                         curves[curve],
-                         style[curve],
-                         c=colors[curve])
+                          curves[curve],
+                          style[curve],
+                          c=colors[curve])
                 k += 1
             else:
                 axes.plot(xPoints[curve],
-                         curves[curve],
-                         style[curve],
-                         label=labels[curve],
-                         c=colors[curve])
+                          curves[curve],
+                          style[curve],
+                          label=labels[curve],
+                          c=colors[curve])
                 k += 1
 
     if labels != None:
@@ -1458,8 +1458,8 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
 
             if printR0:
                 # if t == t_span_rt[0]:
-                    print(f"{t:4.0f}, {x + ', ':<{length + 2}}{value:9.1f}, "
-                          + f"{denom:9.1f}, {newValue:4.2f}")
+                print(f"{t:4.0f}, {x + ', ':<{length + 2}}{value:9.1f}, "
+                      + f"{denom:9.1f}, {newValue:4.2f}")
             values[t][x] = newValue
         # print(f'{sum(values[t_spanOld[i]]):.2f} ', end='')
 
@@ -1588,7 +1588,11 @@ def compare(modelName: str,
             plotStyle: str = None,
             forceColors: bool = False,
             drawVertical: bool = True,
-            saveGraph: bool = True) -> None:
+            saveGraph: bool = True,
+            graphName: str = None,
+            addToLegends: str = '',
+            scale: float = 1.1,
+            plotFrom: float = 0) -> None:
     """
     Runs through all steps and produces a graph (call plt.plot() to show after).
 
@@ -1653,7 +1657,7 @@ def compare(modelName: str,
     DOTS = (1, 2)
 
     if whereToPlot is None:
-        fig, ax1 = plt.subplots(figsize=(4*1.1, 3*1.1))
+        fig, ax1 = plt.subplots(figsize=(4*scale, 3*scale))
         # In article, scale is 1.1
     else:
         fig, ax1, _ = whereToPlot
@@ -1666,7 +1670,7 @@ def compare(modelName: str,
             ax2.set_yscale('log')
         ax2.axhline(y=0, linestyle='--', color='grey',
                     linewidth=WIDTH, dashes=DASH)
-        ax2.set_ylabel('Number of infected')
+        ax2.set_ylabel('Number of newly infected')
 
     ax1.axhline(y=0, linestyle='--', color='grey',
                 linewidth=WIDTH, dashes=DASH)
@@ -1686,6 +1690,8 @@ def compare(modelName: str,
         printWarnings=True, scaleMethod=scaleMethod,
         printR0=printR0, useTqdm=useTqdm)
 
+    toKeep_t_span = np.where(t_span >= plotFrom - 1.5 / sub_sim)[0]
+
     N = np.array([getPopulation(model, x)['Sum']
                   for x in solution])
 
@@ -1699,10 +1705,11 @@ def compare(modelName: str,
 
     if plotInfected:
         if scaledInfectedPlot:
-            ax1.plot(t_span, infsScaled, label='New infs.')
+            ax1.plot(t_span[toKeep_t_span],
+                     infsScaled[toKeep_t_span], label='New infs.')
         else:
-            ax2.plot(t_span, infsNotScaled,
-                     label='$\\nu(t)$',
+            ax2.plot(t_span[toKeep_t_span], infsNotScaled[toKeep_t_span],
+                     label='$\\nu(t)$' + addToLegends,
                      ls='--' if plotStyle is None else plotStyle,
                      c='#8E4585')
 
@@ -1716,7 +1723,8 @@ def compare(modelName: str,
     # R0 needs to be table, tablewise multiplication
     rt_ANA = R0 * susceptiblesDivPop
     if plotANA:
-        ax1.plot(t_span, rt_ANA, label='$\\mathcal{R}_{t}^{ana}$', ls=plotStyle,
+        ax1.plot(t_span[toKeep_t_span], rt_ANA[toKeep_t_span],
+                 label='$\\mathcal{R}_{t}^{ana}$' + addToLegends, ls=plotStyle,
                  c='tab:blue' if forceColors else None)
     # rt_ANA_v2 = R0 * (susceptiblesDivPop - infectedDivPop)
     # if plotANA_v2:
@@ -1726,6 +1734,7 @@ def compare(modelName: str,
     #     ax1.plot(t_span, bound, label='Bound')
 
     rt_times = np.array([key for key in values])
+    toKeep_rt_times = np.where(rt_times >= plotFrom - 1.5 / sub_rt)
 
     rt = np.zeros_like(rt_times, dtype='float64')
     for rtNode in getRtNodes(mod(model, False)):
@@ -1734,10 +1743,13 @@ def compare(modelName: str,
         if len(getRtNodes(mod(model, False))) > 1 \
                 and plotIndividual:
             nodeLegend = rtNode.replace('Rt', '\\mathcal{R}_t')
-            ax1.plot(rt_times, rt_rtNode, label=f"${nodeLegend}$", ls=':')
+            ax1.plot(rt_times[toKeep_rt_times], rt_rtNode[toKeep_rt_times],
+                     label=f"${nodeLegend}$", ls=':')
         rt += rt_rtNode
 
-    ax1.plot(rt_times, rt, label='$\\mathcal{R}_{t}^{int}$' if legendRtCurve is None else legendRtCurve,
+    ax1.plot(rt_times[toKeep_rt_times], rt[toKeep_rt_times],
+             label=('$\\mathcal{R}_{t}^{int}$' if legendRtCurve is None
+                    else legendRtCurve) + addToLegends,
              linestyle=plotStyle, c='tab:orange' if forceColors else None)
 
     rtCurves['Sum'] = rt
@@ -1778,12 +1790,17 @@ def compare(modelName: str,
         # ax2.set_ylim(bottom=1)
         if ax2.get_yscale() == 'linear':
             ax2.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+    else:
+        ax1.legend(loc=legendLoc)
 
     if supressGraph:
         plt.close()
 
     if saveGraph:
-        fig.savefig(f'graphs/{modelName}.pdf', bbox_inches='tight')
+        if graphName is None:
+            fig.savefig(f'graphs/{modelName}.pdf', bbox_inches='tight')
+        else:
+            fig.savefig(f'graphs/{graphName}.pdf', bbox_inches='tight')
 
     return rt_times, rtCurves, infsNotScaled
 
