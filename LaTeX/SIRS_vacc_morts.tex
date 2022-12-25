@@ -1,18 +1,18 @@
 \begin{figure}[H]
     \centering
-    \begin{tikzpicture}[scale=0.6, every node/.style={scale=0.6}]
+    \begin{tikzpicture}[scale=1, every node/.style={scale=1}]
         \node [Square] (S)  {$S$};
-        \node [Square] (I) [right=1.2cm of S] {$I$};
-        \node [Square] (R) [right=1.2cm of I] {$R$};
+        \node [Square] (I) [right=2cm of S] {$I$};
+        \node [Square] (R) [right=2cm of I] {$R$};
 
-        \node [Empty] (Nulln_S) [above left=0.48cm of S] {};
-        \node [Empty] (Nullm_S) [below right=0.48cm of S] {};
-        \node [Empty] (Nulln_I) [above left=0.48cm of I] {};
-        \node [Empty] (Nullm_I) [below right=0.48cm of I] {};
-        \node [Empty] (Nulln_R) [above left=0.48cm of R] {};
-        \node [Empty] (Nullm_R) [below right=0.48cm of R] {};
+        \node [Empty] (Nulln_S) [above left=0.8cm of S] {};
+        \node [Empty] (Nullm_S) [below right=0.8cm of S] {};
+        \node [Empty] (Nulln_I) [above left=0.8cm of I] {};
+        \node [Empty] (Nullm_I) [below right=0.8cm of I] {};
+        \node [Empty] (Nulln_R) [above left=0.8cm of R] {};
+        \node [Empty] (Nullm_R) [below right=0.8cm of R] {};
 
-        \path [Arrow, line width=0.6pt]
+        \path [Arrow, line width=1pt]
             (Nulln_S) edge [bend left=10, Cyan] node [Empty, pos=2/5] (Nulln_S-S-r) {} node [Empty, pos=3/5] (Nulln_S-S-c) {} (S)
             (S) edge [bend left=10, Plum] node [Empty, pos=2/5] (S-I-r) {} node [Empty, pos=3/5] (S-I-c) {} (I)
             (S) edge [bend left=25, Red] node [Empty, pos=2/5] (S-R-r) {} node [Empty, pos=3/5] (S-R-c) {} (R)
@@ -21,7 +21,7 @@
             (I) edge [bend left=10, Red] node [Empty, pos=2/5] (I-Nullm_I-r) {} node [Empty, pos=3/5] (I-Nullm_I-c) {} (Nullm_I)
             (R) edge [bend left=10, Red] node [Empty, pos=2/5] (R-Nullm_R-r) {} node [Empty, pos=3/5] (R-Nullm_R-c) {} (Nullm_R);
 
-        \path [Dashed, line width=0.6pt]
+        \path [Dashed, line width=1pt]
             (S-I-c) edge [bend left=30] (I);
     \end{tikzpicture}
     \label{fig:SIRS_vacc_morts_Tikz}

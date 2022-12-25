@@ -943,7 +943,7 @@ def subGraph(model, u: str, d: str):
             All edges in model.
     """
     visited = {comp: False for comp in getCompartments(model)}
-    edges = getEdges(model, u)
+    edges = edgesCutU(model, u)
 
     allPaths = []
 
@@ -996,9 +996,9 @@ def searchPaths(u: str, d: str, visited: dict, edges: dict, path: list, allPaths
     visited[u] = False
 
 
-def getEdges(model, u: str):
+def edgesCutU(model, u: str):
     """
-    Gets all edges in graph as a dictionary.
+    Gets all edges in graph as a dictionary. NOT TRUE
 
     Inputs:
         model: dict
@@ -1018,7 +1018,7 @@ def getEdges(model, u: str):
 
     for _, flowName in enumerate(flows):
         for flow in flows[flowName]:
-            if not flow['to'] in edges[flow['from']] \
+            if (not flow['to'] in edges[flow['from']]) \
                     and flow['to'] != u:
                 edges[flow['from']].append(flow['to'])
 

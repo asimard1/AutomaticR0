@@ -16,14 +16,14 @@
                 "to": "I^1",
                 "rate": "S^1",
                 "contact": "I^0+I^1",
-                "parameter": ".8 if t < 20 else .6"
+                "parameter": ".8 if t < 10 else (.6 if t < 40 else 1)"
             },
             {
                 "from": "Null_n",
                 "to": "Rt(S,I)",
                 "rate": "S^1",
                 "contact": "I^0",
-                "parameter": ".8 if t < 20 else .6"
+                "parameter": ".8 if t < 10 else (.6 if t < 40 else 1)"
             }
         ],
         "recoveries": [

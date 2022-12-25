@@ -14,7 +14,7 @@
                 "to": "I",
                 "rate": "S",
                 "contact": "I",
-                "parameter": ".8 if t < 20 else .6"
+                "parameter": ".8 if t < 10 else (.6 if t < 40 else 1)"
             }
         ],
         "recoveries": [

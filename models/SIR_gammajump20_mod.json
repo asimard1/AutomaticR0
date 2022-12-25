@@ -32,14 +32,14 @@
                 "to": "R^1",
                 "rate": "I^1",
                 "contact": "Null_m",
-                "parameter": "0.2 if t < 20 else 8 / 30"
+                "parameter": ".2 if t < 10 else (4 / 15 if t < 40 else 4/25)"
             },
             {
                 "from": "I^0",
                 "to": "R^1",
                 "rate": "I^0",
                 "contact": "Null_m",
-                "parameter": "0.2 if t < 20 else 8 / 30"
+                "parameter": ".2 if t < 10 else (4 / 15 if t < 40 else 4/25)"
             }
         ]
     }
