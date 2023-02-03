@@ -19,12 +19,12 @@
         \node [Empty] (Nullm_RtSI) [below right=0.8cm of RtSI] {};
 
         \path [Arrow, line width=1pt]
-            (S^1) edge [bend left=10, Plum] node [Empty, pos=2/5] (S^1-I^1-r) {} node [Empty, pos=3/5] (S^1-I^1-c) {} (I^1)
-            (Nulln_RtSI) edge [bend left=10, Plum] node [Empty, pos=3/5] (Nulln_RtSI-RtSI-r) {} node [Empty, pos=2/5] (Nulln_RtSI-RtSI-c) {} (RtSI)
-            (I^1) edge [bend left=10, Red] node [Empty, pos=2/5] (I^1-S^1-r) {} node [Empty, pos=3/5] (I^1-S^1-c) {} (S^1)
-            (I^0) edge [bend left=10, Red] node [Empty, pos=2/5] (I^0-S^1-r) {} node [Empty, pos=3/5] (I^0-S^1-c) {} (S^1)
-            (S^1) edge [bend left=25, Red] node [Empty, pos=2/5] (S^1-R^1-r) {} node [Empty, pos=3/5] (S^1-R^1-c) {} (R^1)
-            (R^1) edge [bend left=25, Red] node [Empty, pos=2/5] (R^1-S^1-r) {} node [Empty, pos=3/5] (R^1-S^1-c) {} (S^1);
+            (S^1) edge [bend left=10, Plum] node [Empty, pos=2/5] (S^1-I^1-r) {} node [Empty, pos=3/5] (S^1-I^1-c) {} node [Empty, pos=1/2, above=0.05cm] (S^1I^1) {} (I^1)
+            (Nulln_RtSI) edge [bend left=10, Plum] node [Empty, pos=3/5] (Nulln_RtSI-RtSI-r) {} node [Empty, pos=2/5] (Nulln_RtSI-RtSI-c) {} node [Empty, pos=1/2, above=0.05cm] (Nulln_RtSIRtSI) {} (RtSI)
+            (I^1) edge [bend left=10, Red] node [Empty, pos=2/5] (I^1-S^1-r) {} node [Empty, pos=3/5] (I^1-S^1-c) {} node [Empty, pos=1/2, above=0.05cm] (I^1S^1) {} (S^1)
+            (I^0) edge [bend left=10, Red] node [Empty, pos=2/5] (I^0-S^1-r) {} node [Empty, pos=3/5] (I^0-S^1-c) {} node [Empty, pos=1/2, above=0.05cm] (I^0S^1) {} (S^1)
+            (S^1) edge [bend left=25, Red] node [Empty, pos=2/5] (S^1-R^1-r) {} node [Empty, pos=3/5] (S^1-R^1-c) {} node [Empty, pos=1/2, above=0.05cm] (S^1R^1) {} (R^1)
+            (R^1) edge [bend left=25, Red] node [Empty, pos=2/5] (R^1-S^1-r) {} node [Empty, pos=3/5] (R^1-S^1-c) {} node [Empty, pos=1/2, above=0.05cm] (R^1S^1) {} (S^1);
 
         \path [Dotted, line width=1pt]
             (Nulln_RtSI-RtSI-r) edge [bend left=30] (S^1);

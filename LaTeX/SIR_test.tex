@@ -20,12 +20,12 @@
         \node [Empty] (Nullm_R) [below right=0.8cm of R] {};
 
         \path [Arrow, line width=1pt]
-            (S) edge [bend left=10, Plum] node [Empty, pos=2/5] (S-I_1-r) {} node [Empty, pos=3/5] (S-I_1-c) {} (I_1)
-            (S) edge [bend left=10, Plum] node [Empty, pos=2/5] (S-I_1-r) {} node [Empty, pos=3/5] (S-I_1-c) {} (I_1)
-            (S) edge [bend left=10, Plum] node [Empty, pos=2/5] (S-I_1-r) {} node [Empty, pos=3/5] (S-I_1-c) {} (I_1)
-            (I_1) edge [bend left=10, Red] node [Empty, pos=2/5] (I_1-I_2-r) {} node [Empty, pos=3/5] (I_1-I_2-c) {} (I_2)
-            (I_2) edge [bend left=10, Red] node [Empty, pos=2/5] (I_2-I_3-r) {} node [Empty, pos=3/5] (I_2-I_3-c) {} (I_3)
-            (I_3) edge [bend left=10, Red] node [Empty, pos=2/5] (I_3-R-r) {} node [Empty, pos=3/5] (I_3-R-c) {} (R);
+            (S) edge [bend left=10, Plum] node [Empty, pos=2/5] (S-I_1-r) {} node [Empty, pos=3/5] (S-I_1-c) {} node [Empty, pos=1/2, above=0.05cm] (SI_1) {} (I_1)
+            (S) edge [bend left=10, Plum] node [Empty, pos=2/5] (S-I_1-r) {} node [Empty, pos=3/5] (S-I_1-c) {} node [Empty, pos=1/2, above=0.05cm] (SI_1) {} (I_1)
+            (S) edge [bend left=10, Plum] node [Empty, pos=2/5] (S-I_1-r) {} node [Empty, pos=3/5] (S-I_1-c) {} node [Empty, pos=1/2, above=0.05cm] (SI_1) {} (I_1)
+            (I_1) edge [bend left=10, Red] node [Empty, pos=2/5] (I_1-I_2-r) {} node [Empty, pos=3/5] (I_1-I_2-c) {} node [Empty, pos=1/2, above=0.05cm] (I_1I_2) {} (I_2)
+            (I_2) edge [bend left=10, Red] node [Empty, pos=2/5] (I_2-I_3-r) {} node [Empty, pos=3/5] (I_2-I_3-c) {} node [Empty, pos=1/2, above=0.05cm] (I_2I_3) {} (I_3)
+            (I_3) edge [bend left=10, Red] node [Empty, pos=2/5] (I_3-R-r) {} node [Empty, pos=3/5] (I_3-R-c) {} node [Empty, pos=1/2, above=0.05cm] (I_3R) {} (R);
 
         \path [Dashed, line width=1pt]
             (S-I_1-c) edge [bend left=30] (I_1)

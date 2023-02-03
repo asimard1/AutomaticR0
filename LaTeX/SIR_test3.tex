@@ -20,11 +20,11 @@
         \node [Empty] (Nullm_R) [below right=0.8cm of R] {};
 
         \path [Arrow, line width=1pt]
-            (S) edge [bend left=10, Plum] node [Empty, pos=2/5] (S-E_1-r) {} node [Empty, pos=3/5] (S-E_1-c) {} (E_1)
-            (S) edge [bend left=25, Plum] node [Empty, pos=2/5] (S-I-r) {} node [Empty, pos=3/5] (S-I-c) {} (I)
-            (E_1) edge [bend left=10, Red] node [Empty, pos=2/5] (E_1-E_2-r) {} node [Empty, pos=3/5] (E_1-E_2-c) {} (E_2)
-            (E_2) edge [bend left=10, Red] node [Empty, pos=2/5] (E_2-I-r) {} node [Empty, pos=3/5] (E_2-I-c) {} (I)
-            (I) edge [bend left=10, Red] node [Empty, pos=2/5] (I-R-r) {} node [Empty, pos=3/5] (I-R-c) {} (R);
+            (S) edge [bend left=10, Plum] node [Empty, pos=2/5] (S-E_1-r) {} node [Empty, pos=3/5] (S-E_1-c) {} node [Empty, pos=1/2, above=0.05cm] (SE_1) {} (E_1)
+            (S) edge [bend left=25, Plum] node [Empty, pos=2/5] (S-I-r) {} node [Empty, pos=3/5] (S-I-c) {} node [Empty, pos=1/2, above=0.05cm] (SI) {} (I)
+            (E_1) edge [bend left=10, Red] node [Empty, pos=2/5] (E_1-E_2-r) {} node [Empty, pos=3/5] (E_1-E_2-c) {} node [Empty, pos=1/2, above=0.05cm] (E_1E_2) {} (E_2)
+            (E_2) edge [bend left=10, Red] node [Empty, pos=2/5] (E_2-I-r) {} node [Empty, pos=3/5] (E_2-I-c) {} node [Empty, pos=1/2, above=0.05cm] (E_2I) {} (I)
+            (I) edge [bend left=10, Red] node [Empty, pos=2/5] (I-R-r) {} node [Empty, pos=3/5] (I-R-c) {} node [Empty, pos=1/2, above=0.05cm] (IR) {} (R);
 
         \path [Dashed, line width=1pt]
             (S-E_1-c) edge [bend left=30] (I)

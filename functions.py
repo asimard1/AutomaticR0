@@ -18,7 +18,6 @@ if useTorch:
 else:
     from scipy.integrate import odeint
 
-
 @dataclass
 class Delta:
     flux: list
@@ -226,8 +225,8 @@ def verifyModel(model: dict, modelName: str, printText: bool = True) -> None:
     missing = []
     flows = model['flows']
     compartments = getCompartments(model)
-    for flowType_index, flowType in enumerate(flows):
-        for flow_index, flow in enumerate(flows[flowType]):
+    for flowType in flows:
+        for flow in flows[flowType]:
             # Check for missing keys in flows
             keys = list(flow.keys())
             for p in ['from', 'to', 'rate', 'contact', 'parameter']:
@@ -900,7 +899,7 @@ def splitVrVc(nodes, newCompartments) -> str:
     return newVrVc
 
 
-def subGraphVc(model, u: str, vc: list):
+def subSetVc(model, u: str, vc: list):
     """
     Gets all edges in graph as a dictionary.
 
@@ -919,14 +918,14 @@ def subGraphVc(model, u: str, vc: list):
 
     allNodes = []
     for d in vc:
-        for node in subGraph(model, u, d):
+        for node in subSet(model, u, d):
             if node not in allNodes:
                 allNodes.append(node)
 
     return allNodes
 
 
-def subGraph(model, u: str, d: str):
+def subSet(model, u: str, d: str):
     """
     Gets all edges in graph as a dictionary.
 
@@ -949,19 +948,19 @@ def subGraph(model, u: str, d: str):
 
     searchPaths(u, d, visited, edges, [], allPaths)
 
-    subGraph = []
+    subSet = []
 
     for path in allPaths:
         for comp in path:
-            if comp not in subGraph:
-                subGraph.append(comp)
+            if comp not in subSet:
+                subSet.append(comp)
 
-    return subGraph
+    return subSet
 
 
 def searchPaths(u: str, d: str, visited: dict, edges: dict, path: list, allPaths: list):
     """
-    Returns the subgraph in the model (unmodified) that lies between u and v (without loops).
+    Returns the subSet in the model (unmodified) that lies between u and v (without loops).
     See https://www.geeksforgeeks.org/find-paths-given-source-destination/.
 
     Inputs:
@@ -973,8 +972,8 @@ def searchPaths(u: str, d: str, visited: dict, edges: dict, path: list, allPaths
             Dictionary containing information on searched vertices.
 
     Outputs:
-        subgraph: list
-            List of nodes that are in the subgraph.
+        subSet: list
+            List of nodes that are in the subSet.
     """
 
     visited[u] = True
@@ -1078,7 +1077,7 @@ def mod(model: dict,
 
     # Add isolated layer
     toDuplicate = []
-    for _, flowName in enumerate(flows):
+    for flowName in flows:
         for flow in flows[flowName]:
             newFlow = {
                 "from": "Null_n",
@@ -1094,13 +1093,11 @@ def mod(model: dict,
             vc = flow['contact'].split('+')
 
             if getFlowType(flow) == 'contact':
-                for node in subGraphVc(model, v, vc):
+                for node in subSetVc(model, v, vc):
                     if node not in toDuplicate:
                         toDuplicate.append(node)
 
     for node in toDuplicate:
-        newModel["compartments"][addI(node, 0)] \
-            = model["compartments"][node]
         newModel["compartments"][addI(node, 0)] = 0
 
     newCompartments = getCompartments(newModel)
@@ -1108,7 +1105,7 @@ def mod(model: dict,
     # print(toDuplicate)
 
     # Add edges and their informations
-    for _, flowName in enumerate(flows):
+    for flowName in flows:
         newModel['flows'][flowName] = []
         for flow in flows[flowName]:
             newFlow = {
@@ -2402,7 +2399,7 @@ def createLaTeX(model: dict, layerDistance: float = .8,
             if getFlowType(flow) == 'rate' and not u.startswith('Null'):
                 color = 'Red'
             Arrow.append(f"({u}) edge [bend {bendBase}={angle}, {color}] node [Empty, pos={pos1}] ({u}-{v}-r) {{}} " +
-                         f"node [Empty, pos={pos2}] ({u}-{v}-c) {{}} ({v})")
+                         f"node [Empty, pos={pos2}] ({u}-{v}-c) {{}} node [Empty, pos=1/2, above={.05*scale}cm] ({u}{v}) {{}} ({v})")
 
             # Créer arrêtes pointillées
             for r in v_r.split('+'):
