@@ -7,6 +7,7 @@ import json
 from tqdm.notebook import tqdm
 import os
 
+# Use GPU if wanted
 useTorch = False
 if useTorch:
     from torchdiffeq import odeint
@@ -99,7 +100,7 @@ def rreplace(s, old, new, n):
 def plotCurves(xPoints: np.ndarray or list, curves: np.ndarray or list,
                toPlot: list, labels: list,
                title: str = 'Infection curves', style: list = None,
-               xlabel: str = 'Time', ylabel: str = 'Number of people',
+               xlabel: str = 'Temps (jours)', ylabel: str = 'Nb. d\'individus',
                scales: list = ['linear', 'linear'],
                axes=plt, legendLoc: str = 'best',
                colors: list = None, ycolor: str = 'black') -> None:
@@ -1667,14 +1668,14 @@ def compare(modelName: str,
             ax2.set_yscale('log')
         ax2.axhline(y=0, linestyle='--', color='grey',
                     linewidth=WIDTH, dashes=DASH)
-        ax2.set_ylabel('Number of newly infected')
+        ax2.set_ylabel('Nb. d\'individus')
 
     ax1.axhline(y=0, linestyle='--', color='grey',
                 linewidth=WIDTH, dashes=DASH)
     ax1.axhline(y=1, linestyle='--', color='grey',
                 linewidth=WIDTH, dashes=DASH)
-    ax1.set_ylabel('Reproduction number')
-    ax1.set_xlabel('Time')
+    ax1.set_ylabel('Nb. de reproduction')
+    ax1.set_xlabel('Temps (jours)')
 
     rtCurves = {}
 
@@ -1745,7 +1746,7 @@ def compare(modelName: str,
         rt += rt_rtNode
 
     ax1.plot(rt_times[toKeep_rt_times], rt[toKeep_rt_times],
-             label=('$\\mathcal{R}_{t}^{int}$' if legendRtCurve is None
+             label=('$\\mathcal{R}_{t}^{sim}$' if legendRtCurve is None
                     else legendRtCurve) + addToLegends,
              linestyle=plotStyle, c='tab:orange' if forceColors else None)
 
@@ -2398,8 +2399,8 @@ def createLaTeX(model: dict, layerDistance: float = .8,
             # Définition des couleurs additionnelles
             if getFlowType(flow) == 'rate' and not u.startswith('Null'):
                 color = 'Red'
-            Arrow.append(f"({u}) edge [bend {bendBase}={angle}, {color}] node [Empty, pos={pos1}] ({u}-{v}-r) {{}} " +
-                         f"node [Empty, pos={pos2}] ({u}-{v}-c) {{}} node [Empty, pos=1/2, above={.05*scale}cm] ({u}{v}) {{}} ({v})")
+            Arrow.append(f"({u}) edge [bend {bendBase}={angle}, {color}] node [Empty, pos={pos1}] ({u}-{v}-{v_r}-{v_c}-r) {{}} " +
+                         f"node [Empty, pos={pos2}] ({u}-{v}-{v_r}-{v_c}-c) {{}} node [Empty, pos=1/2, above={.05*scale}cm] ({u}{v}{v_r}{v_c}) {{}} ({v})")
 
             # Créer arrêtes pointillées
             for r in v_r.split('+'):
@@ -2414,7 +2415,7 @@ def createLaTeX(model: dict, layerDistance: float = .8,
                 if r != 'Null_n':
                     if u.startswith('Null'):
                         Dotted.append(
-                            f"({u}-{v}-r) edge [bend {bend}={angle}] ({r})")
+                            f"({u}-{v}-{v_r}-{v_c}-r) edge [bend {bend}={angle}] ({r})")
 
             # Créer arrêtes segmentées
             for c in v_c.split('+'):
@@ -2427,7 +2428,7 @@ def createLaTeX(model: dict, layerDistance: float = .8,
 
                 if c != 'Null_m':
                     Dashed.append(
-                        f"({u}-{v}-c) edge [bend {bend}={angle}] ({c})")
+                        f"({u}-{v}-{v_r}-{v_c}-c) edge [bend {bend}={angle}] ({c})")
 
     names = ['Arrow', 'Dotted', 'Dashed']
     for i, table in enumerate([Arrow, Dotted, Dashed]):

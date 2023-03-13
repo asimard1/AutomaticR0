@@ -1,0 +1,59 @@
+{
+    "name": "hospitalized",
+    "compartments": {
+        "S": 1000000.0,
+        "I": 1,
+        "H": 0,
+        "R": 0,
+        "Null_n": 0,
+        "Null_m": 0
+    },
+    "flows": {
+        "contacts": [
+            {
+                "from": "S",
+                "to": "I",
+                "rate": "S",
+                "contact": "I",
+                "parameter": "6"
+            },
+            {
+                "from": "S",
+                "to": "I",
+                "rate": "S",
+                "contact": "H",
+                "parameter": "1"
+            }
+        ],
+        "rates": [
+            {
+                "from": "I",
+                "to": "R",
+                "rate": "I",
+                "contact": "Null_m",
+                "parameter": "1"
+            },
+            {
+                "from": "I",
+                "to": "H",
+                "rate": "I",
+                "contact": "Null_m",
+                "parameter": "4"
+            },
+            {
+                "from": "H",
+                "to": "R",
+                "rate": "H",
+                "contact": "Null_m",
+                "parameter": "2"
+            },
+            {
+                "from": "R",
+                "to": "S",
+                "rate": "R",
+                "contact": "Null_m",
+                "parameter": ".1"
+            }
+        ]
+    }
+}

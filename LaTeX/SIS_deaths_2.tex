@@ -10,19 +10,19 @@
         \node [Empty] (Nullm_I) [below right=0.8cm of I] {};
 
         \path [Arrow, line width=1pt]
-            (S) edge [bend left=10, Plum] node [Empty, pos=2/5] (S-I-r) {} node [Empty, pos=3/5] (S-I-c) {} node [Empty, pos=1/2, above=0.05cm] (SI) {} (I)
-            (I) edge [bend left=10, Red] node [Empty, pos=2/5] (I-S-r) {} node [Empty, pos=3/5] (I-S-c) {} node [Empty, pos=1/2, above=0.05cm] (IS) {} (S)
-            (Nulln_S) edge [bend left=10, Green] node [Empty, pos=2/5] (Nulln_S-S-r) {} node [Empty, pos=3/5] (Nulln_S-S-c) {} node [Empty, pos=1/2, above=0.05cm] (Nulln_SS) {} (S)
-            (Nulln_I) edge [bend left=10, Green] node [Empty, pos=2/5] (Nulln_I-I-r) {} node [Empty, pos=3/5] (Nulln_I-I-c) {} node [Empty, pos=1/2, above=0.05cm] (Nulln_II) {} (I)
-            (S) edge [bend left=10, Red] node [Empty, pos=2/5] (S-Nullm_S-r) {} node [Empty, pos=3/5] (S-Nullm_S-c) {} node [Empty, pos=1/2, above=0.05cm] (SNullm_S) {} (Nullm_S)
-            (I) edge [bend left=10, Red] node [Empty, pos=2/5] (I-Nullm_I-r) {} node [Empty, pos=3/5] (I-Nullm_I-c) {} node [Empty, pos=1/2, above=0.05cm] (INullm_I) {} (Nullm_I);
+            (S) edge [bend left=10, Plum] node [Empty, pos=2/5] (S-I-S-I-r) {} node [Empty, pos=3/5] (S-I-S-I-c) {} node [Empty, pos=1/2, above=0.05cm] (SISI) {} (I)
+            (I) edge [bend left=10, Red] node [Empty, pos=2/5] (I-S-I-Null_m-r) {} node [Empty, pos=3/5] (I-S-I-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (ISINull_m) {} (S)
+            (Nulln_S) edge [bend left=10, Green] node [Empty, pos=2/5] (Nulln_S-S-S-Null_m-r) {} node [Empty, pos=3/5] (Nulln_S-S-S-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (Nulln_SSSNull_m) {} (S)
+            (Nulln_I) edge [bend left=10, Green] node [Empty, pos=2/5] (Nulln_I-I-I-Null_m-r) {} node [Empty, pos=3/5] (Nulln_I-I-I-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (Nulln_IIINull_m) {} (I)
+            (S) edge [bend left=10, Red] node [Empty, pos=2/5] (S-Nullm_S-S-Null_m-r) {} node [Empty, pos=3/5] (S-Nullm_S-S-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (SNullm_SSNull_m) {} (Nullm_S)
+            (I) edge [bend left=10, Red] node [Empty, pos=2/5] (I-Nullm_I-I-Null_m-r) {} node [Empty, pos=3/5] (I-Nullm_I-I-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (INullm_IINull_m) {} (Nullm_I);
 
         \path [Dotted, line width=1pt]
-            (Nulln_S-S-r) edge [bend left=45] (S)
-            (Nulln_I-I-r) edge [bend left=45] (I);
+            (Nulln_S-S-S-Null_m-r) edge [bend left=45] (S)
+            (Nulln_I-I-I-Null_m-r) edge [bend left=45] (I);
 
         \path [Dashed, line width=1pt]
-            (S-I-c) edge [bend left=30] (I);
+            (S-I-S-I-c) edge [bend left=30] (I);
     \end{tikzpicture}
     \label{fig:SIS_deaths_2_Tikz}
 \end{figure}
