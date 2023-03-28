@@ -4,7 +4,7 @@ import math
 import matplotlib.pyplot as plt
 import time
 import json
-from tqdm.notebook import tqdm
+from tqdm import tqdm
 import os
 from scipy.signal import argrelextrema
 
@@ -321,9 +321,9 @@ def loadModel(name: str, overWrite=True, printText: bool = True) -> dict:
     return model
 
 
-def initialize(model: dict, y0: dict, t: float, scaled=False, originalModel:
-               dict = None, printText: bool = True,
-               whereToAdd: str = 'to', r0: bool = True) -> None:
+def initialize(model: dict, y0: dict, t: float, originalModel:
+               dict = None, r0: bool = True, printText: bool = True,
+               whereToAdd: str = 'to', scaled=False) -> None:
     """
     This modifies model variable, but doesn't modify the file it comes from.
 
@@ -362,10 +362,12 @@ def initialize(model: dict, y0: dict, t: float, scaled=False, originalModel:
         else:
             infectious = infs(originalModel, y0, t, whereToAdd)
 
+        toDuplicate = isolated(originalModel)
         for compartment in y0:
             try:
-                model['compartments'][addI(
-                    compartment, 0)] = infectious[compartment]
+                if compartment in toDuplicate:
+                    model['compartments'][addI(
+                        compartment, 0)] = infectious[compartment]
                 model['compartments'][addI(
                     compartment, 1)] = y0[compartment] \
                     - infectious[compartment]
@@ -748,7 +750,7 @@ def model_derivative(t: float, state: list or torch.Tensor or np.ndarray, t0: fl
     return dstate_dt
 
 
-def solve(model: dict, tRange: tuple, refine: int, printText=False, t0=None) -> tuple:
+def solve(model: dict, tRange: tuple, refine: int = 100, printText=False, t0=None) -> tuple:
     """
     Model solver, uses odeint from scipy.integrate.
 
@@ -1042,6 +1044,44 @@ def edgesCutU(model, u: str):
     return edges
 
 
+def isolated(model):
+    """
+    Returns the isolated layer of a model, to be duplicated.
+
+    Inputs:
+        model: dict
+            Given model being modified.
+
+    Outputs:
+        toDuplicate: list
+            List of nodes to be duplicated in isolated layer.
+    """
+    flows = model['flows']
+
+    toDuplicate = []
+    for flowName in flows:
+        for flow in flows[flowName]:
+            newFlow = {
+                "from": "Null_n",
+                "to": "Null_m",
+                "rate": "Null_n",
+                "contact": "Null_m",
+                "parameter": "0"
+            }
+
+            u = flow['from']
+            v = flow['to']
+            vr = flow['rate'].split('+')
+            vc = flow['contact'].split('+')
+
+            if getFlowType(flow) == 'contact':
+                for node in subSetVc(model, v, vc):
+                    if node not in toDuplicate:
+                        toDuplicate.append(node)
+
+    return toDuplicate
+
+
 def mod(model: dict,
         printText: bool = False,
         write=True, overWrite=True) -> dict:
@@ -1094,28 +1134,8 @@ def mod(model: dict,
                 = model["compartments"][compartment]
 
     # Add isolated layer
-    toDuplicate = []
-    for flowName in flows:
-        for flow in flows[flowName]:
-            newFlow = {
-                "from": "Null_n",
-                "to": "Null_m",
-                "rate": "Null_n",
-                "contact": "Null_m",
-                "parameter": "0"
-            }
 
-            u = flow['from']
-            v = flow['to']
-            vr = flow['rate'].split('+')
-            vc = flow['contact'].split('+')
-
-            if getFlowType(flow) == 'contact':
-                for node in subSetVc(model, v, vc):
-                    if node not in toDuplicate:
-                        toDuplicate.append(node)
-
-    for node in toDuplicate:
+    for node in isolated(model):
         newModel["compartments"][addI(node, 0)] = 0
 
     newCompartments = getCompartments(newModel)
@@ -1433,8 +1453,9 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
         init = {key: solutionOld[pointIndex, i]
                 for i, key in enumerate(oldCompartments)}
 
-        initialize(newModel, init, pointTime, scaledInfs, modelOld,
-                   printText=printText, whereToAdd=whereToAdd, r0=r0)
+        initialize(newModel, init, pointTime, modelOld, r0=r0,
+                   printText=printText, whereToAdd=whereToAdd,
+                   scaled=scaledInfs)
 
         solutionTemp, _ = solve(newModel, t_span_sim, sub_sim, t0=t)
 
@@ -1480,7 +1501,7 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
 
     if printText:
         if r0:
-            print('R0 computation done\n')
+            print(f'R0 computation done: R0 = {values[0]}\n')
         else:
             print('Rt computation done\n')
 
@@ -1496,7 +1517,7 @@ def computeR0(modelName: str, t_span_sim: tuple = (0, 100),
               overWrite: bool = False, whereToAdd: str = 'to',
               printText=True, printInit: bool = True,
               printWarnings: bool = True, scaleMethod: str = 'Total',
-              printR0: bool = False) -> dict:
+              printR0: bool = False) -> tuple:
     """
     Returns a dictionary with R0 values, as well as models and initial conditions.
 
@@ -1670,8 +1691,8 @@ def compare(modelName: str,
     DASH = (3, 3)
 
     if whereToPlot is None:
-        fig, ax1 = plt.subplots(figsize=(4*scale, 3*scale))
-        # In article, scale is 1.1
+        fig, ax1 = plt.subplots(figsize=(6.4*scale, 4.8*scale))
+        # In article, scale is 5/8
     else:
         fig, ax1, _ = whereToPlot
     if plotInfected and not scaledInfectedPlot:
@@ -2168,9 +2189,9 @@ def doesIntersect(curve: np.ndarray, value: int, eps=10**-5):
     return doesInter
 
 
-def createLaTeX(model: dict, layerDistance: float = .8,
-                nodeDistance: float = 2, varDistance: float = .1,
-                nullDistance: float = 1, baseAngle: int = 10,
+def createLaTeX(model: dict, layerDistance: float = 1,
+                nodeDistance: float = 2, varDistance: float = .25,
+                nullDistance: float = .8, baseAngle: int = 10,
                 contactPositions: tuple = ("2/5", "3/5"), scale=1) -> None:
     """
     Produces tikzfigure for a model. Places automatically in file.
