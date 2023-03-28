@@ -1,5 +1,5 @@
 # AutomaticR0
-Automatic $\mathcal{R}\_0$ computation from a .json model file.
+Calcul automatique des nombres de reproduction $\mathcal{R}\_0$ et $\mathcal{R}\_t$ à partir d'un fichier .json contenant un modèle. Ce code est présenté dans le cadre de la maîtrise en informatique.
 
 # Usage
 ## Functions
