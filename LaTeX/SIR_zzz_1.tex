@@ -1,0 +1,21 @@
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[scale=1, every node/.style={scale=1}]
+        \node [Square] (S)  {$S$};
+        \node [Square] (I1) [right=2cm of S] {$I1$};
+        \node [Square] (R) [right=2cm of I1] {$R$};
+
+
+        \begin{pgfonlayer}{bg}
+        \path [Arrow, line width=1pt]
+            (S) edge [bend left=10, Plum] node [Empty, pos=2/5] (S-I1-S-I1-r) {} node [Empty, pos=3/5] (S-I1-S-I1-c) {} node [Empty, pos=1/2, above=0.05cm] (SI1SI1) {} (I1)
+            (I1) edge [bend left=10, Red] node [Empty, pos=2/5] (I1-R-I1-Null_m-r) {} node [Empty, pos=3/5] (I1-R-I1-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (I1RI1Null_m) {} (R);
+        \end{pgfonlayer}
+
+        \begin{pgfonlayer}{bg}
+        \path [Dashed, line width=1pt]
+            (S-I1-S-I1-c) edge [bend left=30] (I1);
+        \end{pgfonlayer}
+    \end{tikzpicture}
+    \label{fig:SIR_zzz_1_Tikz}
+\end{figure}

@@ -1,0 +1,176 @@
+{
+    "name": "SIR_zzz_9_mod",
+    "compartments": {
+        "S^1": 10000000.0,
+        "I1^1": 1,
+        "R^1": 0,
+        "I2^1": 0,
+        "I3^1": 0,
+        "I4^1": 0,
+        "I5^1": 0,
+        "I6^1": 0,
+        "I7^1": 0,
+        "I8^1": 0,
+        "I9^1": 0,
+        "I1^0": 0,
+        "I2^0": 0,
+        "I3^0": 0,
+        "I4^0": 0,
+        "I5^0": 0,
+        "I6^0": 0,
+        "I7^0": 0,
+        "I8^0": 0,
+        "I9^0": 0,
+        "Rt(S,I1)": 0,
+        "Null_n": 0,
+        "Null_m": 0
+    },
+    "flows": {
+        "infections": [
+            {
+                "from": "S^1",
+                "to": "I1^1",
+                "rate": "S^1",
+                "contact": "I1^0+I1^1+I2^0+I2^1+I3^0+I3^1+I4^0+I4^1+I5^0+I5^1+I6^0+I6^1+I7^0+I7^1+I8^0+I8^1+I9^0+I9^1",
+                "parameter": "0.8"
+            },
+            {
+                "from": "Null_n",
+                "to": "Rt(S,I1)",
+                "rate": "S^1",
+                "contact": "I1^0+I2^0+I3^0+I4^0+I5^0+I6^0+I7^0+I8^0+I9^0",
+                "parameter": "0.8"
+            }
+        ],
+        "migrations": [
+            {
+                "from": "I1^1",
+                "to": "I2^1",
+                "rate": "I1^1",
+                "contact": "Null_m",
+                "parameter": "1.8"
+            },
+            {
+                "from": "I1^0",
+                "to": "I2^0",
+                "rate": "I1^0",
+                "contact": "Null_m",
+                "parameter": "1.8"
+            },
+            {
+                "from": "I2^1",
+                "to": "I3^1",
+                "rate": "I2^1",
+                "contact": "Null_m",
+                "parameter": "1.8"
+            },
+            {
+                "from": "I2^0",
+                "to": "I3^0",
+                "rate": "I2^0",
+                "contact": "Null_m",
+                "parameter": "1.8"
+            },
+            {
+                "from": "I3^1",
+                "to": "I4^1",
+                "rate": "I3^1",
+                "contact": "Null_m",
+                "parameter": "1.8"
+            },
+            {
+                "from": "I3^0",
+                "to": "I4^0",
+                "rate": "I3^0",
+                "contact": "Null_m",
+                "parameter": "1.8"
+            },
+            {
+                "from": "I4^1",
+                "to": "I5^1",
+                "rate": "I4^1",
+                "contact": "Null_m",
+                "parameter": "1.8"
+            },
+            {
+                "from": "I4^0",
+                "to": "I5^0",
+                "rate": "I4^0",
+                "contact": "Null_m",
+                "parameter": "1.8"
+            },
+            {
+                "from": "I5^1",
+                "to": "I6^1",
+                "rate": "I5^1",
+                "contact": "Null_m",
+                "parameter": "1.8"
+            },
+            {
+                "from": "I5^0",
+                "to": "I6^0",
+                "rate": "I5^0",
+                "contact": "Null_m",
+                "parameter": "1.8"
+            },
+            {
+                "from": "I6^1",
+                "to": "I7^1",
+                "rate": "I6^1",
+                "contact": "Null_m",
+                "parameter": "1.8"
+            },
+            {
+                "from": "I6^0",
+                "to": "I7^0",
+                "rate": "I6^0",
+                "contact": "Null_m",
+                "parameter": "1.8"
+            },
+            {
+                "from": "I7^1",
+                "to": "I8^1",
+                "rate": "I7^1",
+                "contact": "Null_m",
+                "parameter": "1.8"
+            },
+            {
+                "from": "I7^0",
+                "to": "I8^0",
+                "rate": "I7^0",
+                "contact": "Null_m",
+                "parameter": "1.8"
+            },
+            {
+                "from": "I8^1",
+                "to": "I9^1",
+                "rate": "I8^1",
+                "contact": "Null_m",
+                "parameter": "1.8"
+            },
+            {
+                "from": "I8^0",
+                "to": "I9^0",
+                "rate": "I8^0",
+                "contact": "Null_m",
+                "parameter": "1.8"
+            }
+        ],
+        "recoveries": [
+            {
+                "from": "I9^1",
+                "to": "R^1",
+                "rate": "I9^1",
+                "contact": "Null_m",
+                "parameter": "1.8"
+            },
+            {
+                "from": "I9^0",
+                "to": "R^1",
+                "rate": "I9^0",
+                "contact": "Null_m",
+                "parameter": "1.8"
+            }
+        ]
+    }
+}

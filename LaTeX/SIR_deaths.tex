@@ -6,12 +6,12 @@
         \node [Square] (R) [right=2cm of I] {$R$};
 
         \node [Empty] (Nulln_S) [above left=0.8cm of S] {};
-        \node [Empty] (Nullm_S) [below right=0.8cm of S] {};
         \node [Empty] (Nulln_I) [above left=0.8cm of I] {};
+        \node [Empty] (Nullm_S) [below right=0.8cm of S] {};
         \node [Empty] (Nullm_I) [below right=0.8cm of I] {};
-        \node [Empty] (Nulln_R) [above left=0.8cm of R] {};
         \node [Empty] (Nullm_R) [below right=0.8cm of R] {};
 
+        \begin{pgfonlayer}{bg}
         \path [Arrow, line width=1pt]
             (S) edge [bend left=10, Plum] node [Empty, pos=2/5] (S-I-S-I-r) {} node [Empty, pos=3/5] (S-I-S-I-c) {} node [Empty, pos=1/2, above=0.05cm] (SISI) {} (I)
             (I) edge [bend left=10, Red] node [Empty, pos=2/5] (I-R-I-Null_m-r) {} node [Empty, pos=3/5] (I-R-I-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (IRINull_m) {} (R)
@@ -20,13 +20,18 @@
             (S) edge [bend left=10, Red] node [Empty, pos=2/5] (S-Nullm_S-S-Null_m-r) {} node [Empty, pos=3/5] (S-Nullm_S-S-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (SNullm_SSNull_m) {} (Nullm_S)
             (I) edge [bend left=10, Red] node [Empty, pos=2/5] (I-Nullm_I-I-Null_m-r) {} node [Empty, pos=3/5] (I-Nullm_I-I-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (INullm_IINull_m) {} (Nullm_I)
             (R) edge [bend left=10, Red] node [Empty, pos=2/5] (R-Nullm_R-R-Null_m-r) {} node [Empty, pos=3/5] (R-Nullm_R-R-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (RNullm_RRNull_m) {} (Nullm_R);
+        \end{pgfonlayer}
 
+        \begin{pgfonlayer}{bg}
         \path [Dotted, line width=1pt]
             (Nulln_S-S-S-Null_m-r) edge [bend left=45] (S)
             (Nulln_I-I-I-Null_m-r) edge [bend left=45] (I);
+        \end{pgfonlayer}
 
+        \begin{pgfonlayer}{bg}
         \path [Dashed, line width=1pt]
             (S-I-S-I-c) edge [bend left=30] (I);
+        \end{pgfonlayer}
     \end{tikzpicture}
     \label{fig:SIR_deaths_Tikz}
 \end{figure}

@@ -15,25 +15,11 @@
                 "from": "S",
                 "to": "I1",
                 "rate": "S",
-                "contact": "I1",
-                "parameter": "0.8"
-            },
-            {
-                "from": "S",
-                "to": "I1",
-                "rate": "S",
-                "contact": "I2",
-                "parameter": "0.8"
-            },
-            {
-                "from": "S",
-                "to": "I1",
-                "rate": "S",
-                "contact": "I3",
+                "contact": "I1+I2+I3",
                 "parameter": "0.8"
             }
         ],
-        "recoveries": [
+        "migrations": [
             {
                 "from": "I1",
                 "to": "I2",
@@ -47,7 +33,9 @@
                 "rate": "I2",
                 "contact": "Null_m",
                 "parameter": "0.6"
-            },
+            }
+        ],
+        "recoveries": [
             {
                 "from": "I3",
                 "to": "R",

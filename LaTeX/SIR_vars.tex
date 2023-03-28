@@ -9,13 +9,12 @@
 
         \node [Empty] (Nulln_S) [above left=0.8cm of S] {};
         \node [Empty] (Nullm_S) [below right=0.8cm of S] {};
-        \node [Empty] (Nulln_I_A) [above left=0.8cm of I_A] {};
         \node [Empty] (Nullm_I_A) [below right=0.8cm of I_A] {};
-        \node [Empty] (Nulln_I_B) [above left=0.8cm of I_B] {};
         \node [Empty] (Nullm_I_B) [below right=0.8cm of I_B] {};
-        \node [Empty] (Nulln_R) [above left=0.8cm of R] {};
         \node [Empty] (Nullm_R) [below right=0.8cm of R] {};
+        \node [Empty] (Nulln_I_B) [above left=0.8cm of I_B] {};
 
+        \begin{pgfonlayer}{bg}
         \path [Arrow, line width=1pt]
             (S) edge [bend left=10, Plum] node [Empty, pos=2/5] (S-I_A-S-I_A-r) {} node [Empty, pos=3/5] (S-I_A-S-I_A-c) {} node [Empty, pos=1/2, above=0.05cm] (SI_ASI_A) {} (I_A)
             (S) edge [bend left=10, Plum] node [Empty, pos=2/5] (S-I_B-S-I_B-r) {} node [Empty, pos=3/5] (S-I_B-S-I_B-c) {} node [Empty, pos=1/2, above=0.05cm] (SI_BSI_B) {} (I_B)
@@ -27,10 +26,13 @@
             (I_B) edge [bend left=10, Red] node [Empty, pos=2/5] (I_B-Nullm_I_B-I_B-Null_m-r) {} node [Empty, pos=3/5] (I_B-Nullm_I_B-I_B-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (I_BNullm_I_BI_BNull_m) {} (Nullm_I_B)
             (R) edge [bend left=10, Red] node [Empty, pos=2/5] (R-Nullm_R-R-Null_m-r) {} node [Empty, pos=3/5] (R-Nullm_R-R-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (RNullm_RRNull_m) {} (Nullm_R)
             (Nulln_I_B) edge [bend left=10, Cyan] node [Empty, pos=2/5] (Nulln_I_B-I_B-Null_n-Null_m-r) {} node [Empty, pos=3/5] (Nulln_I_B-I_B-Null_n-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (Nulln_I_BI_BNull_nNull_m) {} (I_B);
+        \end{pgfonlayer}
 
+        \begin{pgfonlayer}{bg}
         \path [Dashed, line width=1pt]
             (S-I_A-S-I_A-c) edge [bend left=30] (I_A)
             (S-I_B-S-I_B-c) edge [bend left=30] (I_B);
+        \end{pgfonlayer}
     \end{tikzpicture}
     \label{fig:SIR_vars_Tikz}
 \end{figure}

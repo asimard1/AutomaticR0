@@ -19,46 +19,18 @@
                 "from": "S^1",
                 "to": "I1^1",
                 "rate": "S^1",
-                "contact": "I1^0+I1^1",
+                "contact": "I1^0+I1^1+I2^0+I2^1+I3^0+I3^1",
                 "parameter": "0.8"
             },
             {
                 "from": "Null_n",
                 "to": "Rt(S,I1)",
                 "rate": "S^1",
-                "contact": "I1^0",
-                "parameter": "0.8"
-            },
-            {
-                "from": "S^1",
-                "to": "I1^1",
-                "rate": "S^1",
-                "contact": "I2^0+I2^1",
-                "parameter": "0.8"
-            },
-            {
-                "from": "Null_n",
-                "to": "Rt(S,I1)",
-                "rate": "S^1",
-                "contact": "I2^0",
-                "parameter": "0.8"
-            },
-            {
-                "from": "S^1",
-                "to": "I1^1",
-                "rate": "S^1",
-                "contact": "I3^0+I3^1",
-                "parameter": "0.8"
-            },
-            {
-                "from": "Null_n",
-                "to": "Rt(S,I1)",
-                "rate": "S^1",
-                "contact": "I3^0",
+                "contact": "I1^0+I2^0+I3^0",
                 "parameter": "0.8"
             }
         ],
-        "recoveries": [
+        "migrations": [
             {
                 "from": "I1^1",
                 "to": "I2^1",
@@ -86,7 +58,9 @@
                 "rate": "I2^0",
                 "contact": "Null_m",
                 "parameter": "0.6"
-            },
+            }
+        ],
+        "recoveries": [
             {
                 "from": "I3^1",
                 "to": "R^1",

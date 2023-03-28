@@ -1,0 +1,39 @@
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[scale=1, every node/.style={scale=1}]
+        \node [Square] (S)  {$S$};
+        \node [Square] (I1) [right=2cm of S] {$I1$};
+        \node [Square] (R) [right=2cm of I1] {$R$};
+        \node [Square] (I2) [right=2cm of R] {$I2$};
+        \node [Square] (I3) [right=2cm of I2] {$I3$};
+        \node [Square] (I4) [right=2cm of I3] {$I4$};
+        \node [Square] (I5) [right=2cm of I4] {$I5$};
+        \node [Square] (I6) [right=2cm of I5] {$I6$};
+        \node [Square] (I7) [right=2cm of I6] {$I7$};
+
+
+        \begin{pgfonlayer}{bg}
+        \path [Arrow, line width=1pt]
+            (S) edge [bend left=10, Plum] node [Empty, pos=2/5] (S-I1-S-I1+I2+I3+I4+I5+I6+I7-r) {} node [Empty, pos=3/5] (S-I1-S-I1+I2+I3+I4+I5+I6+I7-c) {} node [Empty, pos=1/2, above=0.05cm] (SI1SI1+I2+I3+I4+I5+I6+I7) {} (I1)
+            (I1) edge [bend left=25, Red] node [Empty, pos=2/5] (I1-I2-I1-Null_m-r) {} node [Empty, pos=3/5] (I1-I2-I1-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (I1I2I1Null_m) {} (I2)
+            (I2) edge [bend left=10, Red] node [Empty, pos=2/5] (I2-I3-I2-Null_m-r) {} node [Empty, pos=3/5] (I2-I3-I2-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (I2I3I2Null_m) {} (I3)
+            (I3) edge [bend left=10, Red] node [Empty, pos=2/5] (I3-I4-I3-Null_m-r) {} node [Empty, pos=3/5] (I3-I4-I3-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (I3I4I3Null_m) {} (I4)
+            (I4) edge [bend left=10, Red] node [Empty, pos=2/5] (I4-I5-I4-Null_m-r) {} node [Empty, pos=3/5] (I4-I5-I4-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (I4I5I4Null_m) {} (I5)
+            (I5) edge [bend left=10, Red] node [Empty, pos=2/5] (I5-I6-I5-Null_m-r) {} node [Empty, pos=3/5] (I5-I6-I5-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (I5I6I5Null_m) {} (I6)
+            (I6) edge [bend left=10, Red] node [Empty, pos=2/5] (I6-I7-I6-Null_m-r) {} node [Empty, pos=3/5] (I6-I7-I6-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (I6I7I6Null_m) {} (I7)
+            (I7) edge [bend left=25, Red] node [Empty, pos=2/5] (I7-R-I7-Null_m-r) {} node [Empty, pos=3/5] (I7-R-I7-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (I7RI7Null_m) {} (R);
+        \end{pgfonlayer}
+
+        \begin{pgfonlayer}{bg}
+        \path [Dashed, line width=1pt]
+            (S-I1-S-I1+I2+I3+I4+I5+I6+I7-c) edge [bend left=30] (I1)
+            (S-I1-S-I1+I2+I3+I4+I5+I6+I7-c) edge [bend left=30] (I2)
+            (S-I1-S-I1+I2+I3+I4+I5+I6+I7-c) edge [bend left=30] (I3)
+            (S-I1-S-I1+I2+I3+I4+I5+I6+I7-c) edge [bend left=30] (I4)
+            (S-I1-S-I1+I2+I3+I4+I5+I6+I7-c) edge [bend left=30] (I5)
+            (S-I1-S-I1+I2+I3+I4+I5+I6+I7-c) edge [bend left=30] (I6)
+            (S-I1-S-I1+I2+I3+I4+I5+I6+I7-c) edge [bend left=30] (I7);
+        \end{pgfonlayer}
+    \end{tikzpicture}
+    \label{fig:SIR_zzz_7_Tikz}
+\end{figure}

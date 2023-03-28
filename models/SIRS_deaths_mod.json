@@ -1,33 +1,13 @@
 {
     "name": "SIRS_deaths_mod",
     "compartments": {
-        "S^1": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 9999999
-        },
-        "I^1": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 1
-        },
-        "R^1": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 0
-        },
+        "S^1": 100000000.0,
+        "I^1": 1,
+        "R^1": 0,
         "I^0": 0,
         "Rt(S,I)": 0,
-        "Null_n": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 0
-        },
-        "Null_m": {
-            "susceptibility": 1,
-            "contagiousness": 1,
-            "initial_condition": 0
-        }
+        "Null_n": 0,
+        "Null_m": 0
     },
     "flows": {
         "contacts": [
@@ -46,7 +26,7 @@
                 "parameter": "0.4"
             }
         ],
-        "rates": [
+        "recoveries": [
             {
                 "from": "I^1",
                 "to": "R^1",
@@ -60,14 +40,18 @@
                 "rate": "I^0",
                 "contact": "Null_m",
                 "parameter": "0.1"
-            },
+            }
+        ],
+        "waning": [
             {
                 "from": "R^1",
                 "to": "S^1",
                 "rate": "R^1",
                 "contact": "Null_m",
                 "parameter": "0.01"
-            },
+            }
+        ],
+        "mortalities": [
             {
                 "from": "S^1",
                 "to": "Null_m",
@@ -95,7 +79,9 @@
                 "rate": "R^1",
                 "contact": "Null_m",
                 "parameter": "0.0005"
-            },
+            }
+        ],
+        "vaccinations": [
             {
                 "from": "S^1",
                 "to": "R^1",

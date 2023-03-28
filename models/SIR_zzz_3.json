@@ -1,0 +1,48 @@
+{
+    "name": "SIR_zzz_3",
+    "compartments": {
+        "S": 10000000.0,
+        "I1": 1,
+        "R": 0,
+        "Null_n": 0,
+        "Null_m": 0,
+        "I2": 0,
+        "I3": 0
+    },
+    "flows": {
+        "infections": [
+            {
+                "from": "S",
+                "to": "I1",
+                "rate": "S",
+                "contact": "I1+I2+I3",
+                "parameter": "0.8"
+            }
+        ],
+        "migrations": [
+            {
+                "from": "I1",
+                "to": "I2",
+                "rate": "I1",
+                "contact": "Null_m",
+                "parameter": "0.6000000000000001"
+            },
+            {
+                "from": "I2",
+                "to": "I3",
+                "rate": "I2",
+                "contact": "Null_m",
+                "parameter": "0.6000000000000001"
+            }
+        ],
+        "recoveries": [
+            {
+                "from": "I3",
+                "to": "R",
+                "rate": "I3",
+                "contact": "Null_m",
+                "parameter": "0.6000000000000001"
+            }
+        ]
+    }
+}

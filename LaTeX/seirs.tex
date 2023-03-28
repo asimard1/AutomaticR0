@@ -1,0 +1,34 @@
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[scale=1, every node/.style={scale=1}]
+        \node [Square] (S)  {$S$};
+        \node [Square] (E) [right=2cm of S] {$E$};
+        \node [Square] (I) [right=2cm of E] {$I$};
+        \node [Square] (R) [right=2cm of I] {$R$};
+
+        \node [Empty] (Nulln_S) [above left=0.8cm of S] {};
+        \node [Empty] (Nullm_S) [below right=0.8cm of S] {};
+        \node [Empty] (Nullm_E) [below right=0.8cm of E] {};
+        \node [Empty] (Nullm_I) [below right=0.8cm of I] {};
+        \node [Empty] (Nullm_R) [below right=0.8cm of R] {};
+
+        \begin{pgfonlayer}{bg}
+        \path [Arrow, line width=1pt]
+            (Nulln_S) edge [bend left=10, Cyan] node [Empty, pos=2/5] (Nulln_S-S-Null_n-Null_m-r) {} node [Empty, pos=3/5] (Nulln_S-S-Null_n-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (Nulln_SSNull_nNull_m) {} (S)
+            (S) edge [bend left=10, Red] node [Empty, pos=2/5] (S-Nullm_S-S-Null_m-r) {} node [Empty, pos=3/5] (S-Nullm_S-S-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (SNullm_SSNull_m) {} (Nullm_S)
+            (E) edge [bend left=10, Red] node [Empty, pos=2/5] (E-Nullm_E-E-Null_m-r) {} node [Empty, pos=3/5] (E-Nullm_E-E-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (ENullm_EENull_m) {} (Nullm_E)
+            (I) edge [bend left=10, Red] node [Empty, pos=2/5] (I-Nullm_I-I-Null_m-r) {} node [Empty, pos=3/5] (I-Nullm_I-I-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (INullm_IINull_m) {} (Nullm_I)
+            (R) edge [bend left=10, Red] node [Empty, pos=2/5] (R-Nullm_R-R-Null_m-r) {} node [Empty, pos=3/5] (R-Nullm_R-R-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (RNullm_RRNull_m) {} (Nullm_R)
+            (S) edge [bend left=10, Plum] node [Empty, pos=2/5] (S-E-S-I-r) {} node [Empty, pos=3/5] (S-E-S-I-c) {} node [Empty, pos=1/2, above=0.05cm] (SESI) {} (E)
+            (E) edge [bend left=10, Red] node [Empty, pos=2/5] (E-I-E-Null_m-r) {} node [Empty, pos=3/5] (E-I-E-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (EIENull_m) {} (I)
+            (I) edge [bend left=10, Red] node [Empty, pos=2/5] (I-R-I-Null_m-r) {} node [Empty, pos=3/5] (I-R-I-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (IRINull_m) {} (R)
+            (R) edge [bend left=25, Red] node [Empty, pos=2/5] (R-S-R-Null_m-r) {} node [Empty, pos=3/5] (R-S-R-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (RSRNull_m) {} (S);
+        \end{pgfonlayer}
+
+        \begin{pgfonlayer}{bg}
+        \path [Dashed, line width=1pt]
+            (S-E-S-I-c) edge [bend left=30] (I);
+        \end{pgfonlayer}
+    \end{tikzpicture}
+    \label{fig:seirs_Tikz}
+\end{figure}

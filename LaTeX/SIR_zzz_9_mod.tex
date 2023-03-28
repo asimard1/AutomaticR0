@@ -1,0 +1,89 @@
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[scale=1, every node/.style={scale=1}]
+        \node [Square] (S^1)  {$S^1$};
+        \node [Square] (I1^1) [right=2cm of S^1] {$I1^1$};
+        \node [Square] (R^1) [right=2cm of I1^1] {$R^1$};
+        \node [Square] (I2^1) [right=2cm of R^1] {$I2^1$};
+        \node [Square] (I3^1) [right=2cm of I2^1] {$I3^1$};
+        \node [Square] (I4^1) [right=2cm of I3^1] {$I4^1$};
+        \node [Square] (I5^1) [right=2cm of I4^1] {$I5^1$};
+        \node [Square] (I6^1) [right=2cm of I5^1] {$I6^1$};
+        \node [Square] (I7^1) [right=2cm of I6^1] {$I7^1$};
+        \node [Square] (I8^1) [right=2cm of I7^1] {$I8^1$};
+        \node [Square] (I9^1) [right=2cm of I8^1] {$I9^1$};
+        \node [Square] (I1^0) [above=1cm of I1^1] {$I1^0$};
+        \node [Square] (I2^0) [above=1cm of I2^1] {$I2^0$};
+        \node [Square] (I3^0) [above=1cm of I3^1] {$I3^0$};
+        \node [Square] (I4^0) [above=1cm of I4^1] {$I4^0$};
+        \node [Square] (I5^0) [above=1cm of I5^1] {$I5^0$};
+        \node [Square] (I6^0) [above=1cm of I6^1] {$I6^0$};
+        \node [Square] (I7^0) [above=1cm of I7^1] {$I7^0$};
+        \node [Square] (I8^0) [above=1cm of I8^1] {$I8^0$};
+        \node [Square] (I9^0) [above=1cm of I9^1] {$I9^0$};
+        \node [Square] (RtSI1) [left=2cm of S^1] {$R_t$\\$(S,I1)$};
+
+        \node [Empty] (Nulln_RtSI1) [above left=0.8cm of RtSI1] {};
+
+        \begin{pgfonlayer}{bg}
+        \path [Arrow, line width=1pt]
+            (S^1) edge [bend left=10, Plum] node [Empty, pos=2/5] (S^1-I1^1-S^1-I1^0+I1^1+I2^0+I2^1+I3^0+I3^1+I4^0+I4^1+I5^0+I5^1+I6^0+I6^1+I7^0+I7^1+I8^0+I8^1+I9^0+I9^1-r) {} node [Empty, pos=3/5] (S^1-I1^1-S^1-I1^0+I1^1+I2^0+I2^1+I3^0+I3^1+I4^0+I4^1+I5^0+I5^1+I6^0+I6^1+I7^0+I7^1+I8^0+I8^1+I9^0+I9^1-c) {} node [Empty, pos=1/2, above=0.05cm] (S^1I1^1S^1I1^0+I1^1+I2^0+I2^1+I3^0+I3^1+I4^0+I4^1+I5^0+I5^1+I6^0+I6^1+I7^0+I7^1+I8^0+I8^1+I9^0+I9^1) {} (I1^1)
+            (Nulln_RtSI1) edge [bend left=10, Plum] node [Empty, pos=3/5] (Nulln_RtSI1-RtSI1-S^1-I1^0+I2^0+I3^0+I4^0+I5^0+I6^0+I7^0+I8^0+I9^0-r) {} node [Empty, pos=2/5] (Nulln_RtSI1-RtSI1-S^1-I1^0+I2^0+I3^0+I4^0+I5^0+I6^0+I7^0+I8^0+I9^0-c) {} node [Empty, pos=1/2, above=0.05cm] (Nulln_RtSI1RtSI1S^1I1^0+I2^0+I3^0+I4^0+I5^0+I6^0+I7^0+I8^0+I9^0) {} (RtSI1)
+            (I1^1) edge [bend left=25, Red] node [Empty, pos=2/5] (I1^1-I2^1-I1^1-Null_m-r) {} node [Empty, pos=3/5] (I1^1-I2^1-I1^1-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (I1^1I2^1I1^1Null_m) {} (I2^1)
+            (I1^0) edge [bend left=10, Red] node [Empty, pos=2/5] (I1^0-I2^0-I1^0-Null_m-r) {} node [Empty, pos=3/5] (I1^0-I2^0-I1^0-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (I1^0I2^0I1^0Null_m) {} (I2^0)
+            (I2^1) edge [bend left=10, Red] node [Empty, pos=2/5] (I2^1-I3^1-I2^1-Null_m-r) {} node [Empty, pos=3/5] (I2^1-I3^1-I2^1-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (I2^1I3^1I2^1Null_m) {} (I3^1)
+            (I2^0) edge [bend left=10, Red] node [Empty, pos=2/5] (I2^0-I3^0-I2^0-Null_m-r) {} node [Empty, pos=3/5] (I2^0-I3^0-I2^0-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (I2^0I3^0I2^0Null_m) {} (I3^0)
+            (I3^1) edge [bend left=10, Red] node [Empty, pos=2/5] (I3^1-I4^1-I3^1-Null_m-r) {} node [Empty, pos=3/5] (I3^1-I4^1-I3^1-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (I3^1I4^1I3^1Null_m) {} (I4^1)
+            (I3^0) edge [bend left=10, Red] node [Empty, pos=2/5] (I3^0-I4^0-I3^0-Null_m-r) {} node [Empty, pos=3/5] (I3^0-I4^0-I3^0-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (I3^0I4^0I3^0Null_m) {} (I4^0)
+            (I4^1) edge [bend left=10, Red] node [Empty, pos=2/5] (I4^1-I5^1-I4^1-Null_m-r) {} node [Empty, pos=3/5] (I4^1-I5^1-I4^1-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (I4^1I5^1I4^1Null_m) {} (I5^1)
+            (I4^0) edge [bend left=10, Red] node [Empty, pos=2/5] (I4^0-I5^0-I4^0-Null_m-r) {} node [Empty, pos=3/5] (I4^0-I5^0-I4^0-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (I4^0I5^0I4^0Null_m) {} (I5^0)
+            (I5^1) edge [bend left=10, Red] node [Empty, pos=2/5] (I5^1-I6^1-I5^1-Null_m-r) {} node [Empty, pos=3/5] (I5^1-I6^1-I5^1-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (I5^1I6^1I5^1Null_m) {} (I6^1)
+            (I5^0) edge [bend left=10, Red] node [Empty, pos=2/5] (I5^0-I6^0-I5^0-Null_m-r) {} node [Empty, pos=3/5] (I5^0-I6^0-I5^0-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (I5^0I6^0I5^0Null_m) {} (I6^0)
+            (I6^1) edge [bend left=10, Red] node [Empty, pos=2/5] (I6^1-I7^1-I6^1-Null_m-r) {} node [Empty, pos=3/5] (I6^1-I7^1-I6^1-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (I6^1I7^1I6^1Null_m) {} (I7^1)
+            (I6^0) edge [bend left=10, Red] node [Empty, pos=2/5] (I6^0-I7^0-I6^0-Null_m-r) {} node [Empty, pos=3/5] (I6^0-I7^0-I6^0-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (I6^0I7^0I6^0Null_m) {} (I7^0)
+            (I7^1) edge [bend left=10, Red] node [Empty, pos=2/5] (I7^1-I8^1-I7^1-Null_m-r) {} node [Empty, pos=3/5] (I7^1-I8^1-I7^1-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (I7^1I8^1I7^1Null_m) {} (I8^1)
+            (I7^0) edge [bend left=10, Red] node [Empty, pos=2/5] (I7^0-I8^0-I7^0-Null_m-r) {} node [Empty, pos=3/5] (I7^0-I8^0-I7^0-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (I7^0I8^0I7^0Null_m) {} (I8^0)
+            (I8^1) edge [bend left=10, Red] node [Empty, pos=2/5] (I8^1-I9^1-I8^1-Null_m-r) {} node [Empty, pos=3/5] (I8^1-I9^1-I8^1-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (I8^1I9^1I8^1Null_m) {} (I9^1)
+            (I8^0) edge [bend left=10, Red] node [Empty, pos=2/5] (I8^0-I9^0-I8^0-Null_m-r) {} node [Empty, pos=3/5] (I8^0-I9^0-I8^0-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (I8^0I9^0I8^0Null_m) {} (I9^0)
+            (I9^1) edge [bend left=25, Red] node [Empty, pos=2/5] (I9^1-R^1-I9^1-Null_m-r) {} node [Empty, pos=3/5] (I9^1-R^1-I9^1-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (I9^1R^1I9^1Null_m) {} (R^1)
+            (I9^0) edge [bend left=10, Red] node [Empty, pos=2/5] (I9^0-R^1-I9^0-Null_m-r) {} node [Empty, pos=3/5] (I9^0-R^1-I9^0-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (I9^0R^1I9^0Null_m) {} (R^1);
+        \end{pgfonlayer}
+
+        \begin{pgfonlayer}{bg}
+        \path [Dotted, line width=1pt]
+            (Nulln_RtSI1-RtSI1-S^1-I1^0+I2^0+I3^0+I4^0+I5^0+I6^0+I7^0+I8^0+I9^0-r) edge [bend left=30] (S^1);
+        \end{pgfonlayer}
+
+        \begin{pgfonlayer}{bg}
+        \path [Dashed, line width=1pt]
+            (S^1-I1^1-S^1-I1^0+I1^1+I2^0+I2^1+I3^0+I3^1+I4^0+I4^1+I5^0+I5^1+I6^0+I6^1+I7^0+I7^1+I8^0+I8^1+I9^0+I9^1-c) edge [bend left=30] (I1^0)
+            (S^1-I1^1-S^1-I1^0+I1^1+I2^0+I2^1+I3^0+I3^1+I4^0+I4^1+I5^0+I5^1+I6^0+I6^1+I7^0+I7^1+I8^0+I8^1+I9^0+I9^1-c) edge [bend right=30] (I1^1)
+            (S^1-I1^1-S^1-I1^0+I1^1+I2^0+I2^1+I3^0+I3^1+I4^0+I4^1+I5^0+I5^1+I6^0+I6^1+I7^0+I7^1+I8^0+I8^1+I9^0+I9^1-c) edge [bend left=30] (I2^0)
+            (S^1-I1^1-S^1-I1^0+I1^1+I2^0+I2^1+I3^0+I3^1+I4^0+I4^1+I5^0+I5^1+I6^0+I6^1+I7^0+I7^1+I8^0+I8^1+I9^0+I9^1-c) edge [bend right=30] (I2^1)
+            (S^1-I1^1-S^1-I1^0+I1^1+I2^0+I2^1+I3^0+I3^1+I4^0+I4^1+I5^0+I5^1+I6^0+I6^1+I7^0+I7^1+I8^0+I8^1+I9^0+I9^1-c) edge [bend left=30] (I3^0)
+            (S^1-I1^1-S^1-I1^0+I1^1+I2^0+I2^1+I3^0+I3^1+I4^0+I4^1+I5^0+I5^1+I6^0+I6^1+I7^0+I7^1+I8^0+I8^1+I9^0+I9^1-c) edge [bend right=30] (I3^1)
+            (S^1-I1^1-S^1-I1^0+I1^1+I2^0+I2^1+I3^0+I3^1+I4^0+I4^1+I5^0+I5^1+I6^0+I6^1+I7^0+I7^1+I8^0+I8^1+I9^0+I9^1-c) edge [bend left=30] (I4^0)
+            (S^1-I1^1-S^1-I1^0+I1^1+I2^0+I2^1+I3^0+I3^1+I4^0+I4^1+I5^0+I5^1+I6^0+I6^1+I7^0+I7^1+I8^0+I8^1+I9^0+I9^1-c) edge [bend right=30] (I4^1)
+            (S^1-I1^1-S^1-I1^0+I1^1+I2^0+I2^1+I3^0+I3^1+I4^0+I4^1+I5^0+I5^1+I6^0+I6^1+I7^0+I7^1+I8^0+I8^1+I9^0+I9^1-c) edge [bend left=30] (I5^0)
+            (S^1-I1^1-S^1-I1^0+I1^1+I2^0+I2^1+I3^0+I3^1+I4^0+I4^1+I5^0+I5^1+I6^0+I6^1+I7^0+I7^1+I8^0+I8^1+I9^0+I9^1-c) edge [bend right=30] (I5^1)
+            (S^1-I1^1-S^1-I1^0+I1^1+I2^0+I2^1+I3^0+I3^1+I4^0+I4^1+I5^0+I5^1+I6^0+I6^1+I7^0+I7^1+I8^0+I8^1+I9^0+I9^1-c) edge [bend left=30] (I6^0)
+            (S^1-I1^1-S^1-I1^0+I1^1+I2^0+I2^1+I3^0+I3^1+I4^0+I4^1+I5^0+I5^1+I6^0+I6^1+I7^0+I7^1+I8^0+I8^1+I9^0+I9^1-c) edge [bend right=30] (I6^1)
+            (S^1-I1^1-S^1-I1^0+I1^1+I2^0+I2^1+I3^0+I3^1+I4^0+I4^1+I5^0+I5^1+I6^0+I6^1+I7^0+I7^1+I8^0+I8^1+I9^0+I9^1-c) edge [bend left=30] (I7^0)
+            (S^1-I1^1-S^1-I1^0+I1^1+I2^0+I2^1+I3^0+I3^1+I4^0+I4^1+I5^0+I5^1+I6^0+I6^1+I7^0+I7^1+I8^0+I8^1+I9^0+I9^1-c) edge [bend right=30] (I7^1)
+            (S^1-I1^1-S^1-I1^0+I1^1+I2^0+I2^1+I3^0+I3^1+I4^0+I4^1+I5^0+I5^1+I6^0+I6^1+I7^0+I7^1+I8^0+I8^1+I9^0+I9^1-c) edge [bend left=30] (I8^0)
+            (S^1-I1^1-S^1-I1^0+I1^1+I2^0+I2^1+I3^0+I3^1+I4^0+I4^1+I5^0+I5^1+I6^0+I6^1+I7^0+I7^1+I8^0+I8^1+I9^0+I9^1-c) edge [bend right=30] (I8^1)
+            (S^1-I1^1-S^1-I1^0+I1^1+I2^0+I2^1+I3^0+I3^1+I4^0+I4^1+I5^0+I5^1+I6^0+I6^1+I7^0+I7^1+I8^0+I8^1+I9^0+I9^1-c) edge [bend left=30] (I9^0)
+            (S^1-I1^1-S^1-I1^0+I1^1+I2^0+I2^1+I3^0+I3^1+I4^0+I4^1+I5^0+I5^1+I6^0+I6^1+I7^0+I7^1+I8^0+I8^1+I9^0+I9^1-c) edge [bend right=30] (I9^1)
+            (Nulln_RtSI1-RtSI1-S^1-I1^0+I2^0+I3^0+I4^0+I5^0+I6^0+I7^0+I8^0+I9^0-c) edge [bend left=20] (I1^0)
+            (Nulln_RtSI1-RtSI1-S^1-I1^0+I2^0+I3^0+I4^0+I5^0+I6^0+I7^0+I8^0+I9^0-c) edge [bend left=20] (I2^0)
+            (Nulln_RtSI1-RtSI1-S^1-I1^0+I2^0+I3^0+I4^0+I5^0+I6^0+I7^0+I8^0+I9^0-c) edge [bend left=20] (I3^0)
+            (Nulln_RtSI1-RtSI1-S^1-I1^0+I2^0+I3^0+I4^0+I5^0+I6^0+I7^0+I8^0+I9^0-c) edge [bend left=20] (I4^0)
+            (Nulln_RtSI1-RtSI1-S^1-I1^0+I2^0+I3^0+I4^0+I5^0+I6^0+I7^0+I8^0+I9^0-c) edge [bend left=20] (I5^0)
+            (Nulln_RtSI1-RtSI1-S^1-I1^0+I2^0+I3^0+I4^0+I5^0+I6^0+I7^0+I8^0+I9^0-c) edge [bend left=20] (I6^0)
+            (Nulln_RtSI1-RtSI1-S^1-I1^0+I2^0+I3^0+I4^0+I5^0+I6^0+I7^0+I8^0+I9^0-c) edge [bend left=20] (I7^0)
+            (Nulln_RtSI1-RtSI1-S^1-I1^0+I2^0+I3^0+I4^0+I5^0+I6^0+I7^0+I8^0+I9^0-c) edge [bend left=20] (I8^0)
+            (Nulln_RtSI1-RtSI1-S^1-I1^0+I2^0+I3^0+I4^0+I5^0+I6^0+I7^0+I8^0+I9^0-c) edge [bend left=20] (I9^0);
+        \end{pgfonlayer}
+    \end{tikzpicture}
+    \label{fig:SIR_zzz_9_mod_Tikz}
+\end{figure}

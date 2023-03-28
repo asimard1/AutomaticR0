@@ -6,6 +6,9 @@ import time
 import json
 from tqdm.notebook import tqdm
 import os
+from scipy.signal import argrelextrema
+
+PLUM = '#8E4585'
 
 # Use GPU if wanted
 useTorch = False
@@ -18,6 +21,7 @@ if useTorch:
         f'Using device {device} with name {torch.cuda.get_device_name(device)}')
 else:
     from scipy.integrate import odeint
+
 
 @dataclass
 class Delta:
@@ -225,7 +229,6 @@ def verifyModel(model: dict, modelName: str, printText: bool = True) -> None:
 
     missing = []
     flows = model['flows']
-    compartments = getCompartments(model)
     for flowType in flows:
         for flow in flows[flowType]:
             # Check for missing keys in flows
@@ -234,13 +237,22 @@ def verifyModel(model: dict, modelName: str, printText: bool = True) -> None:
                 if p not in keys and p not in missing:
                     missing.append(p)
 
+            #     if p in keys and flow[p] == 'Null':
+            #         if p in ['from', 'rate']:
+            #             flow[p] = 'Null_n'
+
+            # print(flow)
+
     if missing != []:
         missingStr = ', '.join(list(map(lambda x: f'"{x}"', missing)))
         missingStr = rreplace(missingStr, ', ', ' and ', 1)
-        raise Exception(f'Some flows are missing parameters {missingStr}.')
+        raise Exception(
+            f'Some flows are missing parameters {missingStr} in model {modelName}.')
 
     if printText:
         print('Model verified.')
+
+    return model
 
 
 def loadModel(name: str, overWrite=True, printText: bool = True) -> dict:
@@ -276,27 +288,32 @@ def loadModel(name: str, overWrite=True, printText: bool = True) -> dict:
         missingNullm = True
 
     if missingNulln or missingNullm or 'Null' in getCompartments(model):
-        print('Fixing missing empty nodes.')
+        if printText:
+            print('Fixing missing empty nodes.')
         flows = model['flows']
         model['compartments']['Null_n'] = 0
         model['compartments']['Null_m'] = 0
 
-        for _, flowType in enumerate(flows):
-            for _, flow in enumerate(flows[flowType]):
-                for i, arg in enumerate(flow):
-                    if flow[arg] == 'Null':
-                        # i even: change null to null_n
-                        # i odd: change null to null_m
-                        flow[arg] = 'Null' + ('_n' if not i % 2 else '_m')
-
         # We don't need Null anymore
         if 'Null' in model['compartments']:
             del model['compartments']['Null']
-
         print('Model should be fixed...')
 
+    flows = model['flows']
+    problem = False
+    for _, flowType in enumerate(flows):
+        for _, flow in enumerate(flows[flowType]):
+            for i, arg in enumerate(['to', 'from', 'rate', 'contact']):
+                if flow[arg].lower() == 'null' and arg in ['to', 'from', 'rate', 'contact']:
+                    problem = True
+                    # i even: change null to null_n
+                    # i odd: change null to null_m
+                    flow[arg] = 'Null' + ('_n' if not i % 2 else '_m')
+    if problem and printText:
+        print('Les noeuds vides sont réglés dans les arrêtes')
+
     # Verify
-    verifyModel(model, name, printText=printText)
+    model = verifyModel(model, name, printText=printText)
     # Write to file
     writeModel(model, overWrite=overWrite, printText=printText)
     # Store functions in dictionary
@@ -306,7 +323,7 @@ def loadModel(name: str, overWrite=True, printText: bool = True) -> dict:
 
 def initialize(model: dict, y0: dict, t: float, scaled=False, originalModel:
                dict = None, printText: bool = True,
-               whereToAdd: str = 'to') -> None:
+               whereToAdd: str = 'to', r0: bool = True) -> None:
     """
     This modifies model variable, but doesn't modify the file it comes from.
 
@@ -332,7 +349,7 @@ def initialize(model: dict, y0: dict, t: float, scaled=False, originalModel:
 
     if originalModel != None:
         # If we are initializing using another model
-        if printText:
+        if printText and r0:
             print(f'Initializing with values {roundDict(y0, 0)} at time {t}.')
         weWant = getCompartments(originalModel)
         if sorted(list(y0.keys())) != sorted(weWant):
@@ -1062,7 +1079,7 @@ def mod(model: dict,
     # Verify if structure is already well implemented
     if 'Rt' in list(map(lambda x: x[:2], compartments)):
         raise Exception(
-            "There is already a node called 'Rt...', please change its name.")
+            f"There is already a node called 'Rt...', please change its name. Model {model['name']}.")
     if 'Null_n' not in compartments:
         raise Exception(
             "There are no nodes called 'Null_n'. Cannot identify empty nodes.")
@@ -1417,7 +1434,7 @@ def computeRt(modelName: str, t_span_rt: tuple, sub_rt: float = 1,
                 for i, key in enumerate(oldCompartments)}
 
         initialize(newModel, init, pointTime, scaledInfs, modelOld,
-                   printText=printText, whereToAdd=whereToAdd)
+                   printText=printText, whereToAdd=whereToAdd, r0=r0)
 
         solutionTemp, _ = solve(newModel, t_span_sim, sub_sim, t0=t)
 
@@ -1568,9 +1585,6 @@ def compare(modelName: str,
             printText=False, printInit=False,
             plotANA: bool = True,
             susceptibles: list = [0],
-            infected: list = [1],
-            plotANA_v2: bool = False,
-            plotBound: bool = False,
             title: str = None,
             scaleMethod: str = 'Total',
             plotIndividual: bool = True,
@@ -1589,8 +1603,9 @@ def compare(modelName: str,
             saveGraph: bool = True,
             graphName: str = None,
             addToLegends: str = '',
-            scale: float = 1.1,
-            plotFrom: float = 0) -> None:
+            scale: float = 1,
+            plotFrom: float = 0,
+            colors: tuple = ('C1', PLUM)) -> None:
     """
     Runs through all steps and produces a graph (call plt.plot() to show after).
 
@@ -1650,9 +1665,9 @@ def compare(modelName: str,
         infsNotScaled
     """
 
-    WIDTH = .5
-    DASH = (10, 10)
-    DOTS = (1, 2)
+    WIDTH = 1
+    HEIGHT = WIDTH * 3/4
+    DASH = (3, 3)
 
     if whereToPlot is None:
         fig, ax1 = plt.subplots(figsize=(4*scale, 3*scale))
@@ -1665,15 +1680,15 @@ def compare(modelName: str,
         else:
             _, _, ax2 = whereToPlot
         if useLog:
+            ax1.axhline(y=0, linestyle=':', color='gray',
+                        linewidth=HEIGHT, dashes=DASH)
             ax2.set_yscale('log')
-        ax2.axhline(y=0, linestyle='--', color='grey',
-                    linewidth=WIDTH, dashes=DASH)
+        else:
+            ax2.axhline(y=0, linestyle=':', color='gray',
+                        linewidth=HEIGHT, dashes=DASH)
         ax2.set_ylabel('Nb. d\'individus')
-
-    ax1.axhline(y=0, linestyle='--', color='grey',
-                linewidth=WIDTH, dashes=DASH)
-    ax1.axhline(y=1, linestyle='--', color='grey',
-                linewidth=WIDTH, dashes=DASH)
+    ax1.axhline(y=1, linestyle=':', color='white', gapcolor='gray',
+                linewidth=HEIGHT, dashes=DASH)
     ax1.set_ylabel('Nb. de reproduction')
     ax1.set_xlabel('Temps (jours)')
 
@@ -1695,21 +1710,13 @@ def compare(modelName: str,
 
     infsScaled = infCurveScaled(model, solution, t_span)
     infsNotScaled = infCurve(model, solution, t_span)
-    idx_infs = find_nearest(infsScaled, 1)
-    xTimeInfs = t_span[idx_infs]
-    maxIncident = infsNotScaled[idx_infs]
-    if printText:
-        print(f'Max incidents: {maxIncident}')
 
     if plotInfected:
-        if scaledInfectedPlot:
-            ax1.plot(t_span[toKeep_t_span],
-                     infsScaled[toKeep_t_span], label='New infs.')
-        else:
-            ax2.plot(t_span[toKeep_t_span], infsNotScaled[toKeep_t_span],
-                     label='$\\nu(t)$' + addToLegends,
-                     ls='--' if plotStyle is None else plotStyle,
-                     c='#8E4585')
+        ax2.plot(t_span[toKeep_t_span], infsNotScaled[toKeep_t_span],
+                 label='$\\nu(t)$' + addToLegends,
+                 linewidth=None if plotStyle is None else WIDTH,
+                 ls='--' if plotStyle is None else plotStyle,
+                 c=PLUM if forceColors else colors[1])
 
     if useTorch:
         susceptiblesDivPop = torch.sum(solution[:, susceptibles], axis=1) / N
@@ -1720,10 +1727,6 @@ def compare(modelName: str,
 
     # R0 needs to be table, tablewise multiplication
     rt_ANA = R0 * susceptiblesDivPop
-    if plotANA:
-        ax1.plot(t_span[toKeep_t_span], rt_ANA[toKeep_t_span],
-                 label='$\\mathcal{R}_{t}^{ana}$' + addToLegends, ls=plotStyle,
-                 c='tab:blue' if forceColors else None)
     # rt_ANA_v2 = R0 * (susceptiblesDivPop - infectedDivPop)
     # if plotANA_v2:
     #     ax1.plot(t_span, rt_ANA_v2, label='ANA_v2')
@@ -1735,44 +1738,77 @@ def compare(modelName: str,
     toKeep_rt_times = np.where(rt_times >= plotFrom - 1.5 / sub_rt)
 
     rt = np.zeros_like(rt_times, dtype='float64')
-    for rtNode in getRtNodes(mod(model, False)):
+    for i, rtNode in enumerate(getRtNodes(mod(model, False))):
         rt_rtNode = np.array([values[key][rtNode] for key in values])
         rtCurves[rtNode] = rt_rtNode
-        if len(getRtNodes(mod(model, False))) > 1 \
-                and plotIndividual:
-            nodeLegend = rtNode.replace('Rt', '\\mathcal{R}_t')
-            ax1.plot(rt_times[toKeep_rt_times], rt_rtNode[toKeep_rt_times],
-                     label=f"${nodeLegend}$", ls=':')
         rt += rt_rtNode
-
-    ax1.plot(rt_times[toKeep_rt_times], rt[toKeep_rt_times],
-             label=('$\\mathcal{R}_{t}^{sim}$' if legendRtCurve is None
-                    else legendRtCurve) + addToLegends,
-             linestyle=plotStyle, c='tab:orange' if forceColors else None)
-
     rtCurves['Sum'] = rt
 
     # Rt simulated
     if doesIntersect(rt, 1):
-        idx_rt = find_intersections(rt, 1)[0]
-        xTimeRt = evaluateCurve(rt_times, idx_rt)
+        idx_rt = find_intersections(rt, 1)
+        xTimeRt = []
+        for idx in idx_rt:
+            xTimeRt.append(evaluateCurve(rt_times, idx))
+        xTimeRt = np.array(xTimeRt)
+
+        peaks = argrelextrema(infsScaled, np.greater, order=5)
+        valleys = argrelextrema(infsScaled, np.less, order=5)
+        extrema = np.union1d(peaks, valleys)
+        xTimeInfs = []
+        for idx in extrema:
+            if abs((infsScaled[idx + 1] - infsScaled[idx - 1]) / infsScaled[idx]) < .1:
+                xTimeInfs.append(evaluateCurve(t_span, idx))
+        xTimeInfs = np.array(xTimeInfs)
 
         if printText:
-            print(f'Infected = 1 at {xTimeInfs:.3f}')
-            print(f'Rt = 1 at {xTimeRt:.3f}')
-            print(f'Time difference: {np.abs(xTimeInfs - xTimeRt)}')
+            print(f'Infected extrema at {[np.round(x, 2) for x in xTimeInfs]}')
+            print(f'Rt = 1 at {[np.round(x, 2) for x in xTimeRt]}')
+            if xTimeRt.shape == xTimeInfs.shape:
+                print(
+                    f'Time difference: {[np.round(x, 2) for x in np.abs(xTimeInfs - xTimeRt)]}')
+
+        if plotInfected and drawVertical:
+            for point in xTimeInfs:
+                try:
+                    ax1.axvline(x=point, linestyle=':', color=PLUM if forceColors else colors[1],
+                                linewidth=WIDTH if plotStyle is None else HEIGHT,
+                                dashes=DASH if plotStyle is None else (1, 1))
+                except Exception as e:
+                    print(e)
+            for point in xTimeRt:
+                try:
+                    ax1.axvline(x=point, linestyle=':',
+                                color=(0, 0, 0, 0),
+                                gapcolor='C1' if forceColors else colors[0],
+                                linewidth=WIDTH if plotStyle is None else HEIGHT,
+                                dashes=DASH if plotStyle is None else (1, 1))
+                except Exception as e:
+                    print(e)
     elif printText:
         print('Time difference is not relevant, '
               + 'no intersection between rt and 1.')
 
-    if plotInfected and drawVertical:
-        try:
-            ax1.axvline(x=xTimeInfs, linestyle=':', color='grey',
-                        linewidth=2.5 * WIDTH, dashes=DOTS)
-            ax1.axvline(x=xTimeRt, linestyle='--', color='grey',
-                        linewidth=WIDTH, dashes=DASH)
-        except:
-            pass
+    # RT CURVES
+    if plotANA:
+        ax1.plot(t_span[toKeep_t_span], rt_ANA[toKeep_t_span],
+                 label='$\\mathcal{R}_{t}^{ana}$' + addToLegends, ls=plotStyle,
+                 c='tab:blue' if forceColors else None)
+    if len(getRtNodes(mod(model, False))) > 1 and plotIndividual:
+        for i, rtNode in enumerate(getRtNodes(mod(model, False))):
+            rt_rtNode = np.array([values[key][rtNode] for key in values])
+            rtCurves[rtNode] = rt_rtNode
+            rt_rtNode[toKeep_rt_times]
+            nodeLegend = rtNode.replace('Rt', '\\mathcal{R}_t')
+            ax1.plot(rt_times[toKeep_rt_times], rt_rtNode[toKeep_rt_times],
+                     label=f"${nodeLegend}$", ls=':', color=f'C{i+2}',
+                     linewidth=HEIGHT, dashes=DASH)
+    ax1.plot(rt_times[toKeep_rt_times], rt[toKeep_rt_times],
+             label=('$\\mathcal{R}_{t}^{sim}$' if legendRtCurve is None
+                    else legendRtCurve) + addToLegends,
+             linewidth=None if plotStyle is None else WIDTH,
+             linestyle=plotStyle,
+             c='C1' if forceColors else colors[0])
 
     if title is None:
         ax1.set_title(modelName)
@@ -1782,14 +1818,19 @@ def compare(modelName: str,
     if plotInfected and not scaledInfectedPlot:
         lines, labels = ax1.get_legend_handles_labels()
         lines2, labels2 = ax2.get_legend_handles_labels()
-        ax1.legend(lines + lines2, labels + labels2, loc=legendLoc)
+        ax2.legend(lines + lines2, labels + labels2,
+                   loc=legendLoc, framealpha=.9)
 
         # ax1.set_ylim(bottom=0)
-        # ax2.set_ylim(bottom=1)
+        ax2.set_ylim(bottom=1)
         if ax2.get_yscale() == 'linear':
             ax2.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
     else:
-        ax1.legend(loc=legendLoc)
+        ax2.legend(framealpha=.9)
+
+    yintMax = math.ceil(max(np.max(rt), np.max(rt_ANA)) + 1)
+    yint = range(yintMax)
+    ax1.set_yticks(yint)
 
     if supressGraph:
         plt.close()
@@ -1799,6 +1840,9 @@ def compare(modelName: str,
             fig.savefig(f'graphs/{modelName}.pdf', bbox_inches='tight')
         else:
             fig.savefig(f'graphs/{graphName}.pdf', bbox_inches='tight')
+
+    print(rt_ANA[0], rt[0])
+    print(rt_ANA[-1], rt[-1])
 
     return rt_times, rtCurves, infsNotScaled
 
@@ -2332,13 +2376,24 @@ def createLaTeX(model: dict, layerDistance: float = .8,
     others = removeDuplicates(others)
 
     LaTeX += '\n'
-    for x in layer0 + layer1 + others:
-        # On veut des noeuds vides pour considérer les entrées et sorties
-        # Puisque les noeuds ne sont pas montrés on en crée pour chaque autre noeud
-        LaTeX += f"{tab * 2}\\node [Empty] (Nulln_{x}) " \
-            + f"[above left={nullDistance}cm of {x}] {{}};\n"
-        LaTeX += f"{tab * 2}\\node [Empty] (Nullm_{x}) " \
-            + f"[below right={nullDistance}cm of {x}] {{}};\n"
+    for flowType in flows:
+        for flow in flows[flowType]:
+            # On veut des noeuds vides pour considérer les entrées et sorties
+            # Puisque les noeuds prennent de la place on les crée seulement lorsque nécessaire
+
+            u, v, v_r, v_c = flow['from'], flow['to'], flow['rate'], flow['contact']
+            if u.startswith('Null'):
+                nameNoProblem = v.replace(
+                    '(', '').replace(')', '').replace(',', '')
+                LaTeX += f"{tab * 2}\\node [Empty] (Nulln_{nameNoProblem}) " \
+                    + f"[above left={nullDistance}cm of {nameNoProblem}] {{}};\n"
+                print(u, nameNoProblem)
+            if v.startswith('Null'):
+                nameNoProblem = u.replace(
+                    '(', '').replace(')', '').replace(',', '')
+                print(nameNoProblem, v)
+                LaTeX += f"{tab * 2}\\node [Empty] (Nullm_{nameNoProblem}) " \
+                    + f"[below right={nullDistance}cm of {nameNoProblem}] {{}};\n"
 
     # L'ensemble des flèches
     Arrow = []  # E(G)
@@ -2412,7 +2467,7 @@ def createLaTeX(model: dict, layerDistance: float = .8,
                         angle = 45
 
                 # Ajouter l'arrête
-                if r != 'Null_n':
+                if not r.startswith('Null'):
                     if u.startswith('Null'):
                         Dotted.append(
                             f"({u}-{v}-{v_r}-{v_c}-r) edge [bend {bend}={angle}] ({r})")
@@ -2426,17 +2481,20 @@ def createLaTeX(model: dict, layerDistance: float = .8,
                 if v.startswith('Rt'):
                     angle = 20
 
-                if c != 'Null_m':
+                if not c.startswith('Null'):
                     Dashed.append(
                         f"({u}-{v}-{v_r}-{v_c}-c) edge [bend {bend}={angle}] ({c})")
 
     names = ['Arrow', 'Dotted', 'Dashed']
     for i, table in enumerate([Arrow, Dotted, Dashed]):
         if len(table) > 0:
+            LaTeX += '\n' + tab * 2 + '\\begin{pgfonlayer}{bg}'
             LaTeX += f'\n{tab * 2}\\path [{names[i]}, line width={scale}pt]'
             for arrow in table:
                 LaTeX += '\n' + tab * 3 + arrow
-            LaTeX += ';\n'
+            LaTeX += ';'
+            LaTeX += '\n' + tab * 2 + '\\end{pgfonlayer}'
+            LaTeX += '\n'
 
     label = "\\label{fig:" + modelName + "_Tikz}"
     LaTeX += f"{tab}\\end{{tikzpicture}}\n{tab + label}\n\\end{{figure}}"

@@ -13,25 +13,11 @@
         \node [Square] (I_3^0) [below=0.5cm of I^0] {$I_3^0$};
         \node [Square] (RtSI_1) [left=2cm of S^1] {$R_t$\\$(S,I_1)$};
 
-        \node [Empty] (Nulln_I_1^0) [above left=0.8cm of I_1^0] {};
-        \node [Empty] (Nullm_I_1^0) [below right=0.8cm of I_1^0] {};
-        \node [Empty] (Nulln_I_2^0) [above left=0.8cm of I_2^0] {};
-        \node [Empty] (Nullm_I_2^0) [below right=0.8cm of I_2^0] {};
-        \node [Empty] (Nulln_I_3^0) [above left=0.8cm of I_3^0] {};
-        \node [Empty] (Nullm_I_3^0) [below right=0.8cm of I_3^0] {};
-        \node [Empty] (Nulln_S^1) [above left=0.8cm of S^1] {};
-        \node [Empty] (Nullm_S^1) [below right=0.8cm of S^1] {};
-        \node [Empty] (Nulln_I_1^1) [above left=0.8cm of I_1^1] {};
-        \node [Empty] (Nullm_I_1^1) [below right=0.8cm of I_1^1] {};
-        \node [Empty] (Nulln_I_2^1) [above left=0.8cm of I_2^1] {};
-        \node [Empty] (Nullm_I_2^1) [below right=0.8cm of I_2^1] {};
-        \node [Empty] (Nulln_I_3^1) [above left=0.8cm of I_3^1] {};
-        \node [Empty] (Nullm_I_3^1) [below right=0.8cm of I_3^1] {};
-        \node [Empty] (Nulln_R^1) [above left=0.8cm of R^1] {};
-        \node [Empty] (Nullm_R^1) [below right=0.8cm of R^1] {};
         \node [Empty] (Nulln_RtSI_1) [above left=0.8cm of RtSI_1] {};
-        \node [Empty] (Nullm_RtSI_1) [below right=0.8cm of RtSI_1] {};
+        \node [Empty] (Nulln_RtSI_1) [above left=0.8cm of RtSI_1] {};
+        \node [Empty] (Nulln_RtSI_1) [above left=0.8cm of RtSI_1] {};
 
+        \begin{pgfonlayer}{bg}
         \path [Arrow, line width=1pt]
             (S^1) edge [bend left=10, Plum] node [Empty, pos=2/5] (S^1-I_1^1-S^1-I_1^0+I_1^1-r) {} node [Empty, pos=3/5] (S^1-I_1^1-S^1-I_1^0+I_1^1-c) {} node [Empty, pos=1/2, above=0.05cm] (S^1I_1^1S^1I_1^0+I_1^1) {} (I_1^1)
             (Nulln_RtSI_1) edge [bend left=10, Plum] node [Empty, pos=3/5] (Nulln_RtSI_1-RtSI_1-S^1-I_1^0-r) {} node [Empty, pos=2/5] (Nulln_RtSI_1-RtSI_1-S^1-I_1^0-c) {} node [Empty, pos=1/2, above=0.05cm] (Nulln_RtSI_1RtSI_1S^1I_1^0) {} (RtSI_1)
@@ -45,12 +31,16 @@
             (I_2^0) edge [bend left=10, Red] node [Empty, pos=2/5] (I_2^0-I_3^0-I_2^0-Null_m-r) {} node [Empty, pos=3/5] (I_2^0-I_3^0-I_2^0-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (I_2^0I_3^0I_2^0Null_m) {} (I_3^0)
             (I_3^1) edge [bend left=10, Red] node [Empty, pos=2/5] (I_3^1-R^1-I_3^1-Null_m-r) {} node [Empty, pos=3/5] (I_3^1-R^1-I_3^1-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (I_3^1R^1I_3^1Null_m) {} (R^1)
             (I_3^0) edge [bend left=10, Red] node [Empty, pos=2/5] (I_3^0-R^1-I_3^0-Null_m-r) {} node [Empty, pos=3/5] (I_3^0-R^1-I_3^0-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (I_3^0R^1I_3^0Null_m) {} (R^1);
+        \end{pgfonlayer}
 
+        \begin{pgfonlayer}{bg}
         \path [Dotted, line width=1pt]
             (Nulln_RtSI_1-RtSI_1-S^1-I_1^0-r) edge [bend left=30] (S^1)
             (Nulln_RtSI_1-RtSI_1-S^1-I_2^0-r) edge [bend left=30] (S^1)
             (Nulln_RtSI_1-RtSI_1-S^1-I_3^0-r) edge [bend left=30] (S^1);
+        \end{pgfonlayer}
 
+        \begin{pgfonlayer}{bg}
         \path [Dashed, line width=1pt]
             (S^1-I_1^1-S^1-I_1^0+I_1^1-c) edge [bend left=30] (I_1^0)
             (S^1-I_1^1-S^1-I_1^0+I_1^1-c) edge [bend right=30] (I_1^1)
@@ -61,6 +51,7 @@
             (S^1-I_1^1-S^1-I_3^0+I_3^1-c) edge [bend left=30] (I_3^0)
             (S^1-I_1^1-S^1-I_3^0+I_3^1-c) edge [bend right=30] (I_3^1)
             (Nulln_RtSI_1-RtSI_1-S^1-I_3^0-c) edge [bend left=20] (I_3^0);
+        \end{pgfonlayer}
     \end{tikzpicture}
     \label{fig:SIR_test_mod_Tikz}
 \end{figure}

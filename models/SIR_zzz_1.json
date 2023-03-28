@@ -1,0 +1,31 @@
+{
+    "name": "SIR_zzz_1",
+    "compartments": {
+        "S": 10000000.0,
+        "I1": 1,
+        "R": 0,
+        "Null_n": 0,
+        "Null_m": 0
+    },
+    "flows": {
+        "infections": [
+            {
+                "from": "S",
+                "to": "I1",
+                "rate": "S",
+                "contact": "I1",
+                "parameter": "0.8"
+            }
+        ],
+        "migrations": [],
+        "recoveries": [
+            {
+                "from": "I1",
+                "to": "R",
+                "rate": "I1",
+                "contact": "Null_m",
+                "parameter": "0.2"
+            }
+        ]
+    }
+}

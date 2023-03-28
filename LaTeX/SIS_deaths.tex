@@ -5,10 +5,11 @@
         \node [Square] (I) [right=2cm of S] {$I$};
 
         \node [Empty] (Nulln_S) [above left=0.8cm of S] {};
-        \node [Empty] (Nullm_S) [below right=0.8cm of S] {};
         \node [Empty] (Nulln_I) [above left=0.8cm of I] {};
+        \node [Empty] (Nullm_S) [below right=0.8cm of S] {};
         \node [Empty] (Nullm_I) [below right=0.8cm of I] {};
 
+        \begin{pgfonlayer}{bg}
         \path [Arrow, line width=1pt]
             (S) edge [bend left=10, Plum] node [Empty, pos=2/5] (S-I-S-I-r) {} node [Empty, pos=3/5] (S-I-S-I-c) {} node [Empty, pos=1/2, above=0.05cm] (SISI) {} (I)
             (I) edge [bend left=10, Red] node [Empty, pos=2/5] (I-S-I-Null_m-r) {} node [Empty, pos=3/5] (I-S-I-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (ISINull_m) {} (S)
@@ -16,14 +17,19 @@
             (Nulln_I) edge [bend left=10, Green] node [Empty, pos=2/5] (Nulln_I-I-I-Null_m-r) {} node [Empty, pos=3/5] (Nulln_I-I-I-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (Nulln_IIINull_m) {} (I)
             (S) edge [bend left=10, Red] node [Empty, pos=2/5] (S-Nullm_S-S-Null_m-r) {} node [Empty, pos=3/5] (S-Nullm_S-S-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (SNullm_SSNull_m) {} (Nullm_S)
             (I) edge [bend left=10, Red] node [Empty, pos=2/5] (I-Nullm_I-I-Null_m-r) {} node [Empty, pos=3/5] (I-Nullm_I-I-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (INullm_IINull_m) {} (Nullm_I);
+        \end{pgfonlayer}
 
+        \begin{pgfonlayer}{bg}
         \path [Dotted, line width=1pt]
             (Nulln_S-S-S+I-Null_m-r) edge [bend left=45] (S)
             (Nulln_S-S-S+I-Null_m-r) edge [bend left=30] (I)
             (Nulln_I-I-I-Null_m-r) edge [bend left=45] (I);
+        \end{pgfonlayer}
 
+        \begin{pgfonlayer}{bg}
         \path [Dashed, line width=1pt]
             (S-I-S-I-c) edge [bend left=30] (I);
+        \end{pgfonlayer}
     \end{tikzpicture}
     \label{fig:SIS_deaths_Tikz}
 \end{figure}

@@ -6,15 +6,8 @@
         \node [Square] (H) [right=2cm of I] {$H$};
         \node [Square] (R) [right=2cm of H] {$R$};
 
-        \node [Empty] (Nulln_S) [above left=0.8cm of S] {};
-        \node [Empty] (Nullm_S) [below right=0.8cm of S] {};
-        \node [Empty] (Nulln_I) [above left=0.8cm of I] {};
-        \node [Empty] (Nullm_I) [below right=0.8cm of I] {};
-        \node [Empty] (Nulln_H) [above left=0.8cm of H] {};
-        \node [Empty] (Nullm_H) [below right=0.8cm of H] {};
-        \node [Empty] (Nulln_R) [above left=0.8cm of R] {};
-        \node [Empty] (Nullm_R) [below right=0.8cm of R] {};
 
+        \begin{pgfonlayer}{bg}
         \path [Arrow, line width=1pt]
             (S) edge [bend left=10, Plum] node [Empty, pos=2/5] (S-I-S-I-r) {} node [Empty, pos=3/5] (S-I-S-I-c) {} node [Empty, pos=1/2, above=0.05cm] (SISI) {} (I)
             (S) edge [bend left=10, Plum] node [Empty, pos=2/5] (S-I-S-H-r) {} node [Empty, pos=3/5] (S-I-S-H-c) {} node [Empty, pos=1/2, above=0.05cm] (SISH) {} (I)
@@ -22,10 +15,13 @@
             (I) edge [bend left=10, Red] node [Empty, pos=2/5] (I-H-I-Null_m-r) {} node [Empty, pos=3/5] (I-H-I-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (IHINull_m) {} (H)
             (H) edge [bend left=10, Red] node [Empty, pos=2/5] (H-R-H-Null_m-r) {} node [Empty, pos=3/5] (H-R-H-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (HRHNull_m) {} (R)
             (R) edge [bend left=25, Red] node [Empty, pos=2/5] (R-S-R-Null_m-r) {} node [Empty, pos=3/5] (R-S-R-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (RSRNull_m) {} (S);
+        \end{pgfonlayer}
 
+        \begin{pgfonlayer}{bg}
         \path [Dashed, line width=1pt]
             (S-I-S-I-c) edge [bend left=30] (I)
             (S-I-S-H-c) edge [bend left=30] (H);
+        \end{pgfonlayer}
     \end{tikzpicture}
     \label{fig:hospitalized_Tikz}
 \end{figure}

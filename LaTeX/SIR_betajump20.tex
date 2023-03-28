@@ -1,0 +1,21 @@
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[scale=1, every node/.style={scale=1}]
+        \node [Square] (S)  {$S$};
+        \node [Square] (I) [right=2cm of S] {$I$};
+        \node [Square] (R) [right=2cm of I] {$R$};
+
+
+        \begin{pgfonlayer}{bg}
+        \path [Arrow, line width=1pt]
+            (S) edge [bend left=10, Plum] node [Empty, pos=2/5] (S-I-S-I-r) {} node [Empty, pos=3/5] (S-I-S-I-c) {} node [Empty, pos=1/2, above=0.05cm] (SISI) {} (I)
+            (I) edge [bend left=10, Red] node [Empty, pos=2/5] (I-R-I-Null_m-r) {} node [Empty, pos=3/5] (I-R-I-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (IRINull_m) {} (R);
+        \end{pgfonlayer}
+
+        \begin{pgfonlayer}{bg}
+        \path [Dashed, line width=1pt]
+            (S-I-S-I-c) edge [bend left=30] (I);
+        \end{pgfonlayer}
+    \end{tikzpicture}
+    \label{fig:SIR_betajump20_Tikz}
+\end{figure}

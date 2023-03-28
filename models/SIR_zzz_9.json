@@ -1,0 +1,96 @@
+{
+    "name": "SIR_zzz_9",
+    "compartments": {
+        "S": 10000000.0,
+        "I1": 1,
+        "R": 0,
+        "Null_n": 0,
+        "Null_m": 0,
+        "I2": 0,
+        "I3": 0,
+        "I4": 0,
+        "I5": 0,
+        "I6": 0,
+        "I7": 0,
+        "I8": 0,
+        "I9": 0
+    },
+    "flows": {
+        "infections": [
+            {
+                "from": "S",
+                "to": "I1",
+                "rate": "S",
+                "contact": "I1+I2+I3+I4+I5+I6+I7+I8+I9",
+                "parameter": "0.8"
+            }
+        ],
+        "migrations": [
+            {
+                "from": "I1",
+                "to": "I2",
+                "rate": "I1",
+                "contact": "Null_m",
+                "parameter": "1.8"
+            },
+            {
+                "from": "I2",
+                "to": "I3",
+                "rate": "I2",
+                "contact": "Null_m",
+                "parameter": "1.8"
+            },
+            {
+                "from": "I3",
+                "to": "I4",
+                "rate": "I3",
+                "contact": "Null_m",
+                "parameter": "1.8"
+            },
+            {
+                "from": "I4",
+                "to": "I5",
+                "rate": "I4",
+                "contact": "Null_m",
+                "parameter": "1.8"
+            },
+            {
+                "from": "I5",
+                "to": "I6",
+                "rate": "I5",
+                "contact": "Null_m",
+                "parameter": "1.8"
+            },
+            {
+                "from": "I6",
+                "to": "I7",
+                "rate": "I6",
+                "contact": "Null_m",
+                "parameter": "1.8"
+            },
+            {
+                "from": "I7",
+                "to": "I8",
+                "rate": "I7",
+                "contact": "Null_m",
+                "parameter": "1.8"
+            },
+            {
+                "from": "I8",
+                "to": "I9",
+                "rate": "I8",
+                "contact": "Null_m",
+                "parameter": "1.8"
+            }
+        ],
+        "recoveries": [
+            {
+                "from": "I9",
+                "to": "R",
+                "rate": "I9",
+                "contact": "Null_m",
+                "parameter": "1.8"
+            }
+        ]
+    }
+}
