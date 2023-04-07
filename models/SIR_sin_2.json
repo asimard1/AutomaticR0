@@ -1,12 +1,12 @@
 {
-    "name": "SIR_zzz_2",
+    "name": "SIR_sin_2",
     "compartments": {
         "S": 10000000.0,
         "I1": 1,
+        "I2": 0,
         "R": 0,
         "Null_n": 0,
-        "Null_m": 0,
-        "I2": 0
+        "Null_m": 0
     },
     "flows": {
         "infections": [
@@ -15,7 +15,7 @@
                 "to": "I1",
                 "rate": "S",
                 "contact": "I1+I2",
-                "parameter": "0.8"
+                "parameter": "0.5+.4*sin(2 * pi * t / 30)"
             }
         ],
         "migrations": [

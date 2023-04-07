@@ -1,5 +1,5 @@
 {
-    "name": "SIR_zzz_2_mod",
+    "name": "SIR_sin_2_mod",
     "compartments": {
         "S^1": 10000000.0,
         "I1^1": 1,
@@ -18,14 +18,14 @@
                 "to": "I1^1",
                 "rate": "S^1",
                 "contact": "I1^0+I1^1+I2^0+I2^1",
-                "parameter": "0.8"
+                "parameter": "0.5+.4*sin(2 * pi * t / 30)"
             },
             {
                 "from": "Null_n",
                 "to": "Rt(S,I1)",
                 "rate": "S^1",
                 "contact": "I1^0+I2^0",
-                "parameter": "0.8"
+                "parameter": "0.5+.4*sin(2 * pi * t / 30)"
             }
         ],
         "migrations": [

@@ -1,6 +1,7 @@
 import numpy as np
 from dataclasses import dataclass
 import math
+from math import *
 import matplotlib.pyplot as plt
 import time
 import json
@@ -1604,7 +1605,7 @@ def compare(modelName: str,
             verification: bool = True, write: bool = True,
             overWrite: bool = False, whereToAdd: str = 'to',
             printText=False, printInit=False,
-            plotANA: bool = True,
+            plotANA: bool=True,
             susceptibles: list = [0],
             title: str = None,
             scaleMethod: str = 'Total',
@@ -1862,8 +1863,8 @@ def compare(modelName: str,
         else:
             fig.savefig(f'graphs/{graphName}.pdf', bbox_inches='tight')
 
-    print(rt_ANA[0], rt[0])
-    print(rt_ANA[-1], rt[-1])
+    print('Rt at start, ana and sim:', rt_ANA[0], rt[0])
+    print('Rt at end, ana and sim:', rt_ANA[-1], rt[-1])
 
     return rt_times, rtCurves, infsNotScaled
 
