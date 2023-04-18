@@ -3,8 +3,8 @@
     \begin{tikzpicture}[scale=1, every node/.style={scale=1}]
         \node [Square] (S^1)  {$S^1$};
         \node [Square] (I1^1) [right=2cm of S^1] {$I1^1$};
-        \node [Square] (R^1) [right=2cm of I1^1] {$R^1$};
-        \node [Square] (I2^1) [right=2cm of R^1] {$I2^1$};
+        \node [Square] (I2^1) [right=2cm of I1^1] {$I2^1$};
+        \node [Square] (R^1) [right=2cm of I2^1] {$R^1$};
         \node [Square] (I1^0) [above=1cm of I1^1] {$I1^0$};
         \node [Square] (I2^0) [above=1cm of I2^1] {$I2^0$};
         \node [Square] (RtSI1) [left=2cm of S^1] {$R_t$\\$(S,I1)$};
@@ -15,7 +15,7 @@
         \path [Arrow, line width=1pt]
             (S^1) edge [bend left=10, Plum] node [Empty, pos=2/5] (S^1-I1^1-S^1-I1^0+I1^1+I2^0+I2^1-r) {} node [Empty, pos=3/5] (S^1-I1^1-S^1-I1^0+I1^1+I2^0+I2^1-c) {} node [Empty, pos=1/2, above=0.05cm] (S^1I1^1S^1I1^0+I1^1+I2^0+I2^1) {} (I1^1)
             (Nulln_RtSI1) edge [bend left=10, Plum] node [Empty, pos=3/5] (Nulln_RtSI1-RtSI1-S^1-I1^0+I2^0-r) {} node [Empty, pos=2/5] (Nulln_RtSI1-RtSI1-S^1-I1^0+I2^0-c) {} node [Empty, pos=1/2, above=0.05cm] (Nulln_RtSI1RtSI1S^1I1^0+I2^0) {} (RtSI1)
-            (I1^1) edge [bend left=25, Red] node [Empty, pos=2/5] (I1^1-I2^1-I1^1-Null_m-r) {} node [Empty, pos=3/5] (I1^1-I2^1-I1^1-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (I1^1I2^1I1^1Null_m) {} (I2^1)
+            (I1^1) edge [bend left=10, Red] node [Empty, pos=2/5] (I1^1-I2^1-I1^1-Null_m-r) {} node [Empty, pos=3/5] (I1^1-I2^1-I1^1-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (I1^1I2^1I1^1Null_m) {} (I2^1)
             (I1^0) edge [bend left=10, Red] node [Empty, pos=2/5] (I1^0-I2^0-I1^0-Null_m-r) {} node [Empty, pos=3/5] (I1^0-I2^0-I1^0-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (I1^0I2^0I1^0Null_m) {} (I2^0)
             (I2^1) edge [bend left=10, Red] node [Empty, pos=2/5] (I2^1-R^1-I2^1-Null_m-r) {} node [Empty, pos=3/5] (I2^1-R^1-I2^1-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (I2^1R^1I2^1Null_m) {} (R^1)
             (I2^0) edge [bend left=10, Red] node [Empty, pos=2/5] (I2^0-R^1-I2^0-Null_m-r) {} node [Empty, pos=3/5] (I2^0-R^1-I2^0-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (I2^0R^1I2^0Null_m) {} (R^1);

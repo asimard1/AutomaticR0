@@ -1,0 +1,70 @@
+{
+    "name": "test",
+    "compartments": {
+        "S": 100000000.0,
+        "E0": 0,
+        "E1": 0,
+        "E2": 0,
+        "E3": 0,
+        "I": 3,
+        "Null_n": 0,
+        "Null_m": 0
+    },
+    "flows": {
+        "infections": [
+            {
+                "from": "S",
+                "to": "E0",
+                "rate": "S",
+                "contact": "I",
+                "parameter": "0"
+            }
+        ],
+        "transfers": [
+            {
+                "from": "E0",
+                "to": "E1",
+                "rate": "E0",
+                "contact": "Null_m",
+                "parameter": "0"
+            },
+            {
+                "from": "E1",
+                "to": "E2",
+                "rate": "E1",
+                "contact": "Null_m",
+                "parameter": "0"
+            },
+            {
+                "from": "E2",
+                "to": "E3",
+                "rate": "E2",
+                "contact": "Null_m",
+                "parameter": "0"
+            },
+            {
+                "from": "E3",
+                "to": "E1",
+                "rate": "E3",
+                "contact": "Null_m",
+                "parameter": "0"
+            },
+            {
+                "from": "E2",
+                "to": "I",
+                "rate": "E2",
+                "contact": "Null_m",
+                "parameter": "0"
+            }
+        ],
+        "recoveries": [
+            {
+                "from": "I",
+                "to": "R",
+                "rate": "I",
+                "contact": "Null_m",
+                "parameter": "0"
+            }
+        ]
+    }
+}

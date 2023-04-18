@@ -221,11 +221,42 @@ def verifyModel(model: dict, modelName: str, printText: bool = True) -> None:
         None.
     """
 
-    if "Null_n" not in model['compartments'] or "Null_m" not in model['compartments']:
-        raise Exception('Model doesn\'t have both Null nodes.')
+    # Try fixing the model if there are problems with nulls.
+    missingNulln = False
+    missingNullm = False
+    if 'Null_n' not in model['compartments']:
+        missingNulln = True
+    if 'Null_m' not in model['compartments']:
+        missingNullm = True
+
+    if missingNulln or missingNullm or 'Null' in getCompartments(model):
+        if printText:
+            print('Fixing missing empty nodes.')
+        flows = model['flows']
+        model['compartments']['Null_n'] = 0
+        model['compartments']['Null_m'] = 0
+
+        # We don't need Null anymore
+        if 'Null' in model['compartments']:
+            del model['compartments']['Null']
+        print('Model should be fixed...')
+
+    # Solve Null nodes in edges. Replace Null with their right instances.
+    flows = model['flows']
+    problem = False
+    for _, flowType in enumerate(flows):
+        for _, flow in enumerate(flows[flowType]):
+            for i, arg in enumerate(['to', 'from', 'rate', 'contact']):
+                if flow[arg].lower() == 'null' and arg in ['to', 'from', 'rate', 'contact']:
+                    problem = True
+                    # i even: change null to null_n
+                    # i odd: change null to null_m
+                    flow[arg] = 'Null' + ('_n' if not i % 2 else '_m')
+    if problem and printText:
+        print('Les noeuds vides sont réglés dans les arrêtes')
 
     if model['name'] != modelName:
-        raise Exception(f"Model doesn\'t have right name in file. "
+        raise Exception(f"Model doesn\'t have right name in file.\n"
                         + f"Name in file: {model['name']}. Wanted name: {modelName}.")
 
     missing = []
@@ -243,6 +274,8 @@ def verifyModel(model: dict, modelName: str, printText: bool = True) -> None:
             #             flow[p] = 'Null_n'
 
             # print(flow)
+
+            # TODO check for flow informations to respect the structure defined
 
     if missing != []:
         missingStr = ', '.join(list(map(lambda x: f'"{x}"', missing)))
@@ -277,41 +310,11 @@ def loadModel(name: str, overWrite=True, printText: bool = True) -> dict:
             model = json.load(file)
     except:
         time.sleep(1)
-        with open(f'models/{name}.json', 'r') as file:
-            model = json.load(file)
-
-    # Try fixing the model if there are problems with nulls.
-    missingNulln = False
-    missingNullm = False
-    if 'Null_n' not in model['compartments']:
-        missingNulln = True
-    if 'Null_m' not in model['compartments']:
-        missingNullm = True
-
-    if missingNulln or missingNullm or 'Null' in getCompartments(model):
-        if printText:
-            print('Fixing missing empty nodes.')
-        flows = model['flows']
-        model['compartments']['Null_n'] = 0
-        model['compartments']['Null_m'] = 0
-
-        # We don't need Null anymore
-        if 'Null' in model['compartments']:
-            del model['compartments']['Null']
-        print('Model should be fixed...')
-
-    flows = model['flows']
-    problem = False
-    for _, flowType in enumerate(flows):
-        for _, flow in enumerate(flows[flowType]):
-            for i, arg in enumerate(['to', 'from', 'rate', 'contact']):
-                if flow[arg].lower() == 'null' and arg in ['to', 'from', 'rate', 'contact']:
-                    problem = True
-                    # i even: change null to null_n
-                    # i odd: change null to null_m
-                    flow[arg] = 'Null' + ('_n' if not i % 2 else '_m')
-    if problem and printText:
-        print('Les noeuds vides sont réglés dans les arrêtes')
+        try:
+            with open(f'models/{name}.json', 'r') as file:
+                model = json.load(file)
+        except:
+            raise Exception(f'Could not open file {name}.json.')
 
     # Verify
     model = verifyModel(model, name, printText=printText)
@@ -493,7 +496,8 @@ def getRtNodes(model: dict) -> list:
         weWant: list
             List of compartments for Rt's.
     """
-    weWant = [x for x in getOtherNodes(model) if x[:4] != 'Null']
+    compartments = getCompartments(model)
+    weWant = [x for x in compartments if x.startswith(('Rt'))]
     return weWant
 
 
@@ -812,7 +816,7 @@ def getFlowType(flow: dict) -> str:
         if flow['contact'].startswith('Null'):
             return 'batch'
         else:
-            return 'u-contact'
+            raise Exception(f'Invalid flow type: {flow}.')
     else:
         if flow['contact'].startswith('Null'):
             return 'rate'
@@ -920,6 +924,42 @@ def splitVrVc(nodes, newCompartments) -> str:
     return newVrVc
 
 
+def subSet(model, start: str, end: str):
+    """
+    Gets all edges in graph as a dictionary.
+
+    Inputs:
+        model: dict
+            Model of interest.
+        u: str
+            Start point for search.
+        d: str
+            Destination for search
+
+    Outputs:
+        edges: dict
+            All edges in model.
+    """
+    compartments = getCompartments(model)
+    visited = {comp: False for comp in compartments}
+    edges = edgesCut(model)
+
+    allPaths = []
+    cycles = []
+
+    searchPaths(start, end, visited, edges, [], allPaths, cycles)
+
+    subSet = []
+
+    for path in allPaths:
+        subSet += [node for node in path if node not in subSet]
+
+    for cycle in [cycle for cycle in cycles if cycle[-1] in subSet]:
+        subSet += [node for node in cycle if node not in subSet]
+
+    return [node for node in compartments if node in subSet] # reorder
+
+
 def subSetVc(model, u: str, vc: list):
     """
     Gets all edges in graph as a dictionary.
@@ -946,42 +986,10 @@ def subSetVc(model, u: str, vc: list):
     return allNodes
 
 
-def subSet(model, u: str, d: str):
+def searchPaths(u: str, d: str, visited: dict, edges: dict,
+                 path: list, allPaths: list, cycles: list):
     """
-    Gets all edges in graph as a dictionary.
-
-    Inputs:
-        model: dict
-            Model of interest.
-        u: str
-            Start point for search.
-        d: str
-            Destination for search
-
-    Outputs:
-        edges: dict
-            All edges in model.
-    """
-    visited = {comp: False for comp in getCompartments(model)}
-    edges = edgesCutU(model, u)
-
-    allPaths = []
-
-    searchPaths(u, d, visited, edges, [], allPaths)
-
-    subSet = []
-
-    for path in allPaths:
-        for comp in path:
-            if comp not in subSet:
-                subSet.append(comp)
-
-    return subSet
-
-
-def searchPaths(u: str, d: str, visited: dict, edges: dict, path: list, allPaths: list):
-    """
-    Returns the subSet in the model (unmodified) that lies between u and v (without loops).
+    Returns the subSet in the model that lies between u and v (without loops).
     See https://www.geeksforgeeks.org/find-paths-given-source-destination/.
 
     Inputs:
@@ -1010,15 +1018,18 @@ def searchPaths(u: str, d: str, visited: dict, edges: dict, path: list, allPaths
                             visited,
                             edges,
                             path,
-                            allPaths)
+                            allPaths,
+                            cycles)
+            else:
+                cycles.append((path + [descendant]).copy())
 
     path.pop()
     visited[u] = False
 
 
-def edgesCutU(model, u: str):
+def edgesCut(model):
     """
-    Gets all edges in graph as a dictionary. NOT TRUE
+    Gets all edges that do not go to u in graph as a dictionary.
 
     Inputs:
         model: dict
@@ -1028,7 +1039,7 @@ def edgesCutU(model, u: str):
 
     Outputs:
         edges: dict
-            All edges in model.
+            Some edges in model.
     """
 
     flows = model['flows']
@@ -1038,8 +1049,8 @@ def edgesCutU(model, u: str):
 
     for _, flowName in enumerate(flows):
         for flow in flows[flowName]:
-            if (not flow['to'] in edges[flow['from']]) \
-                    and flow['to'] != u:
+            if getFlowType(flow) != 'contact' and\
+                not flow['to'] in edges[flow['from']]:
                 edges[flow['from']].append(flow['to'])
 
     return edges
@@ -1048,6 +1059,7 @@ def edgesCutU(model, u: str):
 def isolated(model):
     """
     Returns the isolated layer of a model, to be duplicated.
+    Takes the union of all isolations over contact edges.
 
     Inputs:
         model: dict
@@ -1605,7 +1617,7 @@ def compare(modelName: str,
             verification: bool = True, write: bool = True,
             overWrite: bool = False, whereToAdd: str = 'to',
             printText=False, printInit=False,
-            plotANA: bool=True,
+            plotANA: bool = True,
             susceptibles: list = [0],
             title: str = None,
             scaleMethod: str = 'Total',
