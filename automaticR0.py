@@ -936,6 +936,27 @@ def joinNodeSum(nodes: list) -> str:
     return '+'.join(removeDuplicates(nodes))
 
 
+def addIList(nodes: list, i: int) -> str:
+    """
+    Adds i to all nodes in list "nodes".
+
+    Inputs:
+        nodes: list
+            List of nodes to update.
+        i: int
+            Superior index to add.
+
+    Outputs:
+        newNodes: list
+            Modified nodes.
+    """
+    newNodes = joinNodeSum(list(map(
+        lambda x: addI(x, i),
+        nodes
+    )))
+    return newNodes
+
+
 def splitVrVc(nodes, newCompartments) -> str:
     """
     Splits vr or vc node if there is something to split to.
@@ -994,7 +1015,7 @@ def subSet(model, start: str, end: str):
     for cycle in [cycle for cycle in cycles if cycle[-1] in subSet]:
         subSet += [node for node in cycle if node not in subSet]
 
-    return [node for node in compartments if node in subSet] # reorder
+    return [node for node in compartments if node in subSet]  # reorder
 
 
 def subSetVc(model, u: str, vc: list):
@@ -1024,7 +1045,7 @@ def subSetVc(model, u: str, vc: list):
 
 
 def searchPaths(u: str, d: str, visited: dict, edges: dict,
-                 path: list, allPaths: list, cycles: list):
+                path: list, allPaths: list, cycles: list):
     """
     Returns the subSet in the model that lies between u and v (without loops).
     See https://www.geeksforgeeks.org/find-paths-given-source-destination/.
@@ -1087,7 +1108,7 @@ def edgesCut(model):
     for _, flowName in enumerate(flows):
         for flow in flows[flowName]:
             if getFlowType(flow) != 'contact' and\
-                not flow['to'] in edges[flow['from']]:
+                    not flow['to'] in edges[flow['from']]:
                 edges[flow['from']].append(flow['to'])
 
     return edges
@@ -1158,7 +1179,6 @@ def mod(model: dict,
     """
     if printText:
         print('\nCreating new model!')
-    ti = time.time()
 
     newModel = {"name": model['name'] + '_mod',
                 "compartments": {}, "flows": {}}
@@ -1215,13 +1235,12 @@ def mod(model: dict,
                 uPrime = addI(u, 1)
                 vPrime = addI(v, 1)
                 # Find vr' and vc'
-                if u[:4] == 'Null':
+                if u.startswith('Null'):
+                    # births
                     rateNode = splitVrVc(vr, newCompartments)
                 else:
-                    rateNode = joinNodeSum(list(map(
-                        lambda x: addI(x, 1),
-                        vr
-                    )))
+                    # normal rates
+                    rateNode = addIList(vr, 1)
                 contactNode = 'Null_m'
 
                 newFlow['from'] = uPrime
@@ -1238,10 +1257,7 @@ def mod(model: dict,
                         vPrime = addI(v, 0)
                     else:
                         vPrime = addI(v, 1)
-                    rateNode = joinNodeSum(list(map(
-                        lambda x: addI(x, 0),
-                        vr
-                    )))
+                    rateNode = addIList(vr, 0)
                     contactNode = 'Null_m'
 
                     newFlow['from'] = uPrime
@@ -1268,9 +1284,10 @@ def mod(model: dict,
                 newModel['flows'][flowName].append(newFlow.copy())
             ### CONTACTS ###
             if getFlowType(flow) == 'contact':
+                # first layer
                 uPrime = addI(u, 1)
                 vPrime = addI(v, 1)
-                rateNode = splitVrVc(vr, newCompartments)
+                rateNode = addIList(vr, 1)
                 contactNode = splitVrVc(vc, newCompartments)
 
                 newFlow['from'] = uPrime
@@ -1281,28 +1298,36 @@ def mod(model: dict,
 
                 newModel['flows'][flowName].append(newFlow.copy())
 
+                if addI(u, 0) in newCompartments:
+                    # isolated layer
+                    uPrime = addI(u, 0)
+                    vPrime = addI(v, 0)
+                    rateNode = addIList(vr, 0)
+                    contactNode = splitVrVc(vc, newCompartments)
+
+                    newFlow['from'] = uPrime
+                    newFlow['to'] = vPrime
+                    newFlow['rate'] = rateNode
+                    newFlow['contact'] = contactNode
+                    newFlow['parameter'] = flow['parameter']
+
+                    newModel['flows'][flowName].append(newFlow.copy())
+
                 # COMPUTE RT
+                # RT NODES
                 compartName = f"Rt({flow['from']},{flow['to']})"
                 newModel["compartments"][compartName] = 0
 
                 uPrime = 'Null_n'
                 vPrime = compartName
-                rateNode = joinNodeSum(list(map(
-                    lambda x: addI(x, 1),
-                    vr
-                )))
-                contactNode = joinNodeSum(list(map(
-                    lambda x: addI(x, 0),
-                    vc
-                )))
+                rateNode = splitVrVc(vr, newCompartments)
+                contactNode = addIList(vc, 0)
 
                 newFlow['from'] = uPrime
                 newFlow['to'] = vPrime
                 newFlow['rate'] = rateNode
                 newFlow['contact'] = contactNode
                 newFlow['parameter'] = flow['parameter']
-
-                # print('  ', newFlow)
 
                 newModel['flows'][flowName].append(newFlow.copy())
 
@@ -1311,9 +1336,6 @@ def mod(model: dict,
         if compartment.startswith('Null'):
             newModel["compartments"][compartment] \
                 = model["compartments"][compartment]
-
-    if printText:
-        print(f'New model created in {time.time() - ti:.1e} seconds.\n')
 
     if write:
         writeModel(newModel, overWrite, printText)
@@ -2453,11 +2475,9 @@ def createLaTeX(model: dict, layerDistance: float = 1,
                     '(', '').replace(')', '').replace(',', '')
                 LaTeX += f"{tab * 2}\\node [Empty] (Nulln_{nameNoProblem}) " \
                     + f"[above left={nullDistance}cm of {nameNoProblem}] {{}};\n"
-                print(u, nameNoProblem)
             if v.startswith('Null'):
                 nameNoProblem = u.replace(
                     '(', '').replace(')', '').replace(',', '')
-                print(nameNoProblem, v)
                 LaTeX += f"{tab * 2}\\node [Empty] (Nullm_{nameNoProblem}) " \
                     + f"[below right={nullDistance}cm of {nameNoProblem}] {{}};\n"
 
