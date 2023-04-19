@@ -2,8 +2,28 @@
     \centering
     \begin{tikzpicture}[scale=1, every node/.style={scale=1}]
         \node [Square] (S)  {$S$};
-        \node [Square] (I) [right=2cm of S] {$I$};
+        \node [Square] (E0) [right=2cm of S] {$E0$};
+        \node [Square] (E1) [right=2cm of E0] {$E1$};
+        \node [Square] (E2) [right=2cm of E1] {$E2$};
+        \node [Square] (E3) [right=2cm of E2] {$E3$};
+        \node [Square] (I) [right=2cm of E3] {$I$};
 
+
+        \begin{pgfonlayer}{bg}
+        \path [Arrow, line width=1pt]
+            (S) edge [bend left=10, Plum] node [Empty, pos=2/5] (S-E0-S-I-r) {} node [Empty, pos=3/5] (S-E0-S-I-c) {} node [Empty, pos=1/2, above=0.05cm] (SE0SI) {} (E0)
+            (E0) edge [bend left=10, Red] node [Empty, pos=2/5] (E0-E1-E0-Null_m-r) {} node [Empty, pos=3/5] (E0-E1-E0-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (E0E1E0Null_m) {} (E1)
+            (E1) edge [bend left=10, Red] node [Empty, pos=2/5] (E1-E2-E1-Null_m-r) {} node [Empty, pos=3/5] (E1-E2-E1-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (E1E2E1Null_m) {} (E2)
+            (E2) edge [bend left=10, Red] node [Empty, pos=2/5] (E2-E3-E2-Null_m-r) {} node [Empty, pos=3/5] (E2-E3-E2-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (E2E3E2Null_m) {} (E3)
+            (E3) edge [bend left=25, Red] node [Empty, pos=2/5] (E3-E1-E3-Null_m-r) {} node [Empty, pos=3/5] (E3-E1-E3-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (E3E1E3Null_m) {} (E1)
+            (E2) edge [bend left=25, Red] node [Empty, pos=2/5] (E2-I-E2-Null_m-r) {} node [Empty, pos=3/5] (E2-I-E2-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (E2IE2Null_m) {} (I)
+            (I) edge [bend left=10, Red] node [Empty, pos=2/5] (I-R-I-Null_m-r) {} node [Empty, pos=3/5] (I-R-I-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (IRINull_m) {} (R);
+        \end{pgfonlayer}
+
+        \begin{pgfonlayer}{bg}
+        \path [Dashed, line width=1pt]
+            (S-E0-S-I-c) edge [bend left=30] (I);
+        \end{pgfonlayer}
     \end{tikzpicture}
     \label{fig:test_Tikz}
 \end{figure}

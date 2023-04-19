@@ -2,8 +2,49 @@
     \centering
     \begin{tikzpicture}[scale=1, every node/.style={scale=1}]
         \node [Square] (S^1)  {$S^1$};
-        \node [Square] (I^1) [right=2cm of S^1] {$I^1$};
+        \node [Square] (E0^1) [right=2cm of S^1] {$E0^1$};
+        \node [Square] (E1^1) [right=2cm of E0^1] {$E1^1$};
+        \node [Square] (E2^1) [right=2cm of E1^1] {$E2^1$};
+        \node [Square] (E3^1) [right=2cm of E2^1] {$E3^1$};
+        \node [Square] (I^1) [right=2cm of E3^1] {$I^1$};
+        \node [Square] (E0^0) [above=1cm of E0^1] {$E0^0$};
+        \node [Square] (E1^0) [above=1cm of E1^1] {$E1^0$};
+        \node [Square] (E2^0) [above=1cm of E2^1] {$E2^0$};
+        \node [Square] (E3^0) [above=1cm of E3^1] {$E3^0$};
+        \node [Square] (I^0) [above=1cm of I^1] {$I^0$};
+        \node [Square] (RtSE0) [left=2cm of S^1] {$R_t$\\$(S,E0)$};
 
+        \node [Empty] (Nulln_RtSE0) [above left=0.8cm of RtSE0] {};
+
+        \begin{pgfonlayer}{bg}
+        \path [Arrow, line width=1pt]
+            (S^1) edge [bend left=10, Plum] node [Empty, pos=2/5] (S^1-E0^1-S^1-I^0+I^1-r) {} node [Empty, pos=3/5] (S^1-E0^1-S^1-I^0+I^1-c) {} node [Empty, pos=1/2, above=0.05cm] (S^1E0^1S^1I^0+I^1) {} (E0^1)
+            (Nulln_RtSE0) edge [bend left=10, Plum] node [Empty, pos=3/5] (Nulln_RtSE0-RtSE0-S^1-I^0-r) {} node [Empty, pos=2/5] (Nulln_RtSE0-RtSE0-S^1-I^0-c) {} node [Empty, pos=1/2, above=0.05cm] (Nulln_RtSE0RtSE0S^1I^0) {} (RtSE0)
+            (E0^1) edge [bend left=10, Red] node [Empty, pos=2/5] (E0^1-E1^1-E0^1-Null_m-r) {} node [Empty, pos=3/5] (E0^1-E1^1-E0^1-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (E0^1E1^1E0^1Null_m) {} (E1^1)
+            (E0^0) edge [bend left=10, Red] node [Empty, pos=2/5] (E0^0-E1^0-E0^0-Null_m-r) {} node [Empty, pos=3/5] (E0^0-E1^0-E0^0-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (E0^0E1^0E0^0Null_m) {} (E1^0)
+            (E1^1) edge [bend left=10, Red] node [Empty, pos=2/5] (E1^1-E2^1-E1^1-Null_m-r) {} node [Empty, pos=3/5] (E1^1-E2^1-E1^1-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (E1^1E2^1E1^1Null_m) {} (E2^1)
+            (E1^0) edge [bend left=10, Red] node [Empty, pos=2/5] (E1^0-E2^0-E1^0-Null_m-r) {} node [Empty, pos=3/5] (E1^0-E2^0-E1^0-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (E1^0E2^0E1^0Null_m) {} (E2^0)
+            (E2^1) edge [bend left=10, Red] node [Empty, pos=2/5] (E2^1-E3^1-E2^1-Null_m-r) {} node [Empty, pos=3/5] (E2^1-E3^1-E2^1-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (E2^1E3^1E2^1Null_m) {} (E3^1)
+            (E2^0) edge [bend left=10, Red] node [Empty, pos=2/5] (E2^0-E3^0-E2^0-Null_m-r) {} node [Empty, pos=3/5] (E2^0-E3^0-E2^0-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (E2^0E3^0E2^0Null_m) {} (E3^0)
+            (E3^1) edge [bend left=25, Red] node [Empty, pos=2/5] (E3^1-E1^1-E3^1-Null_m-r) {} node [Empty, pos=3/5] (E3^1-E1^1-E3^1-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (E3^1E1^1E3^1Null_m) {} (E1^1)
+            (E3^0) edge [bend left=25, Red] node [Empty, pos=2/5] (E3^0-E1^0-E3^0-Null_m-r) {} node [Empty, pos=3/5] (E3^0-E1^0-E3^0-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (E3^0E1^0E3^0Null_m) {} (E1^0)
+            (E2^1) edge [bend left=25, Red] node [Empty, pos=2/5] (E2^1-I^1-E2^1-Null_m-r) {} node [Empty, pos=3/5] (E2^1-I^1-E2^1-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (E2^1I^1E2^1Null_m) {} (I^1)
+            (E2^0) edge [bend left=25, Red] node [Empty, pos=2/5] (E2^0-I^0-E2^0-Null_m-r) {} node [Empty, pos=3/5] (E2^0-I^0-E2^0-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (E2^0I^0E2^0Null_m) {} (I^0)
+            (I^1) edge [bend left=10, Red] node [Empty, pos=2/5] (I^1-R^1-I^1-Null_m-r) {} node [Empty, pos=3/5] (I^1-R^1-I^1-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (I^1R^1I^1Null_m) {} (R^1)
+            (I^0) edge [bend left=10, Red] node [Empty, pos=2/5] (I^0-R^1-I^0-Null_m-r) {} node [Empty, pos=3/5] (I^0-R^1-I^0-Null_m-c) {} node [Empty, pos=1/2, above=0.05cm] (I^0R^1I^0Null_m) {} (R^1);
+        \end{pgfonlayer}
+
+        \begin{pgfonlayer}{bg}
+        \path [Dotted, line width=1pt]
+            (Nulln_RtSE0-RtSE0-S^1-I^0-r) edge [bend left=30] (S^1);
+        \end{pgfonlayer}
+
+        \begin{pgfonlayer}{bg}
+        \path [Dashed, line width=1pt]
+            (S^1-E0^1-S^1-I^0+I^1-c) edge [bend left=30] (I^0)
+            (S^1-E0^1-S^1-I^0+I^1-c) edge [bend right=30] (I^1)
+            (Nulln_RtSE0-RtSE0-S^1-I^0-c) edge [bend left=20] (I^0);
+        \end{pgfonlayer}
     \end{tikzpicture}
     \label{fig:test_mod_Tikz}
 \end{figure}
