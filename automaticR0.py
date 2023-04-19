@@ -467,6 +467,43 @@ def getPopNodes(model: dict) -> list:
     return weWant
 
 
+def getSusceptibleNodes(model: dict) -> list:
+    """
+    Return all susceptible nodes, from definition 1.2.3 in thesis.
+
+    Inputs:
+        model: dict
+            Model of interest.
+
+    Outputs:
+        weWant: list
+            list of susceptible nodes in population.
+    """
+
+    population = getPopNodes(model)
+    flows = model['flows']
+
+    weWant = []
+
+    for category in flows:
+        for flow in flows[category]:
+            # On veut des noeuds vides pour considérer les entrées et sorties
+            # Puisque les noeuds prennent de la place on les crée seulement lorsque nécessaire
+
+            _, _, v_r, _ = flow['from'], flow['to'], flow['rate'], flow['contact']
+            flowType = getFlowType(flow)
+
+            if flowType == 'contact':  # we know v_r != Null
+                rates = v_r.split('+')
+                weWant += [node for node in rates if node not in weWant]
+
+    problems = [x for x in weWant if x not in population]
+    if problems != []:
+        print(f'Found a susceptible not in population. Excluding {problems}.')
+
+    return [x for x in population if x in weWant]
+
+
 def getOtherNodes(model: dict) -> list:
     """
     Return compartments that are not in the population.
@@ -1618,7 +1655,6 @@ def compare(modelName: str,
             overWrite: bool = False, whereToAdd: str = 'to',
             printText=False, printInit=False,
             plotANA: bool = True,
-            susceptibles: list = [0],
             title: str = None,
             scaleMethod: str = 'Total',
             plotIndividual: bool = True,
@@ -1670,8 +1706,6 @@ def compare(modelName: str,
             Whether or not to print initialization text.
         plotANA: bool
             Whether or not to plot analytical Rt.
-        susceptibles: list
-            List of susceptible compartments (integers).
         plotANA_v2: bool
             Whether or not to plot the 2nd version of analytical Rt.
         infected: list
@@ -1752,6 +1786,9 @@ def compare(modelName: str,
                  ls='--' if plotStyle is None else plotStyle,
                  c=PLUM if forceColors else colors[1])
 
+    compartments = getCompartments(model)
+    susceptibles = [compartments.index(x) for x in getSusceptibleNodes(model)]
+
     if useTorch:
         susceptiblesDivPop = torch.sum(solution[:, susceptibles], axis=1) / N
         # infectedDivPop = torch.sum(solution[:, infected], axis=1) / N
@@ -1760,13 +1797,8 @@ def compare(modelName: str,
         # infectedDivPop = np.sum(solution[:, infected], axis=1) / N
 
     # R0 needs to be table, tablewise multiplication
+    # or simply a number for normal multiplication
     rt_ANA = R0 * susceptiblesDivPop
-    # rt_ANA_v2 = R0 * (susceptiblesDivPop - infectedDivPop)
-    # if plotANA_v2:
-    #     ax1.plot(t_span, rt_ANA_v2, label='ANA_v2')
-    # bound = rt_ANA * (1 - R0 * infectedDivPop)
-    # if plotBound:
-    #     ax1.plot(t_span, bound, label='Bound')
 
     rt_times = np.array([key for key in values])
     toKeep_rt_times = np.where(rt_times >= plotFrom - 1.5 / sub_rt)
