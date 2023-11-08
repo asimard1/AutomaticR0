@@ -1925,9 +1925,9 @@ def compare(modelName: str,
 
     if saveGraph:
         if graphName is None:
-            fig.savefig(f'graphs/{modelName}.pdf', bbox_inches='tight')
+            fig.savefig(f'graphs/{modelName}.png', bbox_inches='tight')
         else:
-            fig.savefig(f'graphs/{graphName}.pdf', bbox_inches='tight')
+            fig.savefig(f'graphs/{graphName}.png', bbox_inches='tight')
 
     print('Rt at start, ana and sim:', rt_ANA[0], rt[0])
     print('Rt at end, ana and sim:', rt_ANA[-1], rt[-1])
