@@ -1,5 +1,10 @@
-## My master's thesis: https://doi.org/1866/32230
-## Mon mémoire de maîtrise: https://doi.org/1866/32230
+## Warning
+This code has been maintained for the use of the master's thesis presented below, and is not perfectly accurate to what is presented in the article (linked below eventually). This is important, as some notation has been changed between the two. For examples of working notation, see inside the folder "models" which contains all the models considered during research.
+
+## Master's thesis / mémoire de maîtrise : https://doi.org/1866/32230
+
+
+
 
 # AutomaticR0
 Calcul automatique des nombres de reproduction $\mathcal{R}\_0$ et $\mathcal{R}\_t$ à partir d'un fichier .json contenant un modèle. Ce code est présenté dans le cadre de la maîtrise en informatique.
