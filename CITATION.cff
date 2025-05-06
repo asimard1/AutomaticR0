@@ -1,0 +1,18 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: Automatic R0
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Alexandre
+    family-names: Simard
+    affiliation: Université de Montréal
+identifiers:
+  - type: url
+    value: 'http://hdl.handle.net/1866/32230'
+    description: Master's thesis
+repository-code: 'https://github.com/asimard1/AutomaticR0'
